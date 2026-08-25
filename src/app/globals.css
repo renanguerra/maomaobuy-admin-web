@@ -1,0 +1,289 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+    /* Maoshuai Teal — extraído do uniforme do Modelo 4 */
+    --color-brand-50: #edfbfb;
+    --color-brand-100: #d2f5f4;
+    --color-brand-200: #a9eae8;
+    --color-brand-300: #70d7d6;
+    --color-brand-400: #32bdbf;
+    --color-brand-500: #0a9da5;
+    --color-brand-600: #087e89;
+    --color-brand-700: #096671;
+    --color-brand-800: #0b515b;
+    --color-brand-900: #0c444c;
+    --color-brand-950: #03282f;
+
+    /* MaoMao Coral — China, origem e personalidade */
+    --color-origin-50: #fff4f0;
+    --color-origin-100: #ffe5dd;
+    --color-origin-200: #ffcec0;
+    --color-origin-300: #ffa994;
+    --color-origin-400: #ff8068;
+    --color-origin-500: #f25e48;
+    --color-origin-600: #d94331;
+    --color-origin-700: #b63225;
+    --color-origin-800: #962d24;
+    --color-origin-900: #7d2b24;
+    --color-origin-950: #44120e;
+
+    /* MaoMao Jade — sucesso e etapas concluídas */
+    --color-jade-50: #edf9f4;
+    --color-jade-100: #d2f1e5;
+    --color-jade-200: #a8e2ce;
+    --color-jade-300: #73cbb0;
+    --color-jade-400: #43ad8f;
+    --color-jade-500: #2d9277;
+    --color-jade-600: #24856b;
+    --color-jade-700: #1e6957;
+    --color-jade-800: #1b5447;
+    --color-jade-900: #18463c;
+    --color-jade-950: #0a2822;
+
+    /* MaoMao Amber — atenção, prazo e custo variável */
+    --color-amber-50: #fff9e8;
+    --color-amber-100: #fff0be;
+    --color-amber-200: #ffe178;
+    --color-amber-300: #ffca3a;
+    --color-amber-400: #efab18;
+    --color-amber-500: #d88b09;
+    --color-amber-600: #b87610;
+    --color-amber-700: #93540f;
+    --color-amber-800: #794315;
+    --color-amber-900: #663817;
+    --color-amber-950: #3b1c09;
+
+    /* Neutros frios — deixam o teal respirar sem competir com ele */
+    --color-warm-50: #ffffff;
+    --color-warm-100: #f7f9fa;
+    --color-warm-200: #edf2f3;
+    --color-warm-300: #dbe3e5;
+    --color-warm-400: #b9c5c8;
+    --color-warm-500: #909da1;
+    --color-warm-600: #69777b;
+    --color-warm-700: #4d5b5f;
+    --color-warm-800: #344145;
+    --color-warm-900: #223034;
+    --color-warm-950: #121d20;
+
+    /* Modo noturno — grafite azulado com contraste confortável */
+    --color-night-canvas: #171e21;
+    --color-night-surface: #1f282c;
+    --color-night-raised: #283338;
+    --color-night-soft: #2d3a3f;
+    --color-night-line: #3b4a50;
+    --color-night-text: #edf2f1;
+    --color-night-muted: #b7c2c4;
+    --color-night-subtle: #94a2a5;
+    --color-night-brand: #17383d;
+    --color-night-brand-hover: #20484d;
+    --color-night-deep: #102427;
+    --color-night-accent: #8edbd8;
+    --color-night-accent-strong: #b0e8e5;
+    --color-night-coral: #f2a08e;
+    --color-night-coral-surface: #382725;
+    --color-night-success: #82ceb5;
+    --color-night-success-surface: #20342e;
+    --color-night-warning: #ebca78;
+    --color-night-warning-surface: #383225;
+
+    /* Aliases semânticos usados pelos componentes */
+    --color-primary: var(--color-brand-700);
+    --color-primary-hover: var(--color-brand-800);
+    --color-accent: var(--color-origin-600);
+    --color-accent-soft: var(--color-origin-400);
+    --color-background: var(--color-warm-100);
+    --color-surface: var(--color-warm-50);
+    --color-ink: #172226;
+    --color-muted: #5f6d70;
+    --color-line: #d6e0e2;
+    --color-success: var(--color-jade-600);
+    --color-warning: var(--color-amber-500);
+    --color-secondary: var(--color-origin-600);
+    --color-highlight: var(--color-origin-400);
+    --font-sans: 'Inter Variable', Inter, system-ui, sans-serif;
+    --font-display: 'M PLUS 2 Variable', 'Noto Sans', system-ui, sans-serif;
+}
+
+[data-theme='dark'] {
+    color-scheme: dark;
+    --color-primary: var(--color-night-accent);
+    --color-primary-hover: var(--color-night-accent-strong);
+    --color-accent: var(--color-night-coral);
+    --color-accent-soft: var(--color-origin-300);
+    --color-background: var(--color-night-canvas);
+    --color-surface: var(--color-night-surface);
+    --color-ink: var(--color-night-text);
+    --color-muted: var(--color-night-muted);
+    --color-line: var(--color-night-line);
+    --color-success: var(--color-night-success);
+    --color-warning: var(--color-night-warning);
+    --color-secondary: var(--color-night-coral);
+    --color-highlight: var(--color-origin-300);
+}
+
+@layer base {
+    * {
+        @apply box-border;
+    }
+    html {
+        @apply scroll-smooth;
+    }
+    body {
+        @apply m-0 bg-background font-sans text-ink transition-colors duration-200;
+        text-rendering: optimizeLegibility;
+    }
+    h1,
+    h2,
+    h3 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        text-wrap: balance;
+    }
+    nav a,
+    button,
+    [role='button'] {
+        font-family: var(--font-display);
+    }
+    button,
+    input {
+        font: inherit;
+    }
+    button,
+    [role='button'] {
+        @apply cursor-pointer;
+    }
+    button:disabled,
+    [role='button'][aria-disabled='true'] {
+        @apply cursor-not-allowed;
+    }
+    img {
+        -webkit-user-drag: none;
+        user-select: none;
+    }
+    ::selection {
+        @apply bg-accent-soft text-ink;
+    }
+
+    [data-theme='dark'] ::selection {
+        background: var(--color-brand-700);
+        color: var(--color-night-text);
+    }
+}
+
+@layer components {
+    .mm-panel {
+        border: 1px solid var(--color-line);
+        border-radius: 0.5rem;
+        background: var(--color-surface);
+        box-shadow: 0 10px 30px rgb(23 34 38 / 7%);
+    }
+
+    .mm-panel-soft {
+        border: 1px solid var(--color-line);
+        border-radius: 0.5rem;
+        background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+        box-shadow: 0 4px 16px rgb(23 34 38 / 5%);
+    }
+
+    .mm-display {
+        font-family: var(--font-display);
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        text-wrap: balance;
+    }
+
+    .mm-data {
+        font-family: var(--font-display);
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum' 1;
+    }
+
+    .mm-kicker {
+        font-family: var(--font-display);
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        gap: 0.5rem;
+        border-radius: 0.25rem;
+        background: var(--color-brand-100);
+        padding: 0.4rem 0.65rem;
+        color: var(--color-primary);
+        font-size: 0.72rem;
+        font-weight: 650;
+        letter-spacing: 0.08em;
+        line-height: 1;
+        text-transform: uppercase;
+    }
+
+    .mm-mascot-stage {
+        isolation: isolate;
+        position: relative;
+        border: 1px solid var(--color-line);
+        border-radius: 0.75rem;
+        background-color: var(--color-brand-100);
+        background-image: radial-gradient(circle at 50% 42%, rgb(255 255 255 / 85%) 0 24%, transparent 50%);
+        box-shadow: 0 16px 40px rgb(9 102 113 / 10%);
+    }
+
+    .mm-mascot-stage::before {
+        position: absolute;
+        z-index: -1;
+        top: 6%;
+        right: 7%;
+        width: 4.5rem;
+        height: 4.5rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--color-amber-200) 72%, transparent);
+        content: '';
+    }
+
+    .mm-mascot-stage::after {
+        content: none;
+    }
+
+    .mm-section-band {
+        border-block: 1px solid var(--color-line);
+        background: var(--color-warm-200);
+    }
+
+    [data-theme='dark'] .mm-panel,
+    [data-theme='dark'] .mm-panel-soft {
+        background: var(--color-night-surface);
+        border-color: var(--color-night-line);
+        box-shadow: 0 10px 30px rgb(4 12 15 / 20%);
+    }
+
+    [data-theme='dark'] .mm-mascot-stage {
+        background-color: var(--color-night-brand);
+        background-image: radial-gradient(circle at 50% 42%, rgb(142 219 216 / 10%) 0 24%, transparent 54%);
+        border-color: var(--color-night-line);
+        box-shadow: 0 16px 40px rgb(4 12 15 / 24%);
+    }
+
+    [data-theme='dark'] .mm-mascot-stage::before {
+        background: color-mix(in srgb, var(--color-night-warning) 20%, transparent);
+    }
+
+    [data-theme='dark'] .mm-kicker {
+        background: var(--color-night-brand);
+        color: var(--color-night-accent);
+    }
+
+    [data-theme='dark'] .mm-section-band {
+        background: var(--color-night-surface);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}

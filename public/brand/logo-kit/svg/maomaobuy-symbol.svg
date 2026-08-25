@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Símbolo MaoMaoBuy">
+  <path fill="#096671" d="M86 226 82 152q-2-36 30-44 20-4 39 19l35 37q70-22 140 0l35-37q19-23 39-19 32 8 30 44l-4 74q24 54 6 108-22 66-88 93-40 17-88 17t-88-17q-66-27-88-93-18-54 6-108Z"/>
+  <path fill="#FFF" d="m170 248 86-46 86 46-86 49Z"/>
+  <path fill="#FFF" d="m170 262 78 44v80l-78-45Z"/>
+  <path fill="#FFF" d="m342 262-78 44v80l78-45Z"/>
+  <circle cx="350" cy="356" r="45" fill="#FFF"/>
+  <circle cx="350" cy="356" r="36" fill="#F25E48"/>
+  <path fill="none" stroke="#FFF" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" d="m333 356 12 12 23-27"/>
+</svg>
