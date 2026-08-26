@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { FolderPlus, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import type { AdminCategory, AdminSubcategory } from '@/types/api';
 
@@ -18,6 +19,7 @@ function slugify(value: string) {
 }
 
 export function CategoriesPage() {
+    const { t } = useTranslation();
     const [categories, setCategories] = useState<AdminCategory[]>();
     const [error, setError] = useState<string>();
     const [feedback, setFeedback] = useState<string>();
@@ -32,15 +34,16 @@ export function CategoriesPage() {
     function load() {
         api<AdminCategory[]>('/categories')
             .then(setCategories)
-            .catch(() => setError('Não foi possível carregar as categorias.'));
+            .catch(() => setError(t('categories.error')));
     }
 
     useEffect(() => {
         load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     function errorMessage(err: unknown) {
-        return err instanceof ApiError ? err.message : 'Não foi possível concluir a ação.';
+        return err instanceof ApiError ? err.message : t('categories.actionError');
     }
 
     async function createCategory(event: FormEvent<HTMLFormElement>) {
@@ -56,7 +59,7 @@ export function CategoriesPage() {
             setNewCategoryName('');
             setNewCategorySlug('');
             setEditingNewCategorySlug(false);
-            setFeedback('Categoria criada com sucesso.');
+            setFeedback(t('categories.createdFeedback'));
             load();
         } catch (err) {
             setError(errorMessage(err));
@@ -85,7 +88,7 @@ export function CategoriesPage() {
     }
 
     async function deleteCategory(id: string) {
-        if (!confirm('Remover esta categoria e suas subcategorias?')) return;
+        if (!confirm(t('categories.deleteCategoryConfirm'))) return;
         setBusy(`delete-category:${id}`);
         setError(undefined);
         try {
@@ -138,7 +141,7 @@ export function CategoriesPage() {
     }
 
     async function deleteSubcategory(categoryId: string, subcategoryId: string) {
-        if (!confirm('Remover esta subcategoria?')) return;
+        if (!confirm(t('categories.deleteSubcategoryConfirm'))) return;
         setBusy(`delete-subcategory:${subcategoryId}`);
         setError(undefined);
         try {
@@ -153,8 +156,8 @@ export function CategoriesPage() {
 
     return (
         <main>
-            <p className="mm-kicker mb-3">Catálogo</p>
-            <h1 className="m-0 text-3xl tracking-[-.03em]">Categorias</h1>
+            <p className="mm-kicker mb-3">{t('categories.kicker')}</p>
+            <h1 className="m-0 text-3xl tracking-[-.03em]">{t('categories.title')}</h1>
 
             {error && <p className="mt-6 border-l-2 border-origin-500 pl-3 text-sm">{error}</p>}
             {feedback && <p className="mt-6 border-l-2 border-success pl-3 text-sm text-success">{feedback}</p>}
@@ -165,17 +168,15 @@ export function CategoriesPage() {
                         <FolderPlus className="h-5 w-5" aria-hidden="true" />
                     </span>
                     <div>
-                        <h2 className="m-0 text-lg">Nova categoria</h2>
-                        <p className="m-0 text-sm text-muted dark:text-night-muted">
-                            Categorias organizam os produtos exibidos aos clientes.
-                        </p>
+                        <h2 className="m-0 text-lg">{t('categories.newCategory.title')}</h2>
+                        <p className="m-0 text-sm text-muted dark:text-night-muted">{t('categories.newCategory.description')}</p>
                     </div>
                 </div>
                 <form className="mt-5 grid gap-4" onSubmit={createCategory}>
                     <Input
                         name="name"
-                        label="Nome"
-                        placeholder="Ex.: Roupas"
+                        label={t('categories.newCategory.nameLabel')}
+                        placeholder={t('categories.newCategory.namePlaceholder')}
                         required
                         value={newCategoryName}
                         onChange={(event) => {
@@ -186,7 +187,7 @@ export function CategoriesPage() {
                     />
 
                     <div className="grid gap-2">
-                        <span className="text-sm font-semibold text-ink dark:text-night-text">Slug</span>
+                        <span className="text-sm font-semibold text-ink dark:text-night-text">{t('categories.newCategory.slugLabel')}</span>
                         {editingNewCategorySlug ? (
                             <div className="flex items-center gap-2">
                                 <input
@@ -194,7 +195,7 @@ export function CategoriesPage() {
                                     name="slug"
                                     autoFocus
                                     pattern="[a-z0-9]+(-[a-z0-9]+)*"
-                                    placeholder="roupas"
+                                    placeholder={t('categories.newCategory.slugPlaceholder')}
                                     required
                                     value={newCategorySlug}
                                     onChange={(event) => setNewCategorySlug(slugify(event.target.value))}
@@ -207,26 +208,24 @@ export function CategoriesPage() {
                                         setNewCategorySlug(slugify(newCategoryName));
                                     }}
                                 >
-                                    Automático
+                                    {t('categories.newCategory.slugAutoButton')}
                                 </button>
                             </div>
                         ) : (
                             <div className="flex items-center justify-between gap-3 rounded-md border border-dashed border-line bg-warm-100 px-4 py-3 dark:border-night-line dark:bg-night-raised">
                                 <span className="truncate font-mono text-sm text-muted dark:text-night-muted">
-                                    /{newCategorySlug || 'gerado-a-partir-do-nome'}
+                                    /{newCategorySlug || t('categories.newCategory.slugGeneratedPlaceholder')}
                                 </span>
                                 <button
                                     className="shrink-0 text-xs font-semibold text-primary hover:underline dark:text-night-accent"
                                     type="button"
                                     onClick={() => setEditingNewCategorySlug(true)}
                                 >
-                                    Editar
+                                    {t('categories.newCategory.slugEditButton')}
                                 </button>
                             </div>
                         )}
-                        <span className="text-xs leading-relaxed text-muted dark:text-night-muted">
-                            Usado na URL pública. Gerado automaticamente a partir do nome.
-                        </span>
+                        <span className="text-xs leading-relaxed text-muted dark:text-night-muted">{t('categories.newCategory.slugHint')}</span>
                     </div>
 
                     <div className="mt-1 flex justify-end max-[500px]:justify-stretch">
@@ -236,13 +235,13 @@ export function CategoriesPage() {
                             leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
                             loading={busy === 'create-category'}
                         >
-                            Criar categoria
+                            {t('categories.newCategory.submitButton')}
                         </Button>
                     </div>
                 </form>
             </section>
 
-            {!categories && !error && <p className="mt-8 text-muted">Carregando categorias…</p>}
+            {!categories && !error && <p className="mt-8 text-muted">{t('categories.loading')}</p>}
 
             {categories && (
                 <div className="mt-8 grid gap-5">
@@ -251,28 +250,28 @@ export function CategoriesPage() {
                             {editingCategoryId === category.id ? (
                                 <form className="grid grid-cols-[1fr_1fr_auto] items-end gap-3 max-[560px]:grid-cols-1" onSubmit={(event) => updateCategory(category.id, event)}>
                                     <label className="grid gap-2 text-sm font-semibold">
-                                        Nome
+                                        {t('categories.editForm.name')}
                                         <input
                                             className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                             name="name"
                                             defaultValue={category.name}
-                                            placeholder="Ex.: Roupas"
+                                            placeholder={t('categories.newCategory.namePlaceholder')}
                                             required
                                         />
                                     </label>
                                     <label className="grid gap-2 text-sm font-semibold">
-                                        Slug
+                                        {t('categories.editForm.slug')}
                                         <input
                                             className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                             name="slug"
                                             defaultValue={category.slug}
-                                            placeholder="roupas"
+                                            placeholder={t('categories.newCategory.slugPlaceholder')}
                                             required
                                         />
                                     </label>
                                     <div className="flex gap-2">
                                         <Button size="small" type="submit" loading={busy === `update-category:${category.id}`}>
-                                            Salvar
+                                            {t('categories.editForm.save')}
                                         </Button>
                                         <Button size="small" type="button" variant="ghost" onClick={() => setEditingCategoryId(undefined)}>
                                             <X className="h-4 w-4" aria-hidden="true" />
@@ -304,7 +303,7 @@ export function CategoriesPage() {
 
                             <div className="mt-5 border-t border-line pt-4 dark:border-night-line">
                                 <h3 className="m-0 text-sm font-bold tracking-wide text-muted uppercase dark:text-night-subtle">
-                                    Subcategorias
+                                    {t('categories.subcategories.title')}
                                 </h3>
                                 <ul className="m-0 mt-3 grid list-none gap-2 p-0">
                                     {category.subcategories.map((subcategory: AdminSubcategory) =>
@@ -318,19 +317,19 @@ export function CategoriesPage() {
                                                         className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                                         name="name"
                                                         defaultValue={subcategory.name}
-                                                        placeholder="Ex.: Camisetas"
+                                                        placeholder={t('categories.subcategories.editNamePlaceholder')}
                                                         required
                                                     />
                                                     <input
                                                         className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                                         name="slug"
                                                         defaultValue={subcategory.slug}
-                                                        placeholder="camisetas"
+                                                        placeholder={t('categories.subcategories.editSlugPlaceholder')}
                                                         required
                                                     />
                                                     <div className="flex gap-2">
                                                         <Button size="small" type="submit" loading={busy === `update-subcategory:${subcategory.id}`}>
-                                                            Salvar
+                                                            {t('categories.editForm.save')}
                                                         </Button>
                                                         <Button size="small" type="button" variant="ghost" onClick={() => setEditingSubcategory(undefined)}>
                                                             <X className="h-4 w-4" aria-hidden="true" />
@@ -369,7 +368,7 @@ export function CategoriesPage() {
                                         ),
                                     )}
                                     {category.subcategories.length === 0 && (
-                                        <li className="text-sm text-muted dark:text-night-muted">Nenhuma subcategoria.</li>
+                                        <li className="text-sm text-muted dark:text-night-muted">{t('categories.subcategories.empty')}</li>
                                     )}
                                 </ul>
 
@@ -381,18 +380,18 @@ export function CategoriesPage() {
                                         <input
                                             className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                             name="name"
-                                            placeholder="Nome"
+                                            placeholder={t('categories.subcategories.namePlaceholder')}
                                             required
                                         />
                                         <input
                                             className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                             name="slug"
-                                            placeholder="slug"
+                                            placeholder={t('categories.subcategories.slugPlaceholder')}
                                             required
                                         />
                                         <div className="flex gap-2">
                                             <Button size="small" type="submit" loading={busy === `create-subcategory:${category.id}`}>
-                                                Adicionar
+                                                {t('categories.subcategories.add')}
                                             </Button>
                                             <Button size="small" type="button" variant="ghost" onClick={() => setAddingSubcategoryFor(undefined)}>
                                                 <X className="h-4 w-4" aria-hidden="true" />
@@ -402,13 +401,13 @@ export function CategoriesPage() {
                                 ) : (
                                     <Button className="mt-4" size="small" variant="ghost" onClick={() => setAddingSubcategoryFor(category.id)}>
                                         <Plus className="h-4 w-4" aria-hidden="true" />
-                                        Adicionar subcategoria
+                                        {t('categories.subcategories.addButton')}
                                     </Button>
                                 )}
                             </div>
                         </section>
                     ))}
-                    {categories.length === 0 && <p className="text-muted">Nenhuma categoria cadastrada.</p>}
+                    {categories.length === 0 && <p className="text-muted">{t('categories.emptyAll')}</p>}
                 </div>
             )}
         </main>

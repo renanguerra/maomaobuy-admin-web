@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import { logoutAdminAccount, useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import type { AdminAccount, Page } from '@/types/api';
@@ -11,6 +12,7 @@ import { CreateAdminAccountPanel } from './CreateAdminAccountPanel';
 import { ResetAdminAccountPasswordDialog } from './ResetAdminAccountPasswordDialog';
 
 export function AdminAccountsPage() {
+    const { t } = useTranslation();
     const { admin } = useAdminAccountAuth();
     const [page, setPage] = useState<Page<AdminAccount>>();
     const [error, setError] = useState<string>();
@@ -24,12 +26,13 @@ export function AdminAccountsPage() {
         setLoading(true);
         api<Page<AdminAccount>>('/admin-accounts?limit=100')
             .then(setPage)
-            .catch(() => setError('Não foi possível carregar os admins.'))
+            .catch(() => setError(t('admins.list.error')))
             .finally(() => setLoading(false));
     }
 
     useEffect(() => {
         if (admin) load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [admin]);
 
     if (!admin) return null;
@@ -50,9 +53,9 @@ export function AdminAccountsPage() {
                 method: 'POST',
             });
             updateRow(updated);
-            setFeedback(row.status === 'ACTIVE' ? `${row.name} foi desativado.` : `${row.name} foi reativado.`);
+            setFeedback(t(row.status === 'ACTIVE' ? 'admins.list.feedback.deactivated' : 'admins.list.feedback.reactivated', { name: row.name }));
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Não foi possível concluir a ação.');
+            setError(err instanceof ApiError ? err.message : t('admins.list.actionError'));
         } finally {
             setPendingId(undefined);
         }
@@ -65,7 +68,7 @@ export function AdminAccountsPage() {
             body: JSON.stringify({ password }),
         });
         updateRow(updated);
-        setFeedback(`Senha de ${updated.name} redefinida.`);
+        setFeedback(t('admins.feedback.passwordReset', { name: updated.name }));
         setResetTarget(undefined);
     }
 
@@ -82,11 +85,9 @@ export function AdminAccountsPage() {
         <main>
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <p className="mm-kicker mb-3">Sistema</p>
-                    <h1 className="m-0 text-3xl tracking-[-.03em]">Administradores</h1>
-                    <p className="mt-2 text-sm text-muted dark:text-night-muted">
-                        Logado como <strong>{admin.name}</strong> ({admin.email})
-                    </p>
+                    <p className="mm-kicker mb-3">{t('admins.list.kicker')}</p>
+                    <h1 className="m-0 text-3xl tracking-[-.03em]">{t('admins.list.title')}</h1>
+                    <p className="mt-2 text-sm text-muted dark:text-night-muted">{t('admins.list.loggedInAs', { name: admin.name, email: admin.email })}</p>
                 </div>
                 <Button
                     size="small"
@@ -95,24 +96,24 @@ export function AdminAccountsPage() {
                     loading={signingOut}
                     leadingIcon={<LogOut className="h-4 w-4" aria-hidden="true" />}
                 >
-                    Sair da conta admin
+                    {t('admins.list.signOutButton')}
                 </Button>
             </div>
 
             {feedback && <p className="mt-4 text-sm text-success">{feedback}</p>}
             {error && <p className="mt-4 border-l-2 border-origin-500 pl-3 text-sm">{error}</p>}
-            {loading && <p className="mt-6 text-muted">Carregando admins…</p>}
+            {loading && <p className="mt-6 text-muted">{t('admins.list.loading')}</p>}
 
             {!loading && page && (
                 <div className="mt-6 overflow-x-auto">
                     <table className="w-full min-w-[720px] border-collapse text-sm">
                         <thead>
                             <tr className="border-b border-line text-left text-xs font-bold tracking-wide text-muted uppercase dark:border-night-line dark:text-night-subtle">
-                                <th className="py-3 pr-4">Nome</th>
-                                <th className="py-3 pr-4">E-mail</th>
-                                <th className="py-3 pr-4">Status</th>
-                                <th className="py-3 pr-4">Criado em</th>
-                                <th className="py-3 pr-4">Ações</th>
+                                <th className="py-3 pr-4">{t('admins.list.columns.name')}</th>
+                                <th className="py-3 pr-4">{t('admins.list.columns.email')}</th>
+                                <th className="py-3 pr-4">{t('admins.list.columns.status')}</th>
+                                <th className="py-3 pr-4">{t('admins.list.columns.createdAt')}</th>
+                                <th className="py-3 pr-4">{t('admins.list.columns.actions')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -120,7 +121,7 @@ export function AdminAccountsPage() {
                                 <tr className="border-b border-line dark:border-night-line" key={row.id}>
                                     <td className="py-3 pr-4 font-semibold">
                                         {row.name}
-                                        {row.id === admin.id && <span className="ml-2 text-xs font-normal text-muted dark:text-night-muted">(você)</span>}
+                                        {row.id === admin.id && <span className="ml-2 text-xs font-normal text-muted dark:text-night-muted">{t('common.you')}</span>}
                                     </td>
                                     <td className="py-3 pr-4">{row.email}</td>
                                     <td className="py-3 pr-4">
@@ -130,7 +131,7 @@ export function AdminAccountsPage() {
                                     <td className="py-3 pr-4">
                                         <div className="flex flex-wrap gap-2">
                                             <Button size="small" variant="secondary" onClick={() => setResetTarget(row)}>
-                                                Redefinir senha
+                                                {t('admins.list.resetPasswordButton')}
                                             </Button>
                                             <Button
                                                 size="small"
@@ -139,7 +140,7 @@ export function AdminAccountsPage() {
                                                 loading={pendingId === row.id}
                                                 disabled={row.id === admin.id}
                                             >
-                                                {row.status === 'ACTIVE' ? 'Desativar' : 'Ativar'}
+                                                {row.status === 'ACTIVE' ? t('admins.list.deactivateButton') : t('admins.list.activateButton')}
                                             </Button>
                                         </div>
                                     </td>
@@ -148,7 +149,7 @@ export function AdminAccountsPage() {
                             {page.data.length === 0 && (
                                 <tr>
                                     <td className="py-6 text-muted" colSpan={5}>
-                                        Nenhum admin encontrado.
+                                        {t('admins.list.empty')}
                                     </td>
                                 </tr>
                             )}

@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { useTranslation } from '@/i18n/LanguageProvider';
 
 export interface OrderAmountDialogValues {
     totpCode: string;
@@ -39,6 +40,7 @@ export function OrderAmountDialog({
     onCancel,
     onConfirm,
 }: OrderAmountDialogProps) {
+    const { t } = useTranslation();
     const [minor, setMinor] = useState(currentAmountMinor);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string>();
@@ -57,7 +59,7 @@ export function OrderAmountDialog({
         try {
             await onConfirm({ totpCode, reason, newAmountMinor });
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Não foi possível concluir a ação.');
+            setError(err instanceof Error ? err.message : t('orders.amountDialog.error'));
         } finally {
             setSubmitting(false);
         }
@@ -79,7 +81,7 @@ export function OrderAmountDialog({
                         className="text-muted hover:text-ink dark:text-night-muted dark:hover:text-night-text"
                         type="button"
                         onClick={onCancel}
-                        aria-label="Fechar"
+                        aria-label={t('orders.amountDialog.closeAria')}
                     >
                         <X className="h-5 w-5" aria-hidden="true" />
                     </button>
@@ -93,7 +95,7 @@ export function OrderAmountDialog({
                     </label>
 
                     <label className="grid gap-2 text-sm font-semibold">
-                        Código TOTP (6 dígitos)
+                        {t('orders.amountDialog.fieldTotpLabel')}
                         <input
                             className="min-h-11 rounded-md border border-line bg-surface px-3 font-mono tracking-[0.3em] dark:border-night-line dark:bg-night-canvas"
                             name="totpCode"
@@ -108,11 +110,11 @@ export function OrderAmountDialog({
                     </label>
 
                     <label className="grid gap-2 text-sm font-semibold">
-                        Motivo
+                        {t('orders.amountDialog.fieldReasonLabel')}
                         <textarea
                             className="min-h-24 rounded-md border border-line bg-surface px-3 py-2 dark:border-night-line dark:bg-night-canvas"
                             name="reason"
-                            placeholder="Explique o motivo do ajuste"
+                            placeholder={t('orders.amountDialog.fieldReasonPlaceholder')}
                             minLength={5}
                             maxLength={2000}
                             required
@@ -123,7 +125,7 @@ export function OrderAmountDialog({
 
                     <div className="mt-2 flex justify-end gap-3">
                         <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
-                            Cancelar
+                            {t('orders.amountDialog.cancel')}
                         </Button>
                         <Button type="submit" variant="primary" loading={submitting}>
                             {confirmLabel}

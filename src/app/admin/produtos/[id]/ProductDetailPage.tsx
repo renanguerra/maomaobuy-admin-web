@@ -6,12 +6,14 @@ import Link from 'next/link';
 import { ArrowLeft, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import { MARKETPLACE_NAMES, productSourceLabel, type AdminCategory, type AdminProduct } from '@/types/api';
 import { ProductMediaManager } from '../ProductMediaManager';
 import { minorToAmount } from './ProductDetailPage.utils';
 
 export function ProductDetailPage() {
+    const { t } = useTranslation();
     const params = useParams<{ id: string }>();
     const router = useRouter();
     const [product, setProduct] = useState<AdminProduct>();
@@ -38,7 +40,7 @@ export function ProductDetailPage() {
                 setSelectedCategoryIds(new Set(loaded.categories.map((category) => category.id)));
                 setSelectedSubcategoryIds(new Set(loaded.subcategories.map((subcategory) => subcategory.id)));
             })
-            .catch(() => setError('Não foi possível carregar o produto.'));
+            .catch(() => setError(t('products.detail.error')));
     }
 
     useEffect(() => {
@@ -73,14 +75,14 @@ export function ProductDetailPage() {
     }
 
     function errorMessage(err: unknown) {
-        return err instanceof ApiError ? err.message : 'Não foi possível concluir a ação.';
+        return err instanceof ApiError ? err.message : t('common.errors.generic');
     }
 
     async function saveInfo(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         if (String(data.get('sourceAmount')) === '0') {
-            setError('Informe um preço base maior que zero.');
+            setError(t('products.detail.priceRequiredError'));
             return;
         }
         setBusy('save-info');
@@ -107,7 +109,7 @@ export function ProductDetailPage() {
             setSelectedCategoryIds(new Set(updated.categories.map((category) => category.id)));
             setSelectedSubcategoryIds(new Set(updated.subcategories.map((subcategory) => subcategory.id)));
             setEditingInfo(false);
-            setFeedback('Produto atualizado.');
+            setFeedback(t('products.detail.savedFeedback'));
         } catch (err) {
             setError(errorMessage(err));
         } finally {
@@ -116,7 +118,7 @@ export function ProductDetailPage() {
     }
 
     async function deleteProduct() {
-        if (!confirm('Remover este produto definitivamente?')) return;
+        if (!confirm(t('products.detail.deleteConfirm'))) return;
         setBusy('delete-product');
         try {
             await api(`/products/${params.id}`, { method: 'DELETE' });
@@ -179,7 +181,7 @@ export function ProductDetailPage() {
     }
 
     async function deleteVariant(variantId: string) {
-        if (!confirm('Remover esta variante?')) return;
+        if (!confirm(t('products.detail.variants.deleteConfirm'))) return;
         setBusy(`delete-variant:${variantId}`);
         setError(undefined);
         try {
@@ -196,18 +198,18 @@ export function ProductDetailPage() {
         <main>
             <Link className="inline-flex items-center gap-2 text-sm font-semibold text-muted dark:text-night-muted" href="/admin/produtos">
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Voltar para produtos
+                {t('products.detail.backLink')}
             </Link>
 
             {error && <p className="mt-6 border-l-2 border-origin-500 pl-3 text-sm">{error}</p>}
             {feedback && <p className="mt-4 text-sm text-success">{feedback}</p>}
-            {!product && !error && <p className="mt-6 text-muted">Carregando produto…</p>}
+            {!product && !error && <p className="mt-6 text-muted">{t('products.detail.loading')}</p>}
 
             {product && (
                 <>
                     <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
                         <div>
-                            <p className="mm-kicker mb-3">Produto</p>
+                            <p className="mm-kicker mb-3">{t('products.detail.kicker')}</p>
                             <h1 className="m-0 text-3xl tracking-[-.03em]">{product.name}</h1>
                             <p className="mt-1 text-sm text-muted dark:text-night-muted">/{product.slug}</p>
                         </div>
@@ -224,11 +226,11 @@ export function ProductDetailPage() {
                                     }}
                                     leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
                                 >
-                                    Editar
+                                    {t('products.detail.editButton')}
                                 </Button>
                             )}
                             <Button variant="danger" onClick={deleteProduct} loading={busy === 'delete-product'} leadingIcon={<Trash2 className="h-4 w-4" aria-hidden="true" />}>
-                                Excluir
+                                {t('products.detail.deleteButton')}
                             </Button>
                         </div>
                     </div>
@@ -238,26 +240,26 @@ export function ProductDetailPage() {
                             <form className="grid gap-4" onSubmit={saveInfo}>
                                 <div className="grid grid-cols-2 gap-4 max-[600px]:grid-cols-1">
                                     <label className="grid gap-2 text-sm font-semibold">
-                                        Nome
-                                        <input className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas" name="name" defaultValue={product.name} placeholder="Ex.: Camiseta MaoMao" required />
+                                        {t('products.detail.form.name')}
+                                        <input className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas" name="name" defaultValue={product.name} placeholder={t('products.detail.form.namePlaceholder')} required />
                                     </label>
                                     <label className="grid gap-2 text-sm font-semibold">
-                                        Slug
-                                        <input className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas" name="slug" defaultValue={product.slug} placeholder="camiseta-maomao" required />
+                                        {t('products.detail.form.slug')}
+                                        <input className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas" name="slug" defaultValue={product.slug} placeholder={t('products.detail.form.slugPlaceholder')} required />
                                     </label>
                                 </div>
                                 <label className="grid gap-2 text-sm font-semibold">
-                                    Descrição
+                                    {t('products.detail.form.description')}
                                     <textarea
                                         className="min-h-32 rounded-md border border-line bg-surface px-3 py-2 dark:border-night-line dark:bg-night-canvas"
                                         name="description"
                                         defaultValue={product.description}
-                                        placeholder="Descreva o produto para o cliente"
+                                        placeholder={t('products.detail.form.descriptionPlaceholder')}
                                         required
                                     />
                                 </label>
                                 <fieldset className="grid gap-2">
-                                    <legend className="mb-1 text-sm font-semibold">Tipo de produto</legend>
+                                    <legend className="mb-1 text-sm font-semibold">{t('products.detail.form.sourceTypeLegend')}</legend>
                                     <div className="flex flex-wrap gap-4">
                                         <label className="flex items-center gap-2 text-sm">
                                             <input
@@ -267,7 +269,7 @@ export function ProductDetailPage() {
                                                 checked={editSourceType === 'MARKETPLACE'}
                                                 onChange={() => setEditSourceType('MARKETPLACE')}
                                             />
-                                            Marketplace (Taobao/Xianyu/Alibaba)
+                                            {t('products.detail.form.sourceTypeMarketplace')}
                                         </label>
                                         <label className="flex items-center gap-2 text-sm">
                                             <input
@@ -277,7 +279,7 @@ export function ProductDetailPage() {
                                                 checked={editSourceType === 'MAOMAOBUY'}
                                                 onChange={() => setEditSourceType('MAOMAOBUY')}
                                             />
-                                            MaoMaoBuy (estoque próprio)
+                                            {t('products.detail.form.sourceTypeMaoMaoBuy')}
                                         </label>
                                     </div>
                                 </fieldset>
@@ -286,7 +288,7 @@ export function ProductDetailPage() {
                                     <>
                                         <div className="grid grid-cols-2 gap-4 max-[600px]:grid-cols-1">
                                             <label className="grid gap-2 text-sm font-semibold">
-                                                Marketplace
+                                                {t('products.detail.form.marketplace')}
                                                 <select
                                                     className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                                     name="marketplace"
@@ -301,7 +303,7 @@ export function ProductDetailPage() {
                                                 </select>
                                             </label>
                                             <label className="grid gap-2 text-sm font-semibold">
-                                                URL de origem
+                                                {t('products.detail.form.originUrl')}
                                                 <input
                                                     className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                                     name="marketplaceUrl"
@@ -314,7 +316,7 @@ export function ProductDetailPage() {
                                         </div>
                                         <div className="grid grid-cols-2 gap-4 max-[600px]:grid-cols-1">
                                             <label className="grid gap-2 text-sm font-semibold">
-                                                Moeda de origem
+                                                {t('products.detail.form.sourceCurrency')}
                                                 <select
                                                     className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                                     name="sourceCurrency"
@@ -326,7 +328,7 @@ export function ProductDetailPage() {
                                                 </select>
                                             </label>
                                             <label className="grid gap-2 text-sm font-semibold">
-                                                Preço base
+                                                {t('products.detail.form.basePrice')}
                                                 <CurrencyInput
                                                     className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                                     name="sourceAmount"
@@ -339,7 +341,7 @@ export function ProductDetailPage() {
                                     </>
                                 ) : (
                                     <label className="grid max-w-[calc(50%-0.5rem)] gap-2 text-sm font-semibold max-[600px]:max-w-full">
-                                        Preço de venda (BRL)
+                                        {t('products.detail.form.salePriceBrl')}
                                         <CurrencyInput
                                             className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                             name="sourceAmount"
@@ -351,19 +353,17 @@ export function ProductDetailPage() {
                                 )}
                                 <div className="grid grid-cols-2 gap-4 max-[600px]:grid-cols-1">
                                     <label className="grid gap-2 text-sm font-semibold">
-                                        Frete estimado (BRL, opcional)
+                                        {t('products.detail.form.estimatedShipping')}
                                         <CurrencyInput
                                             className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                             name="shippingAmount"
                                             minor={editShippingAmountMinor}
                                             onMinorChange={setEditShippingAmountMinor}
                                         />
-                                        <span className="font-normal text-muted dark:text-night-muted">
-                                            Só informativo — mostrado ao cliente na página do produto, não é cobrado com o pedido.
-                                        </span>
+                                        <span className="font-normal text-muted dark:text-night-muted">{t('products.detail.form.estimatedShippingHint')}</span>
                                     </label>
                                     <label className="grid gap-2 text-sm font-semibold">
-                                        Estoque
+                                        {t('products.detail.form.stock')}
                                         <input
                                             className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                             name="stock"
@@ -375,20 +375,18 @@ export function ProductDetailPage() {
                                             placeholder="0"
                                             required
                                         />
-                                        <span className="font-normal text-muted dark:text-night-muted">
-                                            Unidades disponíveis. Só é debitado quando o pedido é aprovado e liberado para pagamento.
-                                        </span>
+                                        <span className="font-normal text-muted dark:text-night-muted">{t('products.detail.form.stockHint')}</span>
                                     </label>
                                 </div>
 
                                 <label className="flex items-center gap-3 text-sm font-semibold">
                                     <input name="isPublished" type="checkbox" className="h-4 w-4" defaultChecked={product.isPublished} />
-                                    Publicado
+                                    {t('products.detail.form.published')}
                                 </label>
 
                                 {categories.length > 0 && (
                                     <section>
-                                        <h2 className="m-0 text-lg">Categorias</h2>
+                                        <h2 className="m-0 text-lg">{t('products.detail.form.categoriesTitle')}</h2>
                                         <div className="mt-3 grid gap-4">
                                             {categories.map((category) => (
                                                 <div key={category.id}>
@@ -424,10 +422,10 @@ export function ProductDetailPage() {
 
                                 <div className="flex gap-3">
                                     <Button type="submit" loading={busy === 'save-info'}>
-                                        Salvar alterações
+                                        {t('products.detail.form.save')}
                                     </Button>
                                     <Button type="button" variant="ghost" onClick={() => setEditingInfo(false)}>
-                                        Cancelar
+                                        {t('products.detail.form.cancel')}
                                     </Button>
                                 </div>
                             </form>
@@ -435,45 +433,45 @@ export function ProductDetailPage() {
                     ) : (
                         <section className="mm-panel mt-8 grid grid-cols-2 gap-6 p-6 max-[600px]:grid-cols-1">
                             <div>
-                                <p className="m-0 text-sm text-muted dark:text-night-muted">Tipo de produto</p>
+                                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('products.detail.view.sourceType')}</p>
                                 <p className="mt-1 font-semibold">{productSourceLabel(product.marketplace)}</p>
                             </div>
                             <div>
-                                <p className="m-0 text-sm text-muted dark:text-night-muted">Preço base</p>
+                                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('products.detail.view.basePrice')}</p>
                                 <p className="mm-data mt-1 font-semibold">{minorToAmount(product.sourceAmountMinor)} {product.sourceCurrency}</p>
                             </div>
                             <div>
-                                <p className="m-0 text-sm text-muted dark:text-night-muted">Frete estimado</p>
+                                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('products.detail.view.estimatedShipping')}</p>
                                 <p className="mm-data mt-1 font-semibold">
-                                    {product.estimatedShippingAmountMinor ? `${minorToAmount(product.estimatedShippingAmountMinor)} BRL` : '—'}
+                                    {product.estimatedShippingAmountMinor ? `${minorToAmount(product.estimatedShippingAmountMinor)} BRL` : t('common.dash')}
                                 </p>
                             </div>
                             <div>
-                                <p className="m-0 text-sm text-muted dark:text-night-muted">Status</p>
+                                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('products.detail.view.status')}</p>
                                 <p className="mt-1">
-                                    <span className="mm-kicker">{product.isPublished ? 'Publicado' : 'Rascunho'}</span>
+                                    <span className="mm-kicker">{product.isPublished ? t('products.detail.view.published') : t('products.detail.view.draft')}</span>
                                 </p>
                             </div>
                             <div>
-                                <p className="m-0 text-sm text-muted dark:text-night-muted">Estoque</p>
+                                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('products.detail.view.stock')}</p>
                                 <p className="mm-data mt-1 font-semibold">{product.stock}</p>
                             </div>
                             <div>
-                                <p className="m-0 text-sm text-muted dark:text-night-muted">URL de origem</p>
+                                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('products.detail.view.originUrl')}</p>
                                 {product.marketplaceUrl ? (
                                     <a className="mt-1 block truncate text-primary" href={product.marketplaceUrl} target="_blank" rel="noreferrer">
                                         {product.marketplaceUrl}
                                     </a>
                                 ) : (
-                                    <p className="mt-1 text-muted dark:text-night-muted">— (estoque próprio, sem link de origem)</p>
+                                    <p className="mt-1 text-muted dark:text-night-muted">{t('products.detail.view.noOriginUrl')}</p>
                                 )}
                             </div>
                             <div className="col-span-2">
-                                <p className="m-0 text-sm text-muted dark:text-night-muted">Descrição</p>
+                                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('products.detail.view.description')}</p>
                                 <p className="mt-1 whitespace-pre-wrap">{product.description}</p>
                             </div>
                             <div className="col-span-2">
-                                <p className="m-0 text-sm text-muted dark:text-night-muted">Categorias</p>
+                                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('products.detail.view.categories')}</p>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {product.categories.map((category) => (
                                         <span className="mm-kicker" key={category.id}>
@@ -486,7 +484,7 @@ export function ProductDetailPage() {
                                         </span>
                                     ))}
                                     {product.categories.length === 0 && product.subcategories.length === 0 && (
-                                        <span className="text-sm text-muted dark:text-night-muted">Nenhuma categoria vinculada.</span>
+                                        <span className="text-sm text-muted dark:text-night-muted">{t('products.detail.view.noCategories')}</span>
                                     )}
                                 </div>
                             </div>
@@ -495,7 +493,7 @@ export function ProductDetailPage() {
 
                     <section className="mt-10">
                         <div className="flex items-center justify-between">
-                            <h2 className="m-0 text-xl">Variantes</h2>
+                            <h2 className="m-0 text-xl">{t('products.detail.variants.title')}</h2>
                             {!addingVariant && (
                                 <Button
                                     size="small"
@@ -506,7 +504,7 @@ export function ProductDetailPage() {
                                     }}
                                     leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
                                 >
-                                    Adicionar variante
+                                    {t('products.detail.variants.addButton')}
                                 </Button>
                             )}
                         </div>
@@ -517,15 +515,15 @@ export function ProductDetailPage() {
                                 onSubmit={createVariant}
                             >
                                 <label className="grid gap-1 text-xs font-semibold">
-                                    ID externo
-                                    <input className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas" name="externalId" placeholder="Ex.: P-42-azul" required />
+                                    {t('products.detail.variants.externalId')}
+                                    <input className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas" name="externalId" placeholder={t('products.detail.variants.externalIdPlaceholder')} required />
                                 </label>
                                 <label className="grid gap-1 text-xs font-semibold">
-                                    Rótulo
-                                    <input className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas" name="label" placeholder="Ex.: Azul, tamanho 42" required />
+                                    {t('products.detail.variants.label')}
+                                    <input className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas" name="label" placeholder={t('products.detail.variants.labelPlaceholder')} required />
                                 </label>
                                 <label className="grid gap-1 text-xs font-semibold">
-                                    Ajuste
+                                    {t('products.detail.variants.adjustment')}
                                     <CurrencyInput
                                         className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                         name="amountAdjustment"
@@ -535,11 +533,11 @@ export function ProductDetailPage() {
                                 </label>
                                 <label className="flex h-10 items-center gap-2 text-xs font-semibold">
                                     <input name="isAvailable" type="checkbox" className="h-4 w-4" defaultChecked />
-                                    Disponível
+                                    {t('products.detail.variants.available')}
                                 </label>
                                 <div className="flex gap-2">
                                     <Button size="small" type="submit" loading={busy === 'create-variant'}>
-                                        Adicionar
+                                        {t('products.detail.variants.add')}
                                     </Button>
                                     <Button size="small" type="button" variant="ghost" onClick={() => setAddingVariant(false)}>
                                         <X className="h-4 w-4" aria-hidden="true" />
@@ -557,27 +555,27 @@ export function ProductDetailPage() {
                                         onSubmit={(event) => updateVariant(variant.id, event)}
                                     >
                                         <label className="grid gap-1 text-xs font-semibold">
-                                            ID externo
+                                            {t('products.detail.variants.externalId')}
                                             <input
                                                 className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                                 name="externalId"
                                                 defaultValue={variant.externalId}
-                                                placeholder="Ex.: P-42-azul"
+                                                placeholder={t('products.detail.variants.externalIdPlaceholder')}
                                                 required
                                             />
                                         </label>
                                         <label className="grid gap-1 text-xs font-semibold">
-                                            Rótulo
+                                            {t('products.detail.variants.label')}
                                             <input
                                                 className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                                 name="label"
                                                 defaultValue={variant.label}
-                                                placeholder="Ex.: Azul, tamanho 42"
+                                                placeholder={t('products.detail.variants.labelPlaceholder')}
                                                 required
                                             />
                                         </label>
                                         <label className="grid gap-1 text-xs font-semibold">
-                                            Ajuste
+                                            {t('products.detail.variants.adjustment')}
                                             <CurrencyInput
                                                 className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                                 name="amountAdjustment"
@@ -587,11 +585,11 @@ export function ProductDetailPage() {
                                         </label>
                                         <label className="flex h-10 items-center gap-2 text-xs font-semibold">
                                             <input name="isAvailable" type="checkbox" className="h-4 w-4" defaultChecked={variant.isAvailable} />
-                                            Disponível
+                                            {t('products.detail.variants.available')}
                                         </label>
                                         <div className="flex gap-2">
                                             <Button size="small" type="submit" loading={busy === `update-variant:${variant.id}`}>
-                                                Salvar
+                                                {t('products.detail.variants.save')}
                                             </Button>
                                             <Button size="small" type="button" variant="ghost" onClick={() => setEditingVariantId(undefined)}>
                                                 <X className="h-4 w-4" aria-hidden="true" />
@@ -603,8 +601,13 @@ export function ProductDetailPage() {
                                         <div>
                                             <strong>{variant.label}</strong>
                                             <p className="mt-0.5 text-sm text-muted dark:text-night-muted">
-                                                {variant.externalId} · ajuste {minorToAmount(variant.amountAdjustmentMinor)} ·{' '}
-                                                {variant.isAvailable ? 'disponível' : 'indisponível'}
+                                                {t('products.detail.variants.summary', {
+                                                    externalId: variant.externalId,
+                                                    adjustment: minorToAmount(variant.amountAdjustmentMinor),
+                                                    availability: variant.isAvailable
+                                                        ? t('products.detail.variants.available_state')
+                                                        : t('products.detail.variants.unavailable_state'),
+                                                })}
                                             </p>
                                         </div>
                                         <div className="flex gap-2">

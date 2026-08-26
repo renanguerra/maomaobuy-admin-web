@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
 import type { AdminOrderMedia, PresignedUpload } from '@/types/api';
 
@@ -25,6 +26,7 @@ interface OrderMediaManagerProps {
  * mudança vira uma entrada no histórico do pedido.
  */
 export function OrderMediaManager({ orderId, media, onChanged }: OrderMediaManagerProps) {
+    const { t } = useTranslation();
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string>();
     const [busyMediaId, setBusyMediaId] = useState<string>();
@@ -32,7 +34,7 @@ export function OrderMediaManager({ orderId, media, onChanged }: OrderMediaManag
 
     async function uploadOne(file: File, sortOrder: number, reason: string) {
         const type = mediaTypeFromMimeType(file.type);
-        if (!type) throw new Error(`Tipo de arquivo não suportado: ${file.name}`);
+        if (!type) throw new Error(t('orders.media.unsupportedType', { name: file.name }));
         const presigned = await api<PresignedUpload>(`/orders/${orderId}/media/upload-url`, {
             method: 'POST',
             body: JSON.stringify({ type, mimeType: file.type, sizeBytes: file.size }),
@@ -42,7 +44,7 @@ export function OrderMediaManager({ orderId, media, onChanged }: OrderMediaManag
             headers: presigned.headers,
             body: file,
         });
-        if (!uploadResponse.ok) throw new Error(`Falha ao enviar "${file.name}" para o armazenamento.`);
+        if (!uploadResponse.ok) throw new Error(t('orders.media.uploadFailed', { name: file.name }));
         await api(`/orders/${orderId}/media`, {
             method: 'POST',
             body: JSON.stringify({ key: presigned.key, type, mimeType: file.type, sizeBytes: file.size, sortOrder, reason }),
@@ -50,9 +52,9 @@ export function OrderMediaManager({ orderId, media, onChanged }: OrderMediaManag
     }
 
     async function handleFiles(files: FileList) {
-        const reason = window.prompt('Motivo do envio (o cliente poderá ver esta mídia e o motivo):');
+        const reason = window.prompt(t('orders.media.promptSendReason'));
         if (!reason || reason.trim().length < 5) {
-            if (reason !== null) setError('Informe um motivo com pelo menos 5 caracteres.');
+            if (reason !== null) setError(t('orders.media.reasonTooShort'));
             return;
         }
         setUploading(true);
@@ -65,7 +67,7 @@ export function OrderMediaManager({ orderId, media, onChanged }: OrderMediaManag
             }
             onChanged();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Não foi possível enviar a mídia.');
+            setError(err instanceof Error ? err.message : t('orders.media.uploadError'));
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -73,9 +75,9 @@ export function OrderMediaManager({ orderId, media, onChanged }: OrderMediaManag
     }
 
     async function remove(mediaId: string) {
-        const reason = window.prompt('Motivo da remoção:');
+        const reason = window.prompt(t('orders.media.promptRemoveReason'));
         if (!reason || reason.trim().length < 5) {
-            if (reason !== null) setError('Informe um motivo com pelo menos 5 caracteres.');
+            if (reason !== null) setError(t('orders.media.reasonTooShort'));
             return;
         }
         setBusyMediaId(mediaId);
@@ -84,7 +86,7 @@ export function OrderMediaManager({ orderId, media, onChanged }: OrderMediaManag
             await api(`/orders/${orderId}/media/${mediaId}`, { method: 'DELETE', body: JSON.stringify({ reason: reason.trim() }) });
             onChanged();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Não foi possível remover a mídia.');
+            setError(err instanceof Error ? err.message : t('orders.media.removeError'));
         } finally {
             setBusyMediaId(undefined);
         }
@@ -94,10 +96,8 @@ export function OrderMediaManager({ orderId, media, onChanged }: OrderMediaManag
         <div>
             <div className="flex items-center justify-between gap-4">
                 <div>
-                    <h2 className="m-0 text-lg">Mídia</h2>
-                    <p className="mt-1 text-xs text-muted dark:text-night-muted">
-                        Fotos e vídeos do produto sendo comprado. O cliente vê tudo o que for anexado aqui.
-                    </p>
+                    <h2 className="m-0 text-lg">{t('orders.media.title')}</h2>
+                    <p className="mt-1 text-xs text-muted dark:text-night-muted">{t('orders.media.description')}</p>
                 </div>
                 <label>
                     <input
@@ -118,7 +118,7 @@ export function OrderMediaManager({ orderId, media, onChanged }: OrderMediaManag
                         leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
                         onClick={() => fileInputRef.current?.click()}
                     >
-                        {uploading ? 'Enviando…' : 'Enviar mídia'}
+                        {uploading ? t('orders.media.uploadingButton') : t('orders.media.uploadButton')}
                     </Button>
                 </label>
             </div>
@@ -141,12 +141,12 @@ export function OrderMediaManager({ orderId, media, onChanged }: OrderMediaManag
                         <div className="p-3">
                             <Button className="w-full text-origin-700" size="small" variant="ghost" onClick={() => remove(item.id)} loading={busyMediaId === item.id}>
                                 <Trash2 className="h-4 w-4" aria-hidden="true" />
-                                Remover
+                                {t('orders.media.remove')}
                             </Button>
                         </div>
                     </div>
                 ))}
-                {media.length === 0 && <p className="text-sm text-muted dark:text-night-muted">Nenhuma mídia enviada ainda.</p>}
+                {media.length === 0 && <p className="text-sm text-muted dark:text-night-muted">{t('orders.media.empty')}</p>}
             </div>
         </div>
     );

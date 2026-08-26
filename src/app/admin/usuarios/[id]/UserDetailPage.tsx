@@ -8,27 +8,29 @@ import { ApprovalDialog } from '@/components/auth/ApprovalDialog';
 import { CreatePackagePanel } from './CreatePackagePanel';
 import { LazySection } from './LazySection';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import type { AdminOrder, AdminPackage, AdminUser, AdminUserAddress } from '@/types/api';
 import { formatDate, money, orderStatusLabel, packageStatusLabel, userStatusLabel } from '@/types/api';
 
 type DialogKind = 'suspend' | 'reactivate' | 'request-password-reset' | null;
 
-function addressLabel(address: AdminUserAddress) {
-    return `${address.recipientFullName} · ${address.addressLine1}, ${address.locality}/${address.administrativeArea}${address.isDefault ? ' (padrão)' : ''}`;
-}
-
 export function UserDetailPage() {
+    const { t } = useTranslation();
     const params = useParams<{ id: string }>();
     const [user, setUser] = useState<AdminUser>();
     const [error, setError] = useState<string>();
     const [dialog, setDialog] = useState<DialogKind>(null);
     const [feedback, setFeedback] = useState<string>();
 
+    function addressLabel(address: AdminUserAddress) {
+        return `${address.recipientFullName} · ${address.addressLine1}, ${address.locality}/${address.administrativeArea}${address.isDefault ? t('users.detail.addressDefaultSuffix') : ''}`;
+    }
+
     function load() {
         api<AdminUser>(`/users/${params.id}`)
             .then(setUser)
-            .catch(() => setError('Não foi possível carregar o usuário.'));
+            .catch(() => setError(t('users.detail.error')));
     }
 
     useEffect(() => {
@@ -46,14 +48,14 @@ export function UserDetailPage() {
             setUser(updated);
             setFeedback(
                 action === 'suspend'
-                    ? 'Usuário suspenso com sucesso.'
+                    ? t('users.detail.feedback.suspended')
                     : action === 'reactivate'
-                      ? 'Usuário reativado com sucesso.'
-                      : 'Redefinição de senha solicitada. O usuário não poderá entrar até concluí-la.',
+                      ? t('users.detail.feedback.reactivated')
+                      : t('users.detail.feedback.passwordResetRequested'),
             );
             setDialog(null);
         } catch (err) {
-            throw err instanceof ApiError ? err : new Error('Não foi possível concluir a ação.');
+            throw err instanceof ApiError ? err : new Error(t('common.errors.generic'));
         }
     }
 
@@ -61,27 +63,27 @@ export function UserDetailPage() {
         <main>
             <Link className="inline-flex items-center gap-2 text-sm font-semibold text-muted dark:text-night-muted" href="/admin/usuarios">
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Voltar para usuários
+                {t('users.detail.backLink')}
             </Link>
 
             {error && <p className="mt-6 border-l-2 border-origin-500 pl-3 text-sm">{error}</p>}
-            {!user && !error && <p className="mt-6 text-muted">Carregando usuário…</p>}
+            {!user && !error && <p className="mt-6 text-muted">{t('users.detail.loading')}</p>}
 
             {user && (
                 <>
                     <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
                         <div>
-                            <p className="mm-kicker mb-3">Usuário</p>
+                            <p className="mm-kicker mb-3">{t('users.detail.kicker')}</p>
                             <h1 className="m-0 text-3xl tracking-[-.03em]">{user.name}</h1>
                         </div>
                         <div className="flex flex-wrap gap-3">
                             {user.status === 'ACTIVE' ? (
                                 <Button variant="danger" onClick={() => setDialog('suspend')}>
-                                    Suspender usuário
+                                    {t('users.detail.suspendButton')}
                                 </Button>
                             ) : (
                                 <Button variant="primary" onClick={() => setDialog('reactivate')}>
-                                    Reativar usuário
+                                    {t('users.detail.reactivateButton')}
                                 </Button>
                             )}
                             {!user.passwordResetRequiredAt && (
@@ -90,7 +92,7 @@ export function UserDetailPage() {
                                     onClick={() => setDialog('request-password-reset')}
                                     leadingIcon={<KeyRound className="h-4 w-4" aria-hidden="true" />}
                                 >
-                                    Solicitar redefinição de senha
+                                    {t('users.detail.requestPasswordResetButton')}
                                 </Button>
                             )}
                         </div>
@@ -100,53 +102,51 @@ export function UserDetailPage() {
 
                     <section className="mm-panel mt-8 grid grid-cols-2 gap-6 p-6 max-[600px]:grid-cols-1">
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Nome de usuário</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('users.detail.fields.username')}</p>
                             <p className="mt-1 font-semibold">{user.username}</p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">E-mail</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('users.detail.fields.email')}</p>
                             <p className="mt-1 font-semibold">{user.email}</p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">E-mail verificado</p>
-                            <p className="mt-1 font-semibold">{user.emailVerifiedAt ? formatDate(user.emailVerifiedAt) : 'Não verificado'}</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('users.detail.fields.emailVerified')}</p>
+                            <p className="mt-1 font-semibold">{user.emailVerifiedAt ? formatDate(user.emailVerifiedAt) : t('users.detail.fields.notVerified')}</p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Status</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('users.detail.fields.status')}</p>
                             <p className="mt-1">
                                 <span className="mm-kicker">{userStatusLabel(user.status)}</span>
                             </p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Criado em</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('users.detail.fields.createdAt')}</p>
                             <p className="mt-1 font-semibold">{formatDate(user.createdAt)}</p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">ID</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('users.detail.fields.id')}</p>
                             <p className="mt-1 font-mono text-xs break-all">{user.id}</p>
                         </div>
                         {user.passwordResetRequiredAt && (
                             <div className="col-span-2">
-                                <p className="m-0 text-sm text-muted dark:text-night-muted">Redefinição de senha</p>
+                                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('users.detail.fields.passwordReset')}</p>
                                 <p className="mt-1">
-                                    <span className="mm-kicker">Pendente desde {formatDate(user.passwordResetRequiredAt)}</span>
+                                    <span className="mm-kicker">{t('users.detail.fields.passwordResetPendingSince', { date: formatDate(user.passwordResetRequiredAt) })}</span>
                                 </p>
-                                <p className="mt-1 text-sm text-muted dark:text-night-muted">
-                                    O usuário não conseguirá entrar até concluir a redefinição pelo link enviado por e-mail.
-                                </p>
+                                <p className="mt-1 text-sm text-muted dark:text-night-muted">{t('users.detail.fields.passwordResetHint')}</p>
                             </div>
                         )}
                     </section>
 
                     <LazySection<AdminUserAddress[]>
-                        title="Endereços"
+                        title={t('users.detail.addressesSection.title')}
                         icon={<MapPin className="h-5 w-5 text-muted dark:text-night-muted" aria-hidden="true" />}
                         fetcher={() => api<AdminUserAddress[]>(`/users/${user.id}/addresses`)}
-                        errorMessage="Não foi possível carregar os endereços."
+                        errorMessage={t('users.detail.addressesSection.error')}
                     >
                         {(addresses) =>
                             addresses.length === 0 ? (
-                                <p className="text-sm text-muted dark:text-night-muted">Nenhum endereço cadastrado.</p>
+                                <p className="text-sm text-muted dark:text-night-muted">{t('users.detail.addressesSection.empty')}</p>
                             ) : (
                                 <div className="grid gap-3">
                                     {addresses.map((address) => (
@@ -164,14 +164,14 @@ export function UserDetailPage() {
                     </LazySection>
 
                     <LazySection<AdminOrder[]>
-                        title="Pedidos"
+                        title={t('users.detail.ordersSection.title')}
                         icon={<ShoppingBag className="h-5 w-5 text-muted dark:text-night-muted" aria-hidden="true" />}
                         fetcher={() => api<AdminOrder[]>(`/orders?userId=${user.id}`)}
-                        errorMessage="Não foi possível carregar os pedidos."
+                        errorMessage={t('users.detail.ordersSection.error')}
                     >
                         {(orders) =>
                             orders.length === 0 ? (
-                                <p className="text-sm text-muted dark:text-night-muted">Nenhum pedido encontrado.</p>
+                                <p className="text-sm text-muted dark:text-night-muted">{t('users.detail.ordersSection.empty')}</p>
                             ) : (
                                 <div className="grid gap-3">
                                     {orders.map((order) => (
@@ -192,14 +192,14 @@ export function UserDetailPage() {
                     </LazySection>
 
                     <LazySection<AdminPackage[]>
-                        title="Pacotes"
+                        title={t('users.detail.packagesSection.title')}
                         icon={<Package className="h-5 w-5 text-muted dark:text-night-muted" aria-hidden="true" />}
                         fetcher={() => api<AdminPackage[]>(`/packages?userId=${user.id}`)}
-                        errorMessage="Não foi possível carregar os pacotes."
+                        errorMessage={t('users.detail.packagesSection.error')}
                     >
                         {(packages) =>
                             packages.length === 0 ? (
-                                <p className="text-sm text-muted dark:text-night-muted">Nenhum pacote encontrado.</p>
+                                <p className="text-sm text-muted dark:text-night-muted">{t('users.detail.packagesSection.empty')}</p>
                             ) : (
                                 <div className="grid gap-3">
                                     {packages.map((pkg) => (
@@ -224,26 +224,26 @@ export function UserDetailPage() {
 
             <ApprovalDialog
                 open={dialog === 'suspend'}
-                title="Suspender usuário"
-                description="Essa ação impede o usuário de acessar a conta. Informe o código TOTP e o motivo."
-                confirmLabel="Suspender"
+                title={t('users.detail.dialogs.suspend.title')}
+                description={t('users.detail.dialogs.suspend.description')}
+                confirmLabel={t('users.detail.dialogs.suspend.confirmLabel')}
                 variant="danger"
                 onCancel={() => setDialog(null)}
                 onConfirm={handleConfirm}
             />
             <ApprovalDialog
                 open={dialog === 'reactivate'}
-                title="Reativar usuário"
-                description="Essa ação restaura o acesso do usuário à conta."
-                confirmLabel="Reativar"
+                title={t('users.detail.dialogs.reactivate.title')}
+                description={t('users.detail.dialogs.reactivate.description')}
+                confirmLabel={t('users.detail.dialogs.reactivate.confirmLabel')}
                 onCancel={() => setDialog(null)}
                 onConfirm={handleConfirm}
             />
             <ApprovalDialog
                 open={dialog === 'request-password-reset'}
-                title="Solicitar redefinição de senha"
-                description="O usuário receberá um e-mail para redefinir a senha e não conseguirá entrar até concluir o processo. As sessões ativas dele serão encerradas."
-                confirmLabel="Solicitar redefinição"
+                title={t('users.detail.dialogs.requestPasswordReset.title')}
+                description={t('users.detail.dialogs.requestPasswordReset.description')}
+                confirmLabel={t('users.detail.dialogs.requestPasswordReset.confirmLabel')}
                 variant="danger"
                 onCancel={() => setDialog(null)}
                 onConfirm={handleConfirm}

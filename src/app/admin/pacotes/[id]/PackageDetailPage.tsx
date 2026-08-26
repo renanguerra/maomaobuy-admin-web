@@ -7,12 +7,14 @@ import { ArrowLeft, ArrowUpRight, CheckCircle2, Plus, Ruler, Send, Trash2, Uploa
 import { ApprovalDialog } from '@/components/auth/ApprovalDialog';
 import { PaymentAttachmentsManager } from '@/components/admin/PaymentAttachmentsManager';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import { formatDate, money, packageStatusLabel, type AdminPackage, type PresignedUpload } from '@/types/api';
 
 type DialogKind = 'approve' | 'reject' | 'confirm-freight-payment-manually' | 'dispatch' | 'shipment' | null;
 
 export function PackageDetailPage() {
+    const { t } = useTranslation();
     const params = useParams<{ id: string }>();
     const [pkg, setPkg] = useState<AdminPackage>();
     const [error, setError] = useState<string>();
@@ -26,7 +28,7 @@ export function PackageDetailPage() {
     function load() {
         api<AdminPackage>(`/packages/${params.id}`)
             .then(setPkg)
-            .catch(() => setError('Não foi possível carregar o pacote.'));
+            .catch(() => setError(t('packages.detail.error')));
     }
 
     useEffect(() => {
@@ -35,7 +37,7 @@ export function PackageDetailPage() {
     }, [params.id]);
 
     function errorMessage(err: unknown) {
-        return err instanceof ApiError ? err.message : 'Não foi possível concluir a ação.';
+        return err instanceof ApiError ? err.message : t('common.errors.generic');
     }
 
     async function handleApprovalConfirm(values: { totpCode: string; reason: string } & Record<string, string>) {
@@ -49,17 +51,17 @@ export function PackageDetailPage() {
             setDialog(null);
             setFeedback(
                 action === 'approve'
-                    ? 'Pacote aprovado.'
+                    ? t('packages.detail.feedback.approve')
                     : action === 'reject'
-                      ? 'Pacote rejeitado.'
+                      ? t('packages.detail.feedback.reject')
                       : action === 'confirm-freight-payment-manually'
-                        ? 'Pagamento do frete confirmado manualmente.'
+                        ? t('packages.detail.feedback.confirm-freight-payment-manually')
                         : action === 'shipment'
-                          ? 'Dados de frete atualizados.'
-                          : 'Pacote despachado.',
+                          ? t('packages.detail.feedback.shipment')
+                          : t('packages.detail.feedback.dispatch'),
             );
         } catch (err) {
-            throw err instanceof ApiError ? err : new Error('Não foi possível concluir a ação.');
+            throw err instanceof ApiError ? err : new Error(t('common.errors.generic'));
         }
     }
 
@@ -69,7 +71,7 @@ export function PackageDetailPage() {
         try {
             const updated = await api<AdminPackage>(`/packages/${params.id}/submit`, { method: 'POST' });
             setPkg(updated);
-            setFeedback('Pacote enviado para aprovação.');
+            setFeedback(t('packages.detail.feedback.submitted'));
         } catch (err) {
             setError(errorMessage(err));
         } finally {
@@ -105,7 +107,7 @@ export function PackageDetailPage() {
     }
 
     async function removeItem(packageItemId: string) {
-        if (!confirm('Remover este item do pacote?')) return;
+        if (!confirm(t('packages.detail.itemsSection.removeConfirm'))) return;
         setBusy(`remove-item:${packageItemId}`);
         setError(undefined);
         try {
@@ -131,15 +133,15 @@ export function PackageDetailPage() {
                 headers: presigned.headers,
                 body: file,
             });
-            if (!uploadResponse.ok) throw new Error('Falha ao enviar a foto para o armazenamento.');
+            if (!uploadResponse.ok) throw new Error(t('packages.detail.photosSection.uploadFailed'));
             const updated = await api<AdminPackage>(`/packages/${params.id}/photos`, {
                 method: 'POST',
                 body: JSON.stringify({ keys: [presigned.key] }),
             });
             setPkg(updated);
-            setFeedback('Foto enviada com sucesso.');
+            setFeedback(t('packages.detail.feedback.photoUploaded'));
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Não foi possível enviar a foto.');
+            setError(err instanceof Error ? err.message : t('packages.detail.photosSection.uploadError'));
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -150,17 +152,17 @@ export function PackageDetailPage() {
         <main>
             <Link className="inline-flex items-center gap-2 text-sm font-semibold text-muted dark:text-night-muted" href="/admin/pacotes">
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Voltar para pacotes
+                {t('packages.detail.backLink')}
             </Link>
 
             {error && <p className="mt-6 border-l-2 border-origin-500 pl-3 text-sm">{error}</p>}
-            {!pkg && !error && <p className="mt-6 text-muted">Carregando pacote…</p>}
+            {!pkg && !error && <p className="mt-6 text-muted">{t('packages.detail.loading')}</p>}
 
             {pkg && (
                 <>
                     <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
                         <div>
-                            <p className="mm-kicker mb-3">Pacote</p>
+                            <p className="mm-kicker mb-3">{t('packages.detail.kicker')}</p>
                             <h1 className="m-0 text-3xl tracking-[-.03em]">{pkg.packageCode}</h1>
                             <p className="mt-1 text-sm text-muted dark:text-night-muted">
                                 <Link className="font-semibold text-primary hover:underline" href={`/admin/usuarios/${pkg.userId}`}>
@@ -172,7 +174,7 @@ export function PackageDetailPage() {
                         <div className="flex flex-wrap gap-3">
                             {(pkg.status === 'DRAFT' || pkg.status === 'AWAITING_APPROVAL') && (
                                 <Button variant="secondary" onClick={() => setDialog('shipment')} leadingIcon={<Ruler className="h-4 w-4" aria-hidden="true" />}>
-                                    Definir frete
+                                    {t('packages.detail.actions.setShipping')}
                                 </Button>
                             )}
                             {pkg.status === 'DRAFT' && (
@@ -182,27 +184,27 @@ export function PackageDetailPage() {
                                     loading={busy === 'submit'}
                                     leadingIcon={<ArrowUpRight className="h-4 w-4" aria-hidden="true" />}
                                 >
-                                    Enviar para aprovação
+                                    {t('packages.detail.actions.submitForApproval')}
                                 </Button>
                             )}
                             {pkg.status === 'AWAITING_APPROVAL' && (
                                 <>
                                     <Button variant="primary" onClick={() => setDialog('approve')} leadingIcon={<CheckCircle2 className="h-4 w-4" aria-hidden="true" />}>
-                                        Aprovar
+                                        {t('packages.detail.actions.approve')}
                                     </Button>
                                     <Button variant="danger" onClick={() => setDialog('reject')} leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}>
-                                        Rejeitar
+                                        {t('packages.detail.actions.reject')}
                                     </Button>
                                 </>
                             )}
                             {pkg.status === 'PREPARING' && (
                                 <Button variant="secondary" onClick={() => setDialog('confirm-freight-payment-manually')} leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}>
-                                    Confirmar pagamento do frete
+                                    {t('packages.detail.actions.confirmFreightPayment')}
                                 </Button>
                             )}
                             {pkg.status === 'READY_FOR_DISPATCH' && (
                                 <Button variant="primary" onClick={() => setDialog('dispatch')} leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}>
-                                    Despachar
+                                    {t('packages.detail.actions.dispatch')}
                                 </Button>
                             )}
                         </div>
@@ -212,7 +214,7 @@ export function PackageDetailPage() {
 
                     <section className="mm-panel mt-8 grid grid-cols-3 gap-6 p-6 max-[700px]:grid-cols-1">
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Cliente</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.client')}</p>
                             <p className="mt-1 font-semibold">
                                 <Link className="text-primary hover:underline" href={`/admin/usuarios/${pkg.userId}`}>
                                     {pkg.userName}
@@ -220,51 +222,51 @@ export function PackageDetailPage() {
                             </p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Status</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.status')}</p>
                             <p className="mt-1">
                                 <span className="mm-kicker">{packageStatusLabel(pkg.status)}</span>
                             </p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Frete</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.shipping')}</p>
                             <p className="mm-data mt-1 font-semibold">
-                                {pkg.shippingAmountMinor && pkg.shippingCurrency ? money(pkg.shippingAmountMinor, pkg.shippingCurrency) : '—'}
+                                {pkg.shippingAmountMinor && pkg.shippingCurrency ? money(pkg.shippingAmountMinor, pkg.shippingCurrency) : t('common.dash')}
                             </p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Transportadora</p>
-                            <p className="mt-1 font-semibold">{pkg.carrier ?? '—'}</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.carrier')}</p>
+                            <p className="mt-1 font-semibold">{pkg.carrier ?? t('common.dash')}</p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Código de rastreio</p>
-                            <p className="mt-1 font-semibold">{pkg.trackingCode ?? '—'}</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.trackingCode')}</p>
+                            <p className="mt-1 font-semibold">{pkg.trackingCode ?? t('common.dash')}</p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Peso</p>
-                            <p className="mt-1 font-semibold">{pkg.weightGrams ? `${pkg.weightGrams} g` : '—'}</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.weight')}</p>
+                            <p className="mt-1 font-semibold">{pkg.weightGrams ? `${pkg.weightGrams} g` : t('common.dash')}</p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Dimensões (C×L×A)</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.dimensions')}</p>
                             <p className="mt-1 font-semibold">
                                 {pkg.lengthMillimeters && pkg.widthMillimeters && pkg.heightMillimeters
                                     ? `${pkg.lengthMillimeters} × ${pkg.widthMillimeters} × ${pkg.heightMillimeters} mm`
-                                    : '—'}
+                                    : t('common.dash')}
                             </p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Criado em</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.createdAt')}</p>
                             <p className="mt-1 font-semibold">{formatDate(pkg.createdAt)}</p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Enviado em</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.shippedAt')}</p>
                             <p className="mt-1 font-semibold">{formatDate(pkg.shippedAt)}</p>
                         </div>
                         <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Entregue em</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.deliveredAt')}</p>
                             <p className="mt-1 font-semibold">{formatDate(pkg.deliveredAt)}</p>
                         </div>
                         <div className="col-span-3">
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">Destino</p>
+                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.destination')}</p>
                             <p className="mt-1">
                                 {pkg.destination.recipientFullName} · {pkg.destination.addressLine1}
                                 {pkg.destination.addressLine2 ? `, ${pkg.destination.addressLine2}` : ''} ·{' '}
@@ -274,7 +276,7 @@ export function PackageDetailPage() {
                         </div>
                         {pkg.rejectionReason && (
                             <div className="col-span-3">
-                                <p className="m-0 text-sm text-muted dark:text-night-muted">Motivo da rejeição</p>
+                                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.rejectionReason')}</p>
                                 <p className="mt-1">{pkg.rejectionReason}</p>
                             </div>
                         )}
@@ -282,10 +284,10 @@ export function PackageDetailPage() {
 
                     <section className="mt-10">
                         <div className="flex items-center justify-between">
-                            <h2 className="m-0 text-xl">Itens</h2>
+                            <h2 className="m-0 text-xl">{t('packages.detail.itemsSection.title')}</h2>
                             {!addingItem && (
                                 <Button size="small" variant="ghost" onClick={() => setAddingItem(true)} leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}>
-                                    Adicionar itens
+                                    {t('packages.detail.itemsSection.addButton')}
                                 </Button>
                             )}
                         </div>
@@ -293,19 +295,19 @@ export function PackageDetailPage() {
                         {addingItem && (
                             <form className="mm-panel-soft mt-4 grid grid-cols-[1fr_auto_auto] items-end gap-3 p-4 max-[560px]:grid-cols-1" onSubmit={addItems}>
                                 <label className="grid gap-1 text-xs font-semibold">
-                                    IDs dos itens de pedido (separados por vírgula)
+                                    {t('packages.detail.itemsSection.addFieldLabel')}
                                     <input
                                         className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                         name="orderItemIds"
-                                        placeholder="uuid-1, uuid-2"
+                                        placeholder={t('packages.detail.itemsSection.addFieldPlaceholder')}
                                         required
                                     />
                                 </label>
                                 <Button size="small" type="submit" loading={busy === 'add-items'}>
-                                    Adicionar
+                                    {t('packages.detail.itemsSection.add')}
                                 </Button>
                                 <Button size="small" type="button" variant="ghost" onClick={() => setAddingItem(false)}>
-                                    Cancelar
+                                    {t('packages.detail.itemsSection.cancel')}
                                 </Button>
                             </form>
                         )}
@@ -316,7 +318,8 @@ export function PackageDetailPage() {
                                     <div>
                                         <strong>{item.orderItem.productName}</strong>
                                         <p className="mt-0.5 text-sm text-muted dark:text-night-muted">
-                                            quantidade {item.quantity} · {money(item.orderItem.unitAmountMinor, item.orderItem.currency)}
+                                            {t('packages.detail.itemsSection.quantity', { count: item.quantity })} ·{' '}
+                                            {money(item.orderItem.unitAmountMinor, item.orderItem.currency)}
                                         </p>
                                     </div>
                                     <Button
@@ -330,13 +333,13 @@ export function PackageDetailPage() {
                                     </Button>
                                 </div>
                             ))}
-                            {pkg.items.length === 0 && <p className="text-sm text-muted dark:text-night-muted">Nenhum item neste pacote.</p>}
+                            {pkg.items.length === 0 && <p className="text-sm text-muted dark:text-night-muted">{t('packages.detail.itemsSection.empty')}</p>}
                         </div>
                     </section>
 
                     <section className="mt-10">
                         <div className="flex items-center justify-between">
-                            <h2 className="m-0 text-xl">Fotos</h2>
+                            <h2 className="m-0 text-xl">{t('packages.detail.photosSection.title')}</h2>
                             <label>
                                 <input
                                     ref={fileInputRef}
@@ -356,7 +359,7 @@ export function PackageDetailPage() {
                                     leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
                                     onClick={() => fileInputRef.current?.click()}
                                 >
-                                    {uploading ? 'Enviando…' : 'Enviar foto'}
+                                    {uploading ? t('packages.detail.photosSection.uploadingButton') : t('packages.detail.photosSection.uploadButton')}
                                 </Button>
                             </label>
                         </div>
@@ -364,9 +367,9 @@ export function PackageDetailPage() {
                         <div className="mt-4 grid grid-cols-4 gap-4 max-[800px]:grid-cols-2 max-[460px]:grid-cols-1">
                             {pkg.photoUrls.map((url) => (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img className="mm-panel-soft aspect-square w-full object-cover" src={url} alt="Foto do pacote" key={url} />
+                                <img className="mm-panel-soft aspect-square w-full object-cover" src={url} alt={t('packages.detail.photosSection.photoAlt')} key={url} />
                             ))}
-                            {pkg.photoUrls.length === 0 && <p className="text-sm text-muted dark:text-night-muted">Nenhuma foto enviada.</p>}
+                            {pkg.photoUrls.length === 0 && <p className="text-sm text-muted dark:text-night-muted">{t('packages.detail.photosSection.empty')}</p>}
                         </div>
                     </section>
 
@@ -384,53 +387,59 @@ export function PackageDetailPage() {
 
             <ApprovalDialog
                 open={dialog === 'approve'}
-                title="Aprovar pacote"
-                description="Confirma a consolidação e libera o pacote para cobrança de frete."
-                confirmLabel="Aprovar"
+                title={t('packages.detail.dialogs.approve.title')}
+                description={t('packages.detail.dialogs.approve.description')}
+                confirmLabel={t('packages.detail.dialogs.approve.confirmLabel')}
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}
             />
             <ApprovalDialog
                 open={dialog === 'reject'}
-                title="Rejeitar pacote"
-                description="Explique o motivo da rejeição — o cliente poderá visualizá-lo."
-                confirmLabel="Rejeitar"
+                title={t('packages.detail.dialogs.reject.title')}
+                description={t('packages.detail.dialogs.reject.description')}
+                confirmLabel={t('packages.detail.dialogs.reject.confirmLabel')}
                 variant="danger"
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}
             />
             <ApprovalDialog
                 open={dialog === 'shipment'}
-                title="Definir frete do pacote"
-                description="Peso, dimensões e valor do frete a ser cobrado do cliente."
-                confirmLabel="Salvar"
+                title={t('packages.detail.dialogs.shipment.title')}
+                description={t('packages.detail.dialogs.shipment.description')}
+                confirmLabel={t('packages.detail.dialogs.shipment.confirmLabel')}
                 fields={[
-                    { name: 'weightGrams', label: 'Peso (g)', pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '1500' },
-                    { name: 'lengthMillimeters', label: 'Comprimento (mm)', pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '300' },
-                    { name: 'widthMillimeters', label: 'Largura (mm)', pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '200' },
-                    { name: 'heightMillimeters', label: 'Altura (mm)', pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '150' },
-                    { name: 'shippingCurrency', label: 'Moeda (BRL ou CNY)', pattern: '(BRL|CNY)', placeholder: 'BRL' },
-                    { name: 'shippingAmountMinor', label: 'Valor do frete (centavos)', pattern: '0|[1-9]\\d{0,17}', inputMode: 'numeric', placeholder: '4990' },
+                    { name: 'weightGrams', label: t('packages.detail.dialogs.shipment.weight'), pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '1500' },
+                    { name: 'lengthMillimeters', label: t('packages.detail.dialogs.shipment.length'), pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '300' },
+                    { name: 'widthMillimeters', label: t('packages.detail.dialogs.shipment.width'), pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '200' },
+                    { name: 'heightMillimeters', label: t('packages.detail.dialogs.shipment.height'), pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '150' },
+                    { name: 'shippingCurrency', label: t('packages.detail.dialogs.shipment.currency'), pattern: '(BRL|CNY)', placeholder: 'BRL' },
+                    { name: 'shippingAmountMinor', label: t('packages.detail.dialogs.shipment.amount'), pattern: '0|[1-9]\\d{0,17}', inputMode: 'numeric', placeholder: '4990' },
                 ]}
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}
             />
             <ApprovalDialog
                 open={dialog === 'confirm-freight-payment-manually'}
-                title="Confirmar pagamento do frete manualmente"
-                description="Use apenas quando o pagamento foi verificado fora do fluxo automático."
-                confirmLabel="Confirmar pagamento"
+                title={t('packages.detail.dialogs.confirmFreightPayment.title')}
+                description={t('packages.detail.dialogs.confirmFreightPayment.description')}
+                confirmLabel={t('packages.detail.dialogs.confirmFreightPayment.confirmLabel')}
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}
             />
             <ApprovalDialog
                 open={dialog === 'dispatch'}
-                title="Despachar pacote"
-                description="Informe a transportadora e o código de rastreio para notificar o cliente."
-                confirmLabel="Despachar"
+                title={t('packages.detail.dialogs.dispatch.title')}
+                description={t('packages.detail.dialogs.dispatch.description')}
+                confirmLabel={t('packages.detail.dialogs.dispatch.confirmLabel')}
                 fields={[
-                    { name: 'carrier', label: 'Transportadora', placeholder: 'Ex.: Correios', minLength: 2, maxLength: 120 },
-                    { name: 'trackingCode', label: 'Código de rastreio', placeholder: 'Ex.: BR123456789BR', minLength: 2, maxLength: 100 },
+                    { name: 'carrier', label: t('packages.detail.dialogs.dispatch.carrier'), placeholder: t('packages.detail.dialogs.dispatch.carrierPlaceholder'), minLength: 2, maxLength: 120 },
+                    {
+                        name: 'trackingCode',
+                        label: t('packages.detail.dialogs.dispatch.trackingCode'),
+                        placeholder: t('packages.detail.dialogs.dispatch.trackingCodePlaceholder'),
+                        minLength: 2,
+                        maxLength: 100,
+                    },
                 ]}
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}

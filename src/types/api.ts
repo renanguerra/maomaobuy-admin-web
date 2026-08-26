@@ -1,3 +1,6 @@
+import { LOCALE_INTL_TAG, type Locale } from '@/i18n/locale';
+import { getStoreLocale } from '@/i18n/locale-store';
+
 export interface Page<T> {
     data: T[];
     page: number;
@@ -12,14 +15,21 @@ export interface Page<T> {
 export const USER_STATUSES = ['ACTIVE', 'SUSPENDED', 'PENDING_ACTIVATION'] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
 
-export const USER_STATUS_LABELS: Record<UserStatus, string> = {
-    ACTIVE: 'Ativo',
-    SUSPENDED: 'Suspenso',
-    PENDING_ACTIVATION: 'Ativação pendente',
+const USER_STATUS_LABELS: Record<Locale, Record<UserStatus, string>> = {
+    'pt-BR': {
+        ACTIVE: 'Ativo',
+        SUSPENDED: 'Suspenso',
+        PENDING_ACTIVATION: 'Ativação pendente',
+    },
+    'zh-Hans': {
+        ACTIVE: '正常',
+        SUSPENDED: '已暂停',
+        PENDING_ACTIVATION: '待激活',
+    },
 };
 
 export function userStatusLabel(status: string) {
-    return USER_STATUS_LABELS[status as UserStatus] ?? status;
+    return USER_STATUS_LABELS[getStoreLocale()][status as UserStatus] ?? status;
 }
 
 export interface AdminUser {
@@ -55,13 +65,19 @@ export interface AdminUserAddress {
 export const ADMIN_ACCOUNT_STATUSES = ['ACTIVE', 'DISABLED'] as const;
 export type AdminAccountStatus = (typeof ADMIN_ACCOUNT_STATUSES)[number];
 
-export const ADMIN_ACCOUNT_STATUS_LABELS: Record<AdminAccountStatus, string> = {
-    ACTIVE: 'Ativo',
-    DISABLED: 'Desativado',
+const ADMIN_ACCOUNT_STATUS_LABELS: Record<Locale, Record<AdminAccountStatus, string>> = {
+    'pt-BR': {
+        ACTIVE: 'Ativo',
+        DISABLED: 'Desativado',
+    },
+    'zh-Hans': {
+        ACTIVE: '已启用',
+        DISABLED: '已停用',
+    },
 };
 
 export function adminAccountStatusLabel(status: string) {
-    return ADMIN_ACCOUNT_STATUS_LABELS[status as AdminAccountStatus] ?? status;
+    return ADMIN_ACCOUNT_STATUS_LABELS[getStoreLocale()][status as AdminAccountStatus] ?? status;
 }
 
 export interface AdminAccount {
@@ -84,15 +100,23 @@ export type MarketplaceName = (typeof MARKETPLACE_NAMES)[number];
 export const PRODUCT_SOURCE_NAMES = [...MARKETPLACE_NAMES, 'MAOMAOBUY'] as const;
 export type ProductSourceName = (typeof PRODUCT_SOURCE_NAMES)[number];
 
-export const PRODUCT_SOURCE_LABELS: Record<ProductSourceName, string> = {
-    TAOBAO: 'Taobao',
-    XIANYU: 'Xianyu',
-    ALIBABA: 'Alibaba',
-    MAOMAOBUY: 'MaoMaoBuy (estoque próprio)',
+const PRODUCT_SOURCE_LABELS: Record<Locale, Record<ProductSourceName, string>> = {
+    'pt-BR': {
+        TAOBAO: 'Taobao',
+        XIANYU: 'Xianyu',
+        ALIBABA: 'Alibaba',
+        MAOMAOBUY: 'MaoMaoBuy (estoque próprio)',
+    },
+    'zh-Hans': {
+        TAOBAO: '淘宝',
+        XIANYU: '闲鱼',
+        ALIBABA: '阿里巴巴',
+        MAOMAOBUY: 'MaoMaoBuy（自营库存）',
+    },
 };
 
 export function productSourceLabel(source: string) {
-    return PRODUCT_SOURCE_LABELS[source as ProductSourceName] ?? source;
+    return PRODUCT_SOURCE_LABELS[getStoreLocale()][source as ProductSourceName] ?? source;
 }
 
 export const PRODUCT_MEDIA_TYPES = ['IMAGE', 'VIDEO', 'PDF'] as const;
@@ -182,28 +206,49 @@ export const ORDER_STATUSES = [
 ] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-    AWAITING_REVIEW: 'Aguardando análise',
-    AWAITING_CUSTOMER_APPROVAL: 'Aguardando aprovação do cliente',
-    GENERATING_PAYMENT_DATA: 'Gerando dados de pagamento',
-    UNPAID: 'Aguardando pagamento',
-    PENDING: 'Pendente',
-    SUBMITTED: 'Enviado ao fornecedor',
-    PURCHASED: 'Comprado',
-    SELLER_SHIPPED: 'Enviado pelo vendedor',
-    IN_WAREHOUSE: 'No depósito',
-    INSPECTION_PENDING: 'Aguardando inspeção',
-    READY_TO_SHIP: 'Pronto para envio',
-    PARTIALLY_SHIPPED: 'Parcialmente enviado',
-    SHIPPED: 'Enviado',
-    COMPLETED: 'Concluído',
-    REFUND: 'Reembolsado',
-    INVALID: 'Inválido',
-    CANCELLED: 'Cancelado',
+const ORDER_STATUS_LABELS: Record<Locale, Record<OrderStatus, string>> = {
+    'pt-BR': {
+        AWAITING_REVIEW: 'Aguardando análise',
+        AWAITING_CUSTOMER_APPROVAL: 'Aguardando aprovação do cliente',
+        GENERATING_PAYMENT_DATA: 'Gerando dados de pagamento',
+        UNPAID: 'Aguardando pagamento',
+        PENDING: 'Pendente',
+        SUBMITTED: 'Enviado ao fornecedor',
+        PURCHASED: 'Comprado',
+        SELLER_SHIPPED: 'Enviado pelo vendedor',
+        IN_WAREHOUSE: 'No depósito',
+        INSPECTION_PENDING: 'Aguardando inspeção',
+        READY_TO_SHIP: 'Pronto para envio',
+        PARTIALLY_SHIPPED: 'Parcialmente enviado',
+        SHIPPED: 'Enviado',
+        COMPLETED: 'Concluído',
+        REFUND: 'Reembolsado',
+        INVALID: 'Inválido',
+        CANCELLED: 'Cancelado',
+    },
+    'zh-Hans': {
+        AWAITING_REVIEW: '待审核',
+        AWAITING_CUSTOMER_APPROVAL: '待客户确认',
+        GENERATING_PAYMENT_DATA: '生成付款信息中',
+        UNPAID: '待付款',
+        PENDING: '待处理',
+        SUBMITTED: '已提交给供应商',
+        PURCHASED: '已购买',
+        SELLER_SHIPPED: '卖家已发货',
+        IN_WAREHOUSE: '已到仓',
+        INSPECTION_PENDING: '待验货',
+        READY_TO_SHIP: '可发货',
+        PARTIALLY_SHIPPED: '部分发货',
+        SHIPPED: '已发货',
+        COMPLETED: '已完成',
+        REFUND: '已退款',
+        INVALID: '无效',
+        CANCELLED: '已取消',
+    },
 };
 
 export function orderStatusLabel(status: string) {
-    return ORDER_STATUS_LABELS[status as OrderStatus] ?? status;
+    return ORDER_STATUS_LABELS[getStoreLocale()][status as OrderStatus] ?? status;
 }
 
 export interface AdminOrderItem {
@@ -282,26 +327,45 @@ export interface AdminOrder {
     changeLogs: AdminOrderChangeLog[];
 }
 
-const ORDER_CHANGE_LOG_TYPE_LABELS: Record<string, string> = {
-    DESCRIPTION_UPDATED: 'Descrição atualizada',
-    PRICE_CHANGED: 'Valor alterado',
-    MEDIA_ADDED: 'Mídia adicionada',
-    MEDIA_REMOVED: 'Mídia removida',
-    APPROVED: 'Pedido aprovado',
-    REJECTED: 'Pedido rejeitado',
-    SHIPPING_ESTIMATE_CHANGED: 'Frete estimado alterado',
-    CHANGES_REQUESTED: 'Aprovação do cliente solicitada',
-    CUSTOMER_APPROVED_CHANGES: 'Cliente aprovou as alterações',
-    CUSTOMER_REJECTED_CHANGES: 'Cliente rejeitou as alterações',
-    PAYMENT_DATA_SENT: 'Dados de pagamento enviados ao cliente',
-    MARKED_PAID_BY_CUSTOMER: 'Cliente marcou como pago',
-    PAYMENT_CONFIRMED: 'Pagamento confirmado',
-    PAYMENT_ATTACHMENT_ADDED: 'Documento de pagamento anexado',
-    PAYMENT_ATTACHMENT_REMOVED: 'Documento de pagamento removido',
+const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
+    'pt-BR': {
+        DESCRIPTION_UPDATED: 'Descrição atualizada',
+        PRICE_CHANGED: 'Valor alterado',
+        MEDIA_ADDED: 'Mídia adicionada',
+        MEDIA_REMOVED: 'Mídia removida',
+        APPROVED: 'Pedido aprovado',
+        REJECTED: 'Pedido rejeitado',
+        SHIPPING_ESTIMATE_CHANGED: 'Frete estimado alterado',
+        CHANGES_REQUESTED: 'Aprovação do cliente solicitada',
+        CUSTOMER_APPROVED_CHANGES: 'Cliente aprovou as alterações',
+        CUSTOMER_REJECTED_CHANGES: 'Cliente rejeitou as alterações',
+        PAYMENT_DATA_SENT: 'Dados de pagamento enviados ao cliente',
+        MARKED_PAID_BY_CUSTOMER: 'Cliente marcou como pago',
+        PAYMENT_CONFIRMED: 'Pagamento confirmado',
+        PAYMENT_ATTACHMENT_ADDED: 'Documento de pagamento anexado',
+        PAYMENT_ATTACHMENT_REMOVED: 'Documento de pagamento removido',
+    },
+    'zh-Hans': {
+        DESCRIPTION_UPDATED: '描述已更新',
+        PRICE_CHANGED: '金额已修改',
+        MEDIA_ADDED: '已添加素材',
+        MEDIA_REMOVED: '已移除素材',
+        APPROVED: '订单已批准',
+        REJECTED: '订单已拒绝',
+        SHIPPING_ESTIMATE_CHANGED: '预估运费已修改',
+        CHANGES_REQUESTED: '已请求客户确认',
+        CUSTOMER_APPROVED_CHANGES: '客户已确认修改',
+        CUSTOMER_REJECTED_CHANGES: '客户已拒绝修改',
+        PAYMENT_DATA_SENT: '付款信息已发送给客户',
+        MARKED_PAID_BY_CUSTOMER: '客户已标记为已付款',
+        PAYMENT_CONFIRMED: '付款已确认',
+        PAYMENT_ATTACHMENT_ADDED: '已添加付款单据',
+        PAYMENT_ATTACHMENT_REMOVED: '已移除付款单据',
+    },
 };
 
 export function orderChangeLogTypeLabel(type: string) {
-    return ORDER_CHANGE_LOG_TYPE_LABELS[type] ?? type;
+    return ORDER_CHANGE_LOG_TYPE_LABELS[getStoreLocale()][type] ?? type;
 }
 
 // ---------------------------------------------------------------------------
@@ -324,23 +388,39 @@ export const PACKAGE_STATUSES = [
 ] as const;
 export type PackageStatus = (typeof PACKAGE_STATUSES)[number];
 
-export const PACKAGE_STATUS_LABELS: Record<PackageStatus, string> = {
-    DRAFT: 'Rascunho',
-    AWAITING_APPROVAL: 'Aguardando aprovação',
-    PREPARING: 'Em preparação',
-    READY_FOR_DISPATCH: 'Pronto para despacho',
-    SHIPPED: 'Enviado',
-    IN_TRANSIT: 'Em trânsito',
-    CUSTOMS: 'Na alfândega',
-    OUT_FOR_DELIVERY: 'Saiu para entrega',
-    DELIVERED: 'Entregue',
-    EXCEPTION: 'Ocorrência',
-    RETURNED: 'Devolvido',
-    CANCELLED: 'Cancelado',
+const PACKAGE_STATUS_LABELS: Record<Locale, Record<PackageStatus, string>> = {
+    'pt-BR': {
+        DRAFT: 'Rascunho',
+        AWAITING_APPROVAL: 'Aguardando aprovação',
+        PREPARING: 'Em preparação',
+        READY_FOR_DISPATCH: 'Pronto para despacho',
+        SHIPPED: 'Enviado',
+        IN_TRANSIT: 'Em trânsito',
+        CUSTOMS: 'Na alfândega',
+        OUT_FOR_DELIVERY: 'Saiu para entrega',
+        DELIVERED: 'Entregue',
+        EXCEPTION: 'Ocorrência',
+        RETURNED: 'Devolvido',
+        CANCELLED: 'Cancelado',
+    },
+    'zh-Hans': {
+        DRAFT: '草稿',
+        AWAITING_APPROVAL: '待审批',
+        PREPARING: '准备中',
+        READY_FOR_DISPATCH: '待发货',
+        SHIPPED: '已发货',
+        IN_TRANSIT: '运输中',
+        CUSTOMS: '清关中',
+        OUT_FOR_DELIVERY: '派送中',
+        DELIVERED: '已签收',
+        EXCEPTION: '异常',
+        RETURNED: '已退回',
+        CANCELLED: '已取消',
+    },
 };
 
 export function packageStatusLabel(status: string) {
-    return PACKAGE_STATUS_LABELS[status as PackageStatus] ?? status;
+    return PACKAGE_STATUS_LABELS[getStoreLocale()][status as PackageStatus] ?? status;
 }
 
 export interface AddressSnapshot {
@@ -446,5 +526,7 @@ export function brl(minor: string | number) {
 
 export function formatDate(value: string | null) {
     if (!value) return '—';
-    return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
+    return new Intl.DateTimeFormat(LOCALE_INTL_TAG[getStoreLocale()], { dateStyle: 'short', timeStyle: 'short' }).format(
+        new Date(value),
+    );
 }

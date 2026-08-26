@@ -7,6 +7,8 @@ import { ArrowLeft, Check, Globe, Plus, Store, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { useTranslation } from '@/i18n/LanguageProvider';
+import { resolveMessage } from '@/i18n/translations';
 import { api, ApiError } from '@/services/api';
 import { MARKETPLACE_NAMES, type AdminCategory, type AdminProduct } from '@/types/api';
 import { ProductMediaManager } from '../ProductMediaManager';
@@ -19,36 +21,48 @@ type SourceType = 'MARKETPLACE' | 'MAOMAOBUY';
 
 const SOURCE_TYPE_OPTIONS: Array<{
     value: SourceType;
-    title: string;
-    description: string;
+    titleKey: 'products.new.sourceType.marketplaceTitle' | 'products.new.sourceType.maomaobuyTitle';
+    descriptionKey: 'products.new.sourceType.marketplaceDescription' | 'products.new.sourceType.maomaobuyDescription';
     icon: typeof Store;
 }> = [
     {
         value: 'MARKETPLACE',
-        title: 'Marketplace',
-        description: 'Comprado sob encomenda em Taobao, Xianyu ou Alibaba — precisa do link do anúncio de origem.',
+        titleKey: 'products.new.sourceType.marketplaceTitle',
+        descriptionKey: 'products.new.sourceType.marketplaceDescription',
         icon: Globe,
     },
     {
         value: 'MAOMAOBUY',
-        title: 'MaoMaoBuy',
-        description: 'Estoque próprio, vendido direto pela MaoMaoBuy — sem link de origem nem conversão de moeda.',
+        titleKey: 'products.new.sourceType.maomaobuyTitle',
+        descriptionKey: 'products.new.sourceType.maomaobuyDescription',
         icon: Store,
     },
 ];
 
 const STEPS = [
-    { key: 'info' as const, label: 'Informações' },
-    { key: 'media' as const, label: 'Mídia' },
+    { key: 'info' as const, labelKey: 'products.new.steps.info' as const },
+    { key: 'media' as const, labelKey: 'products.new.steps.media' as const },
 ];
 
 function newVariant(): VariantDraft {
     return { key: crypto.randomUUID(), externalId: '', label: '', amountAdjustmentMinor: '0', isAvailable: true };
 }
 
+function slugify(value: string) {
+    return value
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
 export function NewProductPage() {
+    const { t, locale } = useTranslation();
     const router = useRouter();
     const [step, setStep] = useState<'info' | 'media'>('info');
+    const [name, setName] = useState('');
     const [sourceType, setSourceType] = useState<SourceType>('MARKETPLACE');
     const [categories, setCategories] = useState<AdminCategory[]>([]);
     const [variants, setVariants] = useState<VariantDraft[]>([]);
@@ -62,6 +76,7 @@ export function NewProductPage() {
     const [submitting, setSubmitting] = useState(false);
     const [finishing, setFinishing] = useState(false);
     const [error, setError] = useState<string>();
+    const slug = slugify(name);
 
     useEffect(() => {
         api<AdminCategory[]>('/categories')
@@ -101,14 +116,14 @@ export function NewProductPage() {
         if (!product) return;
         api<AdminProduct>(`/products/${product.id}`)
             .then(setProduct)
-            .catch(() => setError('Não foi possível atualizar a lista de mídia.'));
+            .catch(() => setError(t('products.new.mediaReloadError')));
     }
 
     async function handleCreateDraft(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         if (sourceAmountMinor === '0') {
-            setError('Informe um preço maior que zero.');
+            setError(t('products.new.priceRequiredError'));
             return;
         }
         setSubmitting(true);
@@ -144,7 +159,7 @@ export function NewProductPage() {
             setProduct(created);
             setStep('media');
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Não foi possível criar o produto.');
+            setError(err instanceof ApiError ? err.message : t('products.new.createError'));
         } finally {
             setSubmitting(false);
         }
@@ -160,7 +175,7 @@ export function NewProductPage() {
             }
             router.replace(`/admin/produtos/${product.id}`);
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Não foi possível publicar o produto.');
+            setError(err instanceof ApiError ? err.message : t('products.new.publishError'));
             setFinishing(false);
         }
     }
@@ -169,11 +184,11 @@ export function NewProductPage() {
         <main>
             <Link className="inline-flex items-center gap-2 text-sm font-semibold text-muted dark:text-night-muted" href="/admin/produtos">
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Voltar para produtos
+                {t('products.new.backLink')}
             </Link>
 
-            <p className="mm-kicker mt-5 mb-3">Catálogo</p>
-            <h1 className="m-0 text-3xl tracking-[-.03em]">Novo produto</h1>
+            <p className="mm-kicker mt-5 mb-3">{t('products.new.kicker')}</p>
+            <h1 className="m-0 text-3xl tracking-[-.03em]">{t('products.new.title')}</h1>
 
             <ol className="mt-6 flex flex-wrap items-center gap-3">
                 {STEPS.map((item, index) => {
@@ -195,7 +210,7 @@ export function NewProductPage() {
                             <span
                                 className={`text-sm font-semibold ${isCurrent ? 'text-ink dark:text-night-text' : 'text-muted dark:text-night-muted'}`}
                             >
-                                {item.label}
+                                {t(item.labelKey)}
                             </span>
                             {index < STEPS.length - 1 && <span className="h-px w-8 bg-line dark:bg-night-line" aria-hidden="true" />}
                         </li>
@@ -203,13 +218,13 @@ export function NewProductPage() {
                 })}
             </ol>
             <p className="mt-2 text-sm text-muted dark:text-night-muted">
-                {step === 'info' ? 'Preencha os dados do produto para criar o rascunho.' : 'Envie ao menos uma imagem antes de concluir.'}
+                {step === 'info' ? t('products.new.stepHintInfo') : t('products.new.stepHintMedia')}
             </p>
 
             {step === 'info' && (
                 <form className="mt-8 grid max-w-3xl gap-8" onSubmit={handleCreateDraft}>
                     <fieldset className="grid gap-3">
-                        <legend className="mb-1 text-lg font-bold">Tipo de produto</legend>
+                        <legend className="mb-1 text-lg font-bold">{t('products.new.sourceType.legend')}</legend>
                         <div className="grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
                             {SOURCE_TYPE_OPTIONS.map((option) => {
                                 const Icon = option.icon;
@@ -232,9 +247,9 @@ export function NewProductPage() {
                                         />
                                         <span className="flex items-center gap-2 text-sm font-bold">
                                             <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                                            {option.title}
+                                            {t(option.titleKey)}
                                         </span>
-                                        <span className="text-xs text-muted dark:text-night-muted">{option.description}</span>
+                                        <span className="text-xs text-muted dark:text-night-muted">{t(option.descriptionKey)}</span>
                                     </label>
                                 );
                             })}
@@ -242,24 +257,35 @@ export function NewProductPage() {
                     </fieldset>
 
                     <section className="grid gap-4">
-                        <h2 className="m-0 text-lg">Informações básicas</h2>
+                        <h2 className="m-0 text-lg">{t('products.new.basicInfo.title')}</h2>
                         <div className="grid grid-cols-2 gap-4 max-[600px]:grid-cols-1">
-                            <Input name="name" label="Nome" placeholder="Ex.: Camiseta MaoMao" required minLength={1} maxLength={300} />
                             <Input
-                                name="slug"
-                                label="Slug"
-                                pattern="[a-z0-9]+(-[a-z0-9]+)*"
-                                placeholder="camiseta-maomao"
-                                hint="Usado na URL pública, ex.: camiseta-maomao."
+                                name="name"
+                                label={t('products.new.basicInfo.name')}
+                                placeholder={t('products.new.basicInfo.namePlaceholder')}
+                                value={name}
+                                onChange={(event) => setName(event.target.value)}
                                 required
+                                minLength={1}
+                                maxLength={300}
                             />
+                            <div>
+                                <Input
+                                    label={t('products.new.basicInfo.slug')}
+                                    value={slug}
+                                    onChange={() => {}}
+                                    disabled
+                                    hint={t('products.new.basicInfo.slugHint')}
+                                />
+                                <input type="hidden" name="slug" value={slug} />
+                            </div>
                         </div>
                         <label className="grid gap-2 text-sm font-semibold">
-                            Descrição
+                            {t('products.new.basicInfo.description')}
                             <textarea
                                 className={`${fieldClass} min-h-32`}
                                 name="description"
-                                placeholder="Descreva o produto para o cliente"
+                                placeholder={t('products.new.basicInfo.descriptionPlaceholder')}
                                 required
                                 minLength={1}
                                 maxLength={20000}
@@ -269,11 +295,9 @@ export function NewProductPage() {
 
                     <section className="grid gap-4">
                         <div>
-                            <h2 className="m-0 text-lg">{sourceType === 'MAOMAOBUY' ? 'Preço' : 'Origem e preço'}</h2>
+                            <h2 className="m-0 text-lg">{sourceType === 'MAOMAOBUY' ? t('products.new.originPrice.titleMaoMaoBuy') : t('products.new.originPrice.titleMarketplace')}</h2>
                             <p className="mt-1 text-sm text-muted dark:text-night-muted">
-                                {sourceType === 'MAOMAOBUY'
-                                    ? 'Sem link de origem — preço final já em reais, cobrado do cliente sem conversão.'
-                                    : 'Dados do anúncio comprado sob encomenda no marketplace de origem.'}
+                                {sourceType === 'MAOMAOBUY' ? t('products.new.originPrice.descriptionMaoMaoBuy') : t('products.new.originPrice.descriptionMarketplace')}
                             </p>
                         </div>
 
@@ -281,7 +305,7 @@ export function NewProductPage() {
                             <>
                                 <div className="grid grid-cols-2 gap-4 max-[600px]:grid-cols-1">
                                     <label className="grid gap-2 text-sm font-semibold">
-                                        Marketplace de origem
+                                        {t('products.new.originPrice.marketplace')}
                                         <select className={fieldClass} name="marketplace" required defaultValue={MARKETPLACE_NAMES[0]}>
                                             {MARKETPLACE_NAMES.map((name) => (
                                                 <option key={name} value={name}>
@@ -292,7 +316,7 @@ export function NewProductPage() {
                                     </label>
                                     <Input
                                         name="marketplaceUrl"
-                                        label="URL do produto de origem"
+                                        label={t('products.new.originPrice.originUrl')}
                                         type="url"
                                         placeholder="https://item.taobao.com/item.htm?id=123"
                                         required
@@ -300,14 +324,14 @@ export function NewProductPage() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 max-[600px]:grid-cols-1">
                                     <label className="grid gap-2 text-sm font-semibold">
-                                        Moeda de origem
+                                        {t('products.new.originPrice.sourceCurrency')}
                                         <select className={fieldClass} name="sourceCurrency" required defaultValue="CNY">
                                             <option value="CNY">CNY</option>
                                             <option value="BRL">BRL</option>
                                         </select>
                                     </label>
                                     <label className="grid gap-2 text-sm font-semibold">
-                                        Preço base (na moeda de origem)
+                                        {t('products.new.originPrice.basePrice')}
                                         <CurrencyInput
                                             className={fieldClass}
                                             minor={sourceAmountMinor}
@@ -319,35 +343,33 @@ export function NewProductPage() {
                             </>
                         ) : (
                             <label className="grid max-w-[calc(50%-0.5rem)] gap-2 text-sm font-semibold max-[600px]:max-w-full">
-                                Preço de venda (BRL)
+                                {t('products.new.originPrice.salePriceBrl')}
                                 <CurrencyInput className={fieldClass} minor={sourceAmountMinor} onMinorChange={setSourceAmountMinor} required />
                             </label>
                         )}
                     </section>
 
                     <section className="grid gap-4">
-                        <h2 className="m-0 text-lg">Frete e estoque</h2>
+                        <h2 className="m-0 text-lg">{t('products.new.shippingStock.title')}</h2>
                         <div className="grid grid-cols-2 gap-4 max-[600px]:grid-cols-1">
                             <label className="grid gap-2 text-sm font-semibold">
-                                Frete estimado (BRL, opcional)
+                                {t('products.new.shippingStock.estimatedShipping')}
                                 <CurrencyInput
                                     className={fieldClass}
                                     minor={estimatedShippingAmountMinor}
                                     onMinorChange={setEstimatedShippingAmountMinor}
                                 />
-                                <span className="font-normal text-muted dark:text-night-muted">
-                                    Só informativo — mostrado ao cliente na página do produto, não é cobrado com o pedido.
-                                </span>
+                                <span className="font-normal text-muted dark:text-night-muted">{t('products.new.shippingStock.estimatedShippingHint')}</span>
                             </label>
                             <Input
-                                label="Estoque"
+                                label={t('products.new.shippingStock.stock')}
                                 type="number"
                                 min={0}
                                 step={1}
                                 value={stock}
                                 onChange={(event) => setStock(event.target.value)}
                                 placeholder="0"
-                                hint="Unidades disponíveis. Só é debitado quando o pedido é aprovado e liberado para pagamento."
+                                hint={t('products.new.shippingStock.stockHint')}
                                 required
                             />
                         </div>
@@ -355,12 +377,12 @@ export function NewProductPage() {
 
                     <label className="flex items-center gap-3 text-sm font-semibold">
                         <input type="checkbox" className="h-4 w-4" checked={publishOnFinish} onChange={(event) => setPublishOnFinish(event.target.checked)} />
-                        Publicar ao concluir
+                        {t('products.new.publishCheckbox')}
                     </label>
 
                     {categories.length > 0 && (
                         <section>
-                            <h2 className="m-0 text-lg">Categorias</h2>
+                            <h2 className="m-0 text-lg">{t('products.new.categoriesTitle')}</h2>
                             <div className="mt-3 grid gap-4">
                                 {categories.map((category) => (
                                     <div key={category.id}>
@@ -397,14 +419,12 @@ export function NewProductPage() {
                     <section>
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="m-0 text-lg">Variantes (opcional)</h2>
-                                <p className="mt-1 text-sm text-muted dark:text-night-muted">
-                                    Só use se o produto tiver opções como tamanho ou cor. Sem variantes, o produto é vendido como item único.
-                                </p>
+                                <h2 className="m-0 text-lg">{t('products.new.variants.title')}</h2>
+                                <p className="mt-1 text-sm text-muted dark:text-night-muted">{t('products.new.variants.description')}</p>
                             </div>
                             <Button type="button" size="small" variant="ghost" onClick={() => setVariants((current) => [...current, newVariant()])}>
                                 <Plus className="h-4 w-4" aria-hidden="true" />
-                                Adicionar variante
+                                {t('products.new.variants.addButton')}
                             </Button>
                         </div>
 
@@ -412,27 +432,27 @@ export function NewProductPage() {
                             {variants.map((variant) => (
                                 <div className="mm-panel-soft grid grid-cols-[1fr_1fr_120px_auto_auto] items-end gap-3 p-4 max-[700px]:grid-cols-1" key={variant.key}>
                                     <label className="grid gap-1 text-xs font-semibold">
-                                        ID externo
+                                        {t('products.new.variants.externalId')}
                                         <input
                                             className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                             value={variant.externalId}
                                             onChange={(event) => updateVariant(variant.key, { externalId: event.target.value })}
-                                            placeholder="Ex.: P-42-azul"
+                                            placeholder={t('products.new.variants.externalIdPlaceholder')}
                                             required
                                         />
                                     </label>
                                     <label className="grid gap-1 text-xs font-semibold">
-                                        Rótulo
+                                        {t('products.new.variants.label')}
                                         <input
                                             className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                             value={variant.label}
                                             onChange={(event) => updateVariant(variant.key, { label: event.target.value })}
-                                            placeholder="Ex.: Azul, tamanho 42"
+                                            placeholder={t('products.new.variants.labelPlaceholder')}
                                             required
                                         />
                                     </label>
                                     <label className="grid gap-1 text-xs font-semibold">
-                                        Ajuste de preço
+                                        {t('products.new.variants.adjustment')}
                                         <CurrencyInput
                                             className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                             minor={variant.amountAdjustmentMinor}
@@ -446,7 +466,7 @@ export function NewProductPage() {
                                             checked={variant.isAvailable}
                                             onChange={(event) => updateVariant(variant.key, { isAvailable: event.target.checked })}
                                         />
-                                        Disponível
+                                        {t('products.new.variants.available')}
                                     </label>
                                     <Button type="button" size="small" variant="ghost" className="text-origin-700" onClick={() => removeVariant(variant.key)}>
                                         <Trash2 className="h-4 w-4" aria-hidden="true" />
@@ -459,7 +479,7 @@ export function NewProductPage() {
                     {error && <p className="border-l-2 border-origin-500 pl-3 text-sm">{error}</p>}
 
                     <Button type="submit" loading={submitting}>
-                        {submitting ? 'Criando…' : 'Continuar para mídia'}
+                        {submitting ? t('products.new.creatingButton') : t('products.new.continueButton')}
                     </Button>
                 </form>
             )}
@@ -467,7 +487,16 @@ export function NewProductPage() {
             {step === 'media' && product && (
                 <div className="mt-8 grid max-w-3xl gap-6">
                     <p className="text-sm text-muted dark:text-night-muted">
-                        Produto <strong>{product.name}</strong> criado como rascunho. Envie ao menos uma imagem antes de concluir.
+                        {(() => {
+                            const [before, after] = resolveMessage(locale, 'products.new.mediaStep.createdMessage').split('{{name}}');
+                            return (
+                                <>
+                                    {before}
+                                    <strong>{product.name}</strong>
+                                    {after}
+                                </>
+                            );
+                        })()}
                     </p>
 
                     <ProductMediaManager productId={product.id} media={product.media} onChanged={reloadProduct} />
@@ -476,10 +505,10 @@ export function NewProductPage() {
 
                     <div className="flex gap-3">
                         <Button type="button" onClick={handleFinish} loading={finishing} disabled={product.media.length === 0}>
-                            {finishing ? 'Concluindo…' : 'Concluir'}
+                            {finishing ? t('products.new.mediaStep.finishingButton') : t('products.new.mediaStep.finishButton')}
                         </Button>
                         <Button type="button" variant="ghost" onClick={() => router.replace(`/admin/produtos/${product.id}`)}>
-                            Concluir depois
+                            {t('products.new.mediaStep.finishLaterButton')}
                         </Button>
                     </div>
                 </div>
