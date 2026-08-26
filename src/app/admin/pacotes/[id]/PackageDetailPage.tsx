@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight, CheckCircle2, Plus, Ruler, Send, Trash2, Upload, Wallet, XCircle } from 'lucide-react';
 import { ApprovalDialog } from '@/components/auth/ApprovalDialog';
+import { PaymentAttachmentsManager } from '@/components/admin/PaymentAttachmentsManager';
 import { Button } from '@/components/ui/Button';
 import { api, ApiError } from '@/services/api';
 import { formatDate, money, packageStatusLabel, type AdminPackage, type PresignedUpload } from '@/types/api';
@@ -367,6 +368,16 @@ export function PackageDetailPage() {
                             ))}
                             {pkg.photoUrls.length === 0 && <p className="text-sm text-muted dark:text-night-muted">Nenhuma foto enviada.</p>}
                         </div>
+                    </section>
+
+                    <section className="mt-10">
+                        <PaymentAttachmentsManager
+                            resource="packages"
+                            resourceId={pkg.id}
+                            attachments={pkg.paymentAttachments}
+                            onChanged={load}
+                            canManage={!['DELIVERED', 'RETURNED', 'CANCELLED'].includes(pkg.status)}
+                        />
                     </section>
                 </>
             )}

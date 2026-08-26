@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, PackageCheck, Pencil, Send, Truck, Wallet, XCircle } from 'lucide-react';
 import { ApprovalDialog } from '@/components/auth/ApprovalDialog';
+import { PaymentAttachmentsManager } from '@/components/admin/PaymentAttachmentsManager';
 import { Button } from '@/components/ui/Button';
 import { api, ApiError } from '@/services/api';
 import { formatDate, money, orderChangeLogTypeLabel, orderStatusLabel, type AdminOrder } from '@/types/api';
@@ -320,6 +321,16 @@ export function OrderDetailPage() {
                                 </div>
                             </>
                         )}
+                    </section>
+
+                    <section className="mt-10">
+                        <PaymentAttachmentsManager
+                            resource="orders"
+                            resourceId={order.id}
+                            attachments={order.paymentAttachments}
+                            onChanged={load}
+                            canManage={!['COMPLETED', 'REFUND', 'INVALID', 'CANCELLED'].includes(order.status)}
+                        />
                     </section>
 
                     <details className="group mt-10">
