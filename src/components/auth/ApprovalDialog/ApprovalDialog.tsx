@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n/LanguageProvider';
 import type { ApprovalDialogProps } from './ApprovalDialog.types';
 
 /**
@@ -16,13 +17,14 @@ export function ApprovalDialog({
     open,
     title,
     description,
-    confirmLabel = 'Confirmar',
+    confirmLabel,
     variant = 'primary',
     fields = [],
     requireTotp = true,
     onCancel,
     onConfirm,
 }: ApprovalDialogProps) {
+    const { t } = useTranslation();
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string>();
 
@@ -41,7 +43,7 @@ export function ApprovalDialog({
         try {
             await onConfirm({ totpCode, reason, ...extra });
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Não foi possível concluir a ação.');
+            setError(err instanceof Error ? err.message : t('approvalDialog.error'));
         } finally {
             setSubmitting(false);
         }
@@ -63,7 +65,7 @@ export function ApprovalDialog({
                         className="text-muted hover:text-ink dark:text-night-muted dark:hover:text-night-text"
                         type="button"
                         onClick={onCancel}
-                        aria-label="Fechar"
+                        aria-label={t('approvalDialog.closeAria')}
                     >
                         <X className="h-5 w-5" aria-hidden="true" />
                     </button>
@@ -103,7 +105,7 @@ export function ApprovalDialog({
 
                     {requireTotp && (
                         <label className="grid gap-2 text-sm font-semibold">
-                            Código TOTP (6 dígitos)
+                            {t('approvalDialog.totpLabel')}
                             <input
                                 className="min-h-11 rounded-md border border-line bg-surface px-3 font-mono tracking-[0.3em] dark:border-night-line dark:bg-night-canvas"
                                 name="totpCode"
@@ -119,11 +121,11 @@ export function ApprovalDialog({
                     )}
 
                     <label className="grid gap-2 text-sm font-semibold">
-                        Motivo
+                        {t('approvalDialog.reasonLabel')}
                         <textarea
                             className="min-h-24 rounded-md border border-line bg-surface px-3 py-2 dark:border-night-line dark:bg-night-canvas"
                             name="reason"
-                            placeholder="Explique o motivo desta ação"
+                            placeholder={t('approvalDialog.reasonPlaceholder')}
                             minLength={5}
                             maxLength={2000}
                             required
@@ -134,10 +136,10 @@ export function ApprovalDialog({
 
                     <div className="mt-2 flex justify-end gap-3">
                         <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
-                            Cancelar
+                            {t('approvalDialog.cancel')}
                         </Button>
                         <Button type="submit" variant={variant === 'danger' ? 'danger' : 'primary'} loading={submitting}>
-                            {confirmLabel}
+                            {confirmLabel ?? t('approvalDialog.confirmLabel')}
                         </Button>
                     </div>
                 </form>

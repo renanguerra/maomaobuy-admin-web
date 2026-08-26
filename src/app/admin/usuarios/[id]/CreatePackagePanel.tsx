@@ -4,6 +4,8 @@ import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { Package, PackagePlus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n/LanguageProvider';
+import { resolveMessage } from '@/i18n/translations';
 import { api, ApiError } from '@/services/api';
 import { money, type AdminOrderItem, type AdminPackage, type AdminUserAddress } from '@/types/api';
 
@@ -11,11 +13,8 @@ interface CreatePackagePanelProps {
     userId: string;
 }
 
-function addressLabel(address: AdminUserAddress) {
-    return `${address.recipientFullName} · ${address.addressLine1}, ${address.locality}/${address.administrativeArea}${address.isDefault ? ' (padrão)' : ''}`;
-}
-
 export function CreatePackagePanel({ userId }: CreatePackagePanelProps) {
+    const { t, locale } = useTranslation();
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string>();
@@ -24,6 +23,10 @@ export function CreatePackagePanel({ userId }: CreatePackagePanelProps) {
     const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [created, setCreated] = useState<AdminPackage>();
+
+    function addressLabel(address: AdminUserAddress) {
+        return `${address.recipientFullName} · ${address.addressLine1}, ${address.locality}/${address.administrativeArea}${address.isDefault ? t('users.detail.addressDefaultSuffix') : ''}`;
+    }
 
     async function openPanel() {
         setOpen(true);
@@ -39,7 +42,7 @@ export function CreatePackagePanel({ userId }: CreatePackagePanelProps) {
             setAddresses(addressList);
             setItems(itemList);
         } catch {
-            setError('Não foi possível carregar os dados para criação do pacote.');
+            setError(t('users.createPackage.error'));
         } finally {
             setLoading(false);
         }
@@ -65,7 +68,7 @@ export function CreatePackagePanel({ userId }: CreatePackagePanelProps) {
             setItems((current) => current?.filter((item) => !selectedItemIds.includes(item.id)));
             setSelectedItemIds([]);
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : 'Não foi possível criar o pacote.');
+            setError(err instanceof ApiError ? err.message : t('admins.create.error'));
         } finally {
             setSubmitting(false);
         }
@@ -74,36 +77,40 @@ export function CreatePackagePanel({ userId }: CreatePackagePanelProps) {
     return (
         <section className="mt-10">
             <div className="flex items-center justify-between">
-                <h2 className="m-0 text-xl">Criar pacote</h2>
+                <h2 className="m-0 text-xl">{t('users.createPackage.title')}</h2>
                 {!open && (
                     <Button size="small" variant="ghost" onClick={openPanel} leadingIcon={<PackagePlus className="h-4 w-4" aria-hidden="true" />}>
-                        Criar pacote
+                        {t('users.createPackage.title')}
                     </Button>
                 )}
             </div>
 
             {open && (
                 <div className="mm-panel-soft mt-4 p-5">
-                    {loading && <p className="text-sm text-muted dark:text-night-muted">Carregando endereços e itens elegíveis…</p>}
+                    {loading && <p className="text-sm text-muted dark:text-night-muted">{t('users.createPackage.loading')}</p>}
                     {error && <p className="border-l-2 border-origin-500 pl-3 text-sm">{error}</p>}
 
-                    {created && (
-                        <p className="mb-4 text-sm text-success">
-                            Pacote{' '}
-                            <Link className="font-semibold text-primary" href={`/admin/pacotes/${created.id}`}>
-                                {created.packageCode}
-                            </Link>{' '}
-                            criado com sucesso.
-                        </p>
-                    )}
+                    {created &&
+                        (() => {
+                            const [before, after] = resolveMessage(locale, 'users.createPackage.createdMessage').split('{{code}}');
+                            return (
+                                <p className="mb-4 text-sm text-success">
+                                    {before}
+                                    <Link className="font-semibold text-primary" href={`/admin/pacotes/${created.id}`}>
+                                        {created.packageCode}
+                                    </Link>
+                                    {after}
+                                </p>
+                            );
+                        })()}
 
                     {!loading && addresses && items && (
                         <form className="grid gap-5" onSubmit={handleSubmit}>
                             {addresses.length === 0 ? (
-                                <p className="text-sm text-muted dark:text-night-muted">Este usuário não possui endereços cadastrados.</p>
+                                <p className="text-sm text-muted dark:text-night-muted">{t('users.createPackage.noAddresses')}</p>
                             ) : (
                                 <label className="grid gap-2 text-sm font-semibold">
-                                    Endereço de destino
+                                    {t('users.createPackage.addressLabel')}
                                     <select
                                         className="min-h-11 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                                         name="addressId"
@@ -120,12 +127,8 @@ export function CreatePackagePanel({ userId }: CreatePackagePanelProps) {
                             )}
 
                             <div>
-                                <p className="mb-2 text-sm font-semibold">Itens elegíveis</p>
-                                {items.length === 0 && (
-                                    <p className="text-sm text-muted dark:text-night-muted">
-                                        Nenhum item liberado para envio (READY_TO_SHIP) e sem pacote ativo.
-                                    </p>
-                                )}
+                                <p className="mb-2 text-sm font-semibold">{t('users.createPackage.eligibleItemsLabel')}</p>
+                                {items.length === 0 && <p className="text-sm text-muted dark:text-night-muted">{t('users.createPackage.noEligibleItems')}</p>}
                                 <div className="grid gap-2">
                                     {items.map((item) => (
                                         <label
@@ -141,7 +144,7 @@ export function CreatePackagePanel({ userId }: CreatePackagePanelProps) {
                                             <span className="flex-1">
                                                 <strong>{item.productName}</strong>
                                                 <span className="ml-2 text-muted dark:text-night-muted">
-                                                    quantidade {item.quantity} · {money(item.unitAmountMinor, item.currency)}
+                                                    {t('users.createPackage.quantityLabel', { count: item.quantity })} · {money(item.unitAmountMinor, item.currency)}
                                                 </span>
                                             </span>
                                         </label>
@@ -151,10 +154,10 @@ export function CreatePackagePanel({ userId }: CreatePackagePanelProps) {
 
                             <div className="flex justify-end gap-3">
                                 <Button size="small" type="button" variant="ghost" onClick={() => setOpen(false)}>
-                                    Fechar
+                                    {t('users.createPackage.closeButton')}
                                 </Button>
                                 <Button size="small" type="submit" loading={submitting} disabled={addresses.length === 0 || selectedItemIds.length === 0}>
-                                    Criar pacote
+                                    {t('users.createPackage.submitButton')}
                                 </Button>
                             </div>
                         </form>

@@ -124,6 +124,16 @@
     --color-highlight: var(--color-origin-300);
 }
 
+/*
+ * Chinês simplificado: prioriza a Noto Sans SC antes das fontes latinas.
+ * A M PLUS 2 (japonesa) e a Inter cobrem alguns Han por unificação CJK, mas
+ * com formas de traço erradas para o chinês — por isso não bastam sozinhas.
+ */
+html:lang(zh-Hans) {
+    --font-sans: 'Noto Sans SC Variable', 'Inter Variable', Inter, system-ui, sans-serif;
+    --font-display: 'Noto Sans SC Variable', 'M PLUS 2 Variable', 'Noto Sans', system-ui, sans-serif;
+}
+
 @layer base {
     * {
         @apply box-border;

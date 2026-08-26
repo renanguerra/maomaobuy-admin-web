@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { FileText, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
 import type { AdminPaymentAttachment, PresignedUpload } from '@/types/api';
 
@@ -29,6 +30,7 @@ export function PaymentAttachmentsManager({
     onChanged,
     canManage = true,
 }: PaymentAttachmentsManagerProps) {
+    const { t } = useTranslation();
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string>();
     const [busyId, setBusyId] = useState<string>();
@@ -48,7 +50,7 @@ export function PaymentAttachmentsManager({
             headers: presigned.headers,
             body: file,
         });
-        if (!uploadResponse.ok) throw new Error(`Falha ao enviar "${file.name}" para o armazenamento.`);
+        if (!uploadResponse.ok) throw new Error(t('paymentAttachments.uploadFailed', { name: file.name }));
         await api(basePath, {
             method: 'POST',
             body: JSON.stringify({ key: presigned.key, mimeType: file.type, sizeBytes: file.size, reason }),
@@ -56,9 +58,9 @@ export function PaymentAttachmentsManager({
     }
 
     async function handleFiles(files: FileList) {
-        const reason = window.prompt('Motivo do envio (fica registrado no histórico):');
+        const reason = window.prompt(t('paymentAttachments.promptSendReason'));
         if (!reason || reason.trim().length < 5) {
-            if (reason !== null) setError('Informe um motivo com pelo menos 5 caracteres.');
+            if (reason !== null) setError(t('paymentAttachments.reasonTooShort'));
             return;
         }
         setUploading(true);
@@ -69,7 +71,7 @@ export function PaymentAttachmentsManager({
             }
             onChanged();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Não foi possível enviar o documento.');
+            setError(err instanceof Error ? err.message : t('paymentAttachments.uploadError'));
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -77,9 +79,9 @@ export function PaymentAttachmentsManager({
     }
 
     async function remove(attachmentId: string) {
-        const reason = window.prompt('Motivo da remoção:');
+        const reason = window.prompt(t('paymentAttachments.promptRemoveReason'));
         if (!reason || reason.trim().length < 5) {
-            if (reason !== null) setError('Informe um motivo com pelo menos 5 caracteres.');
+            if (reason !== null) setError(t('paymentAttachments.reasonTooShort'));
             return;
         }
         setBusyId(attachmentId);
@@ -91,7 +93,7 @@ export function PaymentAttachmentsManager({
             });
             onChanged();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Não foi possível remover o anexo.');
+            setError(err instanceof Error ? err.message : t('paymentAttachments.removeError'));
         } finally {
             setBusyId(undefined);
         }
@@ -114,7 +116,7 @@ export function PaymentAttachmentsManager({
                         rel="noreferrer"
                     >
                         <FileText className="h-6 w-6" aria-hidden="true" />
-                        PDF
+                        {t('paymentAttachments.pdfLabel')}
                     </a>
                 )}
                 {canManage && (
@@ -127,7 +129,7 @@ export function PaymentAttachmentsManager({
                             loading={busyId === item.id}
                         >
                             <Trash2 className="h-4 w-4" aria-hidden="true" />
-                            Remover
+                            {t('paymentAttachments.remove')}
                         </Button>
                     </div>
                 )}
@@ -139,10 +141,8 @@ export function PaymentAttachmentsManager({
         <div>
             <div className="flex items-center justify-between gap-4">
                 <div>
-                    <h2 className="m-0 text-lg">Pagamento</h2>
-                    <p className="mt-1 text-xs text-muted dark:text-night-muted">
-                        Documentos de pagamento (boleto, QR do Pix) e comprovantes enviados pelo cliente.
-                    </p>
+                    <h2 className="m-0 text-lg">{t('paymentAttachments.title')}</h2>
+                    <p className="mt-1 text-xs text-muted dark:text-night-muted">{t('paymentAttachments.description')}</p>
                 </div>
                 {canManage && (
                     <label>
@@ -164,7 +164,7 @@ export function PaymentAttachmentsManager({
                             leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
                             onClick={() => fileInputRef.current?.click()}
                         >
-                            {uploading ? 'Enviando…' : 'Anexar documento'}
+                            {uploading ? t('paymentAttachments.uploadingButton') : t('paymentAttachments.uploadButton')}
                         </Button>
                     </label>
                 )}
@@ -173,25 +173,21 @@ export function PaymentAttachmentsManager({
             {error && <p className="mt-3 text-sm text-secondary">{error}</p>}
 
             <div className="mt-4">
-                <h3 className="m-0 text-sm font-semibold text-muted dark:text-night-muted">
-                    Documentos para pagamento
-                </h3>
+                <h3 className="m-0 text-sm font-semibold text-muted dark:text-night-muted">{t('paymentAttachments.adminDocsTitle')}</h3>
                 <div className="mt-2 grid grid-cols-4 gap-4 max-[800px]:grid-cols-2 max-[460px]:grid-cols-1">
                     {adminAttachments.map(renderTile)}
                     {adminAttachments.length === 0 && (
-                        <p className="text-sm text-muted dark:text-night-muted">Nenhum documento enviado ainda.</p>
+                        <p className="text-sm text-muted dark:text-night-muted">{t('paymentAttachments.emptyAdmin')}</p>
                     )}
                 </div>
             </div>
 
             <div className="mt-6">
-                <h3 className="m-0 text-sm font-semibold text-muted dark:text-night-muted">
-                    Comprovantes enviados pelo cliente
-                </h3>
+                <h3 className="m-0 text-sm font-semibold text-muted dark:text-night-muted">{t('paymentAttachments.customerDocsTitle')}</h3>
                 <div className="mt-2 grid grid-cols-4 gap-4 max-[800px]:grid-cols-2 max-[460px]:grid-cols-1">
                     {customerAttachments.map(renderTile)}
                     {customerAttachments.length === 0 && (
-                        <p className="text-sm text-muted dark:text-night-muted">Nenhum comprovante enviado ainda.</p>
+                        <p className="text-sm text-muted dark:text-night-muted">{t('paymentAttachments.emptyCustomer')}</p>
                     )}
                 </div>
             </div>

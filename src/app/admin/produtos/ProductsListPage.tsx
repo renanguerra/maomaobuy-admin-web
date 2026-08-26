@@ -4,19 +4,21 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
 import type { AdminCategory, AdminProduct, Page } from '@/types/api';
 import { money, productSourceLabel } from '@/types/api';
 
 const STATUS_FILTERS = [
-    { value: '', label: 'Todos' },
-    { value: 'published', label: 'Publicado' },
-    { value: 'draft', label: 'Rascunho' },
+    { value: '', key: 'statusAll' },
+    { value: 'published', key: 'statusPublished' },
+    { value: 'draft', key: 'statusDraft' },
 ] as const;
 
 const LIMIT = 20;
 
 export function ProductsListPage() {
+    const { t } = useTranslation();
     const [page, setPage] = useState<Page<AdminProduct>>();
     const [categories, setCategories] = useState<AdminCategory[]>([]);
     const [error, setError] = useState<string>();
@@ -34,7 +36,7 @@ export function ProductsListPage() {
         if (filters.subcategory) query.set('subcategoryId', filters.subcategory);
         api<Page<AdminProduct>>(`/products?${query.toString()}`)
             .then(setPage)
-            .catch(() => setError('Não foi possível carregar os produtos.'))
+            .catch(() => setError(t('products.list.error')))
             .finally(() => setLoading(false));
     }
 
@@ -45,7 +47,7 @@ export function ProductsListPage() {
             .catch(() => {
                 /* filtro de categoria é opcional; falha silenciosa aqui */
             });
-
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const subcategoryOptions = useMemo(
@@ -70,17 +72,17 @@ export function ProductsListPage() {
         <main>
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <p className="mm-kicker mb-3">Catálogo</p>
-                    <h1 className="m-0 text-3xl tracking-[-.03em]">Produtos</h1>
+                    <p className="mm-kicker mb-3">{t('products.list.kicker')}</p>
+                    <h1 className="m-0 text-3xl tracking-[-.03em]">{t('products.list.title')}</h1>
                 </div>
                 <Link href="/admin/produtos/novo">
-                    <Button leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}>Novo produto</Button>
+                    <Button leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}>{t('products.list.newButton')}</Button>
                 </Link>
             </div>
 
             <form className="mt-6 flex flex-wrap items-end gap-4" onSubmit={handleSearch}>
                 <label className="grid gap-2 text-sm font-semibold">
-                    Categoria
+                    {t('products.list.categoryLabel')}
                     <select
                         className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                         value={categoryFilter}
@@ -89,7 +91,7 @@ export function ProductsListPage() {
                             setSubcategoryFilter('');
                         }}
                     >
-                        <option value="">Todas</option>
+                        <option value="">{t('products.list.categoryAll')}</option>
                         {categories.map((category) => (
                             <option key={category.id} value={category.id}>
                                 {category.name}
@@ -98,14 +100,14 @@ export function ProductsListPage() {
                     </select>
                 </label>
                 <label className="grid gap-2 text-sm font-semibold">
-                    Subcategoria
+                    {t('products.list.subcategoryLabel')}
                     <select
                         className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas disabled:opacity-50"
                         value={subcategoryFilter}
                         onChange={(event) => setSubcategoryFilter(event.target.value)}
                         disabled={subcategoryOptions.length === 0}
                     >
-                        <option value="">Todas</option>
+                        <option value="">{t('products.list.categoryAll')}</option>
                         {subcategoryOptions.map((subcategory) => (
                             <option key={subcategory.id} value={subcategory.id}>
                                 {subcategory.name}
@@ -114,7 +116,7 @@ export function ProductsListPage() {
                     </select>
                 </label>
                 <label className="grid gap-2 text-sm font-semibold">
-                    Status
+                    {t('products.list.statusLabel')}
                     <select
                         className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
                         value={statusFilter}
@@ -122,18 +124,18 @@ export function ProductsListPage() {
                     >
                         {STATUS_FILTERS.map((filter) => (
                             <option key={filter.value} value={filter.value}>
-                                {filter.label}
+                                {t(`products.list.${filter.key}`)}
                             </option>
                         ))}
                     </select>
                 </label>
                 <Button type="submit" variant="secondary">
-                    Pesquisar
+                    {t('products.list.searchButton')}
                 </Button>
             </form>
 
             {error && <p className="mt-6 border-l-2 border-origin-500 pl-3 text-sm">{error}</p>}
-            {loading && <p className="mt-6 text-muted">Carregando produtos…</p>}
+            {loading && <p className="mt-6 text-muted">{t('products.list.loading')}</p>}
 
             {!loading && page && (
                 <>
@@ -141,12 +143,12 @@ export function ProductsListPage() {
                         <table className="w-full min-w-[900px] border-collapse text-sm">
                             <thead>
                                 <tr className="border-b border-line text-left text-xs font-bold tracking-wide text-muted uppercase dark:border-night-line dark:text-night-subtle">
-                                    <th className="py-3 pr-4">Produto</th>
-                                    <th className="py-3 pr-4">Categoria</th>
-                                    <th className="py-3 pr-4">Marketplace</th>
-                                    <th className="py-3 pr-4">Preço base</th>
-                                    <th className="py-3 pr-4">Variantes</th>
-                                    <th className="py-3 pr-4">Status</th>
+                                    <th className="py-3 pr-4">{t('products.list.columns.product')}</th>
+                                    <th className="py-3 pr-4">{t('products.list.columns.category')}</th>
+                                    <th className="py-3 pr-4">{t('products.list.columns.marketplace')}</th>
+                                    <th className="py-3 pr-4">{t('products.list.columns.basePrice')}</th>
+                                    <th className="py-3 pr-4">{t('products.list.columns.variants')}</th>
+                                    <th className="py-3 pr-4">{t('products.list.columns.status')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -159,20 +161,20 @@ export function ProductsListPage() {
                                             <p className="mt-0.5 text-xs text-muted dark:text-night-muted">/{product.slug}</p>
                                         </td>
                                         <td className="py-3 pr-4 text-muted dark:text-night-muted">
-                                            {[...product.categories, ...product.subcategories].map((entry) => entry.name).join(', ') || '—'}
+                                            {[...product.categories, ...product.subcategories].map((entry) => entry.name).join(', ') || t('common.dash')}
                                         </td>
                                         <td className="py-3 pr-4">{productSourceLabel(product.marketplace)}</td>
                                         <td className="py-3 pr-4 mm-data">{money(product.sourceAmountMinor, product.sourceCurrency)}</td>
                                         <td className="py-3 pr-4">{product.variants.length}</td>
                                         <td className="py-3 pr-4">
-                                            <span className="mm-kicker">{product.isPublished ? 'Publicado' : 'Rascunho'}</span>
+                                            <span className="mm-kicker">{product.isPublished ? t('products.list.statusPublished') : t('products.list.statusDraft')}</span>
                                         </td>
                                     </tr>
                                 ))}
                                 {page.data.length === 0 && (
                                     <tr>
                                         <td className="py-6 text-muted" colSpan={6}>
-                                            Nenhum produto encontrado para este filtro.
+                                            {t('products.list.empty')}
                                         </td>
                                     </tr>
                                 )}
@@ -182,7 +184,7 @@ export function ProductsListPage() {
 
                     <div className="mt-5 flex items-center justify-between gap-4 text-sm">
                         <span className="text-muted dark:text-night-muted">
-                            Página {pageNumber} de {totalPages} · {page.total} produtos
+                            {t('common.pagination.page', { page: pageNumber, total: totalPages })} · {t('products.list.countUnit', { count: page.total })}
                         </span>
                         <div className="flex gap-3">
                             <Button
@@ -191,7 +193,7 @@ export function ProductsListPage() {
                                 onClick={() => goToPage(pageNumber - 1)}
                                 disabled={pageNumber <= 1}
                             >
-                                Anterior
+                                {t('common.pagination.previous')}
                             </Button>
                             <Button
                                 size="small"
@@ -199,7 +201,7 @@ export function ProductsListPage() {
                                 onClick={() => goToPage(pageNumber + 1)}
                                 disabled={pageNumber >= totalPages}
                             >
-                                Próxima
+                                {t('common.pagination.next')}
                             </Button>
                         </div>
                     </div>
