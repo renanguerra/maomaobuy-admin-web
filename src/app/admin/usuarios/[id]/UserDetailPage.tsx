@@ -228,6 +228,7 @@ export function UserDetailPage() {
                 description={t('users.detail.dialogs.suspend.description')}
                 confirmLabel={t('users.detail.dialogs.suspend.confirmLabel')}
                 variant="danger"
+                requireReason
                 onCancel={() => setDialog(null)}
                 onConfirm={handleConfirm}
             />

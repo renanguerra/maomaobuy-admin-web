@@ -20,11 +20,17 @@ export interface ApprovalDialogProps {
     /** Campos extras coletados antes do TOTP, como carrier/trackingCode no despacho. */
     fields?: ApprovalDialogField[];
     /**
-     * Algumas ações (editar descrição, anexar/remover mídia) não mexem em
-     * dinheiro nem em dados sensíveis, então não exigem TOTP — só motivo.
-     * Default `true` para manter o comportamento de toda ação financeira.
+     * TOTP temporariamente não exigido em nenhuma rota admin (ver AGENTS.md
+     * do backend) — default `false`. Prop mantida para religar por ação
+     * específica, ou trocando o default aqui, quando a exigência voltar.
      */
     requireTotp?: boolean;
+    /**
+     * Motivo só é obrigatório em bloqueio de usuário e rejeição de pedido/
+     * pacote (ver AGENTS.md do backend) — default `false`. Passe `true`
+     * explicitamente nessas três ações; as demais viram confirmação simples.
+     */
+    requireReason?: boolean;
     onCancel: () => void;
     onConfirm: (values: { totpCode: string; reason: string } & Record<string, string>) => Promise<void>;
 }

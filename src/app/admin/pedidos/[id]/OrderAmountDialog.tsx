@@ -20,6 +20,17 @@ interface OrderAmountDialogProps {
     fieldName: string;
     currentAmountMinor: string;
     confirmLabel: string;
+    /**
+     * TOTP temporariamente não exigido em nenhuma rota admin (ver AGENTS.md
+     * do backend) — default `false`. Prop mantida para religar quando a
+     * exigência voltar (mesmo padrão do `ApprovalDialog`).
+     */
+    requireTotp?: boolean;
+    /**
+     * Motivo também não é exigido por padrão (mudar preço/frete não está na
+     * lista de ações que precisam de motivo — ver AGENTS.md do backend).
+     */
+    requireReason?: boolean;
     onCancel: () => void;
     onConfirm: (values: OrderAmountDialogValues) => Promise<void>;
 }
@@ -37,6 +48,8 @@ export function OrderAmountDialog({
     fieldName,
     currentAmountMinor,
     confirmLabel,
+    requireTotp = false,
+    requireReason = false,
     onCancel,
     onConfirm,
 }: OrderAmountDialogProps) {
@@ -94,32 +107,36 @@ export function OrderAmountDialog({
                         <CurrencyInput name={fieldName} minor={minor} onMinorChange={setMinor} required />
                     </label>
 
-                    <label className="grid gap-2 text-sm font-semibold">
-                        {t('orders.amountDialog.fieldTotpLabel')}
-                        <input
-                            className="min-h-11 rounded-md border border-line bg-surface px-3 font-mono tracking-[0.3em] dark:border-night-line dark:bg-night-canvas"
-                            name="totpCode"
-                            inputMode="numeric"
-                            pattern="\d{6}"
-                            maxLength={6}
-                            minLength={6}
-                            placeholder="000000"
-                            autoComplete="one-time-code"
-                            required
-                        />
-                    </label>
+                    {requireTotp && (
+                        <label className="grid gap-2 text-sm font-semibold">
+                            {t('orders.amountDialog.fieldTotpLabel')}
+                            <input
+                                className="min-h-11 rounded-md border border-line bg-surface px-3 font-mono tracking-[0.3em] dark:border-night-line dark:bg-night-canvas"
+                                name="totpCode"
+                                inputMode="numeric"
+                                pattern="\d{6}"
+                                maxLength={6}
+                                minLength={6}
+                                placeholder="000000"
+                                autoComplete="one-time-code"
+                                required
+                            />
+                        </label>
+                    )}
 
-                    <label className="grid gap-2 text-sm font-semibold">
-                        {t('orders.amountDialog.fieldReasonLabel')}
-                        <textarea
-                            className="min-h-24 rounded-md border border-line bg-surface px-3 py-2 dark:border-night-line dark:bg-night-canvas"
-                            name="reason"
-                            placeholder={t('orders.amountDialog.fieldReasonPlaceholder')}
-                            minLength={5}
-                            maxLength={2000}
-                            required
-                        />
-                    </label>
+                    {requireReason && (
+                        <label className="grid gap-2 text-sm font-semibold">
+                            {t('orders.amountDialog.fieldReasonLabel')}
+                            <textarea
+                                className="min-h-24 rounded-md border border-line bg-surface px-3 py-2 dark:border-night-line dark:bg-night-canvas"
+                                name="reason"
+                                placeholder={t('orders.amountDialog.fieldReasonPlaceholder')}
+                                minLength={5}
+                                maxLength={2000}
+                                required
+                            />
+                        </label>
+                    )}
 
                     {error && <p className="text-sm text-secondary">{error}</p>}
 

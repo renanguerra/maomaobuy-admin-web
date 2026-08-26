@@ -399,6 +399,7 @@ export function PackageDetailPage() {
                 description={t('packages.detail.dialogs.reject.description')}
                 confirmLabel={t('packages.detail.dialogs.reject.confirmLabel')}
                 variant="danger"
+                requireReason
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}
             />

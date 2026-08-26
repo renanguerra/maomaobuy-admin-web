@@ -394,6 +394,7 @@ export function OrderDetailPage() {
                 description={t('orders.detail.dialogs.reject.description')}
                 confirmLabel={t('orders.detail.dialogs.reject.confirmLabel')}
                 variant="danger"
+                requireReason
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}
             />
