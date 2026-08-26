@@ -235,6 +235,17 @@ export interface AdminOrderMedia {
     createdAt: string;
 }
 
+export interface AdminPaymentAttachment {
+    id: string;
+    mimeType: string;
+    sizeBytes: string;
+    url: string | null;
+    uploadedBy: 'ADMIN' | 'USER';
+    createdByAdminId: string | null;
+    createdByUserId: string | null;
+    createdAt: string;
+}
+
 export interface AdminOrderChangeLog {
     id: string;
     type: string;
@@ -267,6 +278,7 @@ export interface AdminOrder {
     adminDescription: string | null;
     items: AdminOrderItem[];
     media: AdminOrderMedia[];
+    paymentAttachments: AdminPaymentAttachment[];
     changeLogs: AdminOrderChangeLog[];
 }
 
@@ -284,6 +296,8 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<string, string> = {
     PAYMENT_DATA_SENT: 'Dados de pagamento enviados ao cliente',
     MARKED_PAID_BY_CUSTOMER: 'Cliente marcou como pago',
     PAYMENT_CONFIRMED: 'Pagamento confirmado',
+    PAYMENT_ATTACHMENT_ADDED: 'Documento de pagamento anexado',
+    PAYMENT_ATTACHMENT_REMOVED: 'Documento de pagamento removido',
 };
 
 export function orderChangeLogTypeLabel(type: string) {
@@ -372,7 +386,9 @@ export interface AdminPackage {
     pixCopyPaste: string | null;
     paymentExpiresAt: string | null;
     paidAt: string | null;
+    markedPaidByUserAt: string | null;
     photoUrls: string[];
+    paymentAttachments: AdminPaymentAttachment[];
     createdAt: string;
     items: AdminPackageItem[];
     userId: string;
