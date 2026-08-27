@@ -45,7 +45,10 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
         const message =
-            typeof responseBody === 'object' && responseBody !== null && 'message' in responseBody && typeof responseBody.message === 'string'
+            typeof responseBody === 'object' &&
+            responseBody !== null &&
+            'message' in responseBody &&
+            typeof responseBody.message === 'string'
                 ? responseBody.message
                 : 'Não foi possível entrar com essa conta administrativa.';
         return Response.json({ message }, { status: response.status, headers: { 'Cache-Control': 'no-store' } });

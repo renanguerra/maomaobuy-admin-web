@@ -1,55 +1,99 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { useParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowUpRight, CheckCircle2, Plus, Ruler, Send, Trash2, Upload, Wallet, XCircle } from 'lucide-react';
-import { ApprovalDialog } from '@/components/auth/ApprovalDialog';
+import { useParams } from 'next/navigation';
+import {
+    ArrowUpRight,
+    CheckCircle2,
+    Images,
+    Package as PackageIcon,
+    Plus,
+    Ruler,
+    Send,
+    Trash2,
+    Upload,
+    Wallet,
+    XCircle,
+} from 'lucide-react';
+import { ActionBar } from '@/components/admin/ActionBar';
+import { ActionDialog } from '@/components/admin/ActionDialog';
+import { Alert } from '@/components/admin/Alert';
+import { EmptyState } from '@/components/admin/EmptyState';
+import { ListRow, ListRows } from '@/components/admin/ListRow';
+import { MediaGrid, MediaTile } from '@/components/admin/MediaGrid';
+import { PageHeader } from '@/components/admin/PageHeader';
 import { PaymentAttachmentsManager } from '@/components/admin/PaymentAttachmentsManager';
+import { SectionCard } from '@/components/admin/SectionCard';
+import { SkeletonCards } from '@/components/admin/Skeleton';
+import { packageStatusTone, StatusPill } from '@/components/admin/StatusPill';
+import { SummaryList } from '@/components/admin/SummaryList';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
+import { refreshPendingCounts } from '@/services/admin/pending-counts';
 import { api, ApiError } from '@/services/api';
 import { formatDate, money, packageStatusLabel, type AdminPackage, type PresignedUpload } from '@/types/api';
+import { AddPackageItemsDialog } from './AddPackageItemsDialog';
 
-type DialogKind = 'approve' | 'reject' | 'confirm-freight-payment-manually' | 'dispatch' | 'shipment' | null;
+type DialogKind =
+    'approve' | 'reject' | 'confirm-freight-payment-manually' | 'dispatch' | 'shipment' | 'add-items' | null;
+
+/** Situações finais do pacote — nada mais é anexado depois delas. */
+const CLOSED_STATUSES = ['DELIVERED', 'RETURNED', 'CANCELLED'];
 
 export function PackageDetailPage() {
     const { t } = useTranslation();
+    const { notify } = useToast();
+    const confirm = useConfirm();
     const params = useParams<{ id: string }>();
     const [pkg, setPkg] = useState<AdminPackage>();
     const [error, setError] = useState<string>();
-    const [feedback, setFeedback] = useState<string>();
     const [dialog, setDialog] = useState<DialogKind>(null);
     const [busy, setBusy] = useState<string>();
     const [uploading, setUploading] = useState(false);
-    const [addingItem, setAddingItem] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    function load() {
+    const load = useCallback(() => {
         api<AdminPackage>(`/packages/${params.id}`)
-            .then(setPkg)
+            .then((loaded) => {
+                setPkg(loaded);
+                setError(undefined);
+            })
             .catch(() => setError(t('packages.detail.error')));
-    }
+    }, [params.id, t]);
 
     useEffect(() => {
         load();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [params.id]);
+    }, [load]);
 
-    function errorMessage(err: unknown) {
-        return err instanceof ApiError ? err.message : t('common.errors.generic');
+    function applyUpdate(updated: AdminPackage, message: string) {
+        setPkg(updated);
+        setDialog(null);
+        notify({ tone: 'success', title: message });
+        void refreshPendingCounts();
     }
 
-    async function handleApprovalConfirm(values: { totpCode: string; reason: string } & Record<string, string>) {
+    function reportError(err: unknown) {
+        notify({
+            tone: 'danger',
+            title: t('common.errors.actionTitle'),
+            description: err instanceof ApiError ? err.message : t('common.errors.generic'),
+        });
+    }
+
+    async function handleActionConfirm(values: { totpCode: string; reason: string } & Record<string, string>) {
         const action = dialog;
+        if (!action || action === 'add-items') return;
+
         try {
             const updated = await api<AdminPackage>(`/packages/${params.id}/${action}`, {
                 method: 'POST',
                 body: JSON.stringify(values),
             });
-            setPkg(updated);
-            setDialog(null);
-            setFeedback(
+            applyUpdate(
+                updated,
                 action === 'approve'
                     ? t('packages.detail.feedback.approve')
                     : action === 'reject'
@@ -67,373 +111,471 @@ export function PackageDetailPage() {
 
     async function submitPackage() {
         setBusy('submit');
-        setError(undefined);
         try {
             const updated = await api<AdminPackage>(`/packages/${params.id}/submit`, { method: 'POST' });
-            setPkg(updated);
-            setFeedback(t('packages.detail.feedback.submitted'));
+            applyUpdate(updated, t('packages.detail.feedback.submitted'));
         } catch (err) {
-            setError(errorMessage(err));
-        } finally {
-            setBusy(undefined);
-        }
-    }
-
-    async function addItems(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const data = new FormData(form);
-        const raw = String(data.get('orderItemIds') ?? '');
-        const orderItemIds = raw
-            .split(/[\s,]+/)
-            .map((value) => value.trim())
-            .filter(Boolean);
-        if (orderItemIds.length === 0) return;
-        setBusy('add-items');
-        setError(undefined);
-        try {
-            const updated = await api<AdminPackage>(`/packages/${params.id}/items`, {
-                method: 'POST',
-                body: JSON.stringify({ orderItemIds }),
-            });
-            setPkg(updated);
-            form.reset();
-            setAddingItem(false);
-        } catch (err) {
-            setError(errorMessage(err));
+            reportError(err);
         } finally {
             setBusy(undefined);
         }
     }
 
     async function removeItem(packageItemId: string) {
-        if (!confirm(t('packages.detail.itemsSection.removeConfirm'))) return;
+        const confirmed = await confirm({
+            title: t('packages.detail.itemsSection.removeTitle'),
+            description: t('packages.detail.itemsSection.removeConfirm'),
+            confirmLabel: t('common.actions.remove'),
+            tone: 'danger',
+        });
+        if (!confirmed) return;
+
         setBusy(`remove-item:${packageItemId}`);
-        setError(undefined);
         try {
-            const updated = await api<AdminPackage>(`/packages/${params.id}/items/${packageItemId}`, { method: 'DELETE' });
+            const updated = await api<AdminPackage>(`/packages/${params.id}/items/${packageItemId}`, {
+                method: 'DELETE',
+            });
             setPkg(updated);
+            notify({ tone: 'success', title: t('packages.detail.itemsSection.removedToast') });
         } catch (err) {
-            setError(errorMessage(err));
+            reportError(err);
         } finally {
             setBusy(undefined);
         }
     }
 
-    async function uploadPhoto(file: File) {
+    async function uploadPhotos(files: File[]) {
         setUploading(true);
-        setError(undefined);
         try {
-            const presigned = await api<PresignedUpload>(`/packages/${params.id}/photos/upload-url`, {
-                method: 'POST',
-                body: JSON.stringify({ mimeType: file.type, sizeBytes: file.size }),
-            });
-            const uploadResponse = await fetch(presigned.uploadUrl, {
-                method: 'PUT',
-                headers: presigned.headers,
-                body: file,
-            });
-            if (!uploadResponse.ok) throw new Error(t('packages.detail.photosSection.uploadFailed'));
+            const keys: string[] = [];
+            for (const file of files) {
+                const presigned = await api<PresignedUpload>(`/packages/${params.id}/photos/upload-url`, {
+                    method: 'POST',
+                    body: JSON.stringify({ mimeType: file.type, sizeBytes: file.size }),
+                });
+                const uploadResponse = await fetch(presigned.uploadUrl, {
+                    method: 'PUT',
+                    headers: presigned.headers,
+                    body: file,
+                });
+                if (!uploadResponse.ok) throw new Error(t('packages.detail.photosSection.uploadFailed'));
+                keys.push(presigned.key);
+            }
+
             const updated = await api<AdminPackage>(`/packages/${params.id}/photos`, {
                 method: 'POST',
-                body: JSON.stringify({ keys: [presigned.key] }),
+                body: JSON.stringify({ keys }),
             });
             setPkg(updated);
-            setFeedback(t('packages.detail.feedback.photoUploaded'));
+            notify({ tone: 'success', title: t('packages.detail.feedback.photoUploaded', { count: keys.length }) });
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('packages.detail.photosSection.uploadError'));
+            reportError(err);
         } finally {
             setUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     }
 
+    if (error) {
+        return (
+            <div className="grid gap-6">
+                <PageHeader
+                    backHref="/admin/pacotes"
+                    backLabel={t('packages.detail.backLink')}
+                    title={t('packages.list.title')}
+                />
+                <Alert tone="danger" title={t('common.errors.loadTitle')}>
+                    <p>{error}</p>
+                </Alert>
+            </div>
+        );
+    }
+
+    if (!pkg) {
+        return (
+            <div className="grid gap-6">
+                <PageHeader
+                    backHref="/admin/pacotes"
+                    backLabel={t('packages.detail.backLink')}
+                    title={t('packages.detail.loading')}
+                />
+                <SkeletonCards label={t('packages.detail.loading')} />
+            </div>
+        );
+    }
+
+    const isDraft = pkg.status === 'DRAFT';
+    const isAwaitingApproval = pkg.status === 'AWAITING_APPROVAL';
+    const canEditItems = isDraft || isAwaitingApproval;
+    const hasActions = canEditItems || pkg.status === 'PREPARING' || pkg.status === 'READY_FOR_DISPATCH';
+
     return (
-        <main>
-            <Link className="inline-flex items-center gap-2 text-sm font-semibold text-muted dark:text-night-muted" href="/admin/pacotes">
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                {t('packages.detail.backLink')}
-            </Link>
+        <div className="grid gap-6">
+            <PageHeader
+                backHref="/admin/pacotes"
+                backLabel={t('packages.detail.backLink')}
+                badge={<StatusPill tone={packageStatusTone(pkg.status)}>{packageStatusLabel(pkg.status)}</StatusPill>}
+                kicker={t('packages.detail.kicker')}
+                title={pkg.packageCode}
+                meta={
+                    <>
+                        <Link
+                            className="font-semibold text-primary no-underline hover:underline dark:text-night-accent"
+                            href={`/admin/usuarios/${pkg.userId}`}
+                        >
+                            {pkg.userName}
+                        </Link>{' '}
+                        · {pkg.userEmail}
+                    </>
+                }
+            />
 
-            {error && <p className="mt-6 border-l-2 border-origin-500 pl-3 text-sm">{error}</p>}
-            {!pkg && !error && <p className="mt-6 text-muted">{t('packages.detail.loading')}</p>}
-
-            {pkg && (
-                <>
-                    <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <p className="mm-kicker mb-3">{t('packages.detail.kicker')}</p>
-                            <h1 className="m-0 text-3xl tracking-[-.03em]">{pkg.packageCode}</h1>
-                            <p className="mt-1 text-sm text-muted dark:text-night-muted">
-                                <Link className="font-semibold text-primary hover:underline" href={`/admin/usuarios/${pkg.userId}`}>
-                                    {pkg.userName}
-                                </Link>{' '}
-                                · {pkg.userEmail}
-                            </p>
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                            {(pkg.status === 'DRAFT' || pkg.status === 'AWAITING_APPROVAL') && (
-                                <Button variant="secondary" onClick={() => setDialog('shipment')} leadingIcon={<Ruler className="h-4 w-4" aria-hidden="true" />}>
-                                    {t('packages.detail.actions.setShipping')}
-                                </Button>
-                            )}
-                            {pkg.status === 'DRAFT' && (
-                                <Button
-                                    variant="primary"
-                                    onClick={submitPackage}
-                                    loading={busy === 'submit'}
-                                    leadingIcon={<ArrowUpRight className="h-4 w-4" aria-hidden="true" />}
-                                >
-                                    {t('packages.detail.actions.submitForApproval')}
-                                </Button>
-                            )}
-                            {pkg.status === 'AWAITING_APPROVAL' && (
-                                <>
-                                    <Button variant="primary" onClick={() => setDialog('approve')} leadingIcon={<CheckCircle2 className="h-4 w-4" aria-hidden="true" />}>
-                                        {t('packages.detail.actions.approve')}
-                                    </Button>
-                                    <Button variant="danger" onClick={() => setDialog('reject')} leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}>
-                                        {t('packages.detail.actions.reject')}
-                                    </Button>
-                                </>
-                            )}
-                            {pkg.status === 'PREPARING' && (
-                                <Button variant="secondary" onClick={() => setDialog('confirm-freight-payment-manually')} leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}>
-                                    {t('packages.detail.actions.confirmFreightPayment')}
-                                </Button>
-                            )}
-                            {pkg.status === 'READY_FOR_DISPATCH' && (
-                                <Button variant="primary" onClick={() => setDialog('dispatch')} leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}>
-                                    {t('packages.detail.actions.dispatch')}
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-
-                    {feedback && <p className="mt-4 text-sm text-success">{feedback}</p>}
-
-                    <section className="mm-panel mt-8 grid grid-cols-3 gap-6 p-6 max-[700px]:grid-cols-1">
-                        <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.client')}</p>
-                            <p className="mt-1 font-semibold">
-                                <Link className="text-primary hover:underline" href={`/admin/usuarios/${pkg.userId}`}>
-                                    {pkg.userName}
-                                </Link>
-                            </p>
-                        </div>
-                        <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.status')}</p>
-                            <p className="mt-1">
-                                <span className="mm-kicker">{packageStatusLabel(pkg.status)}</span>
-                            </p>
-                        </div>
-                        <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.shipping')}</p>
-                            <p className="mm-data mt-1 font-semibold">
-                                {pkg.shippingAmountMinor && pkg.shippingCurrency ? money(pkg.shippingAmountMinor, pkg.shippingCurrency) : t('common.dash')}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.carrier')}</p>
-                            <p className="mt-1 font-semibold">{pkg.carrier ?? t('common.dash')}</p>
-                        </div>
-                        <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.trackingCode')}</p>
-                            <p className="mt-1 font-semibold">{pkg.trackingCode ?? t('common.dash')}</p>
-                        </div>
-                        <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.weight')}</p>
-                            <p className="mt-1 font-semibold">{pkg.weightGrams ? `${pkg.weightGrams} g` : t('common.dash')}</p>
-                        </div>
-                        <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.dimensions')}</p>
-                            <p className="mt-1 font-semibold">
-                                {pkg.lengthMillimeters && pkg.widthMillimeters && pkg.heightMillimeters
-                                    ? `${pkg.lengthMillimeters} × ${pkg.widthMillimeters} × ${pkg.heightMillimeters} mm`
-                                    : t('common.dash')}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.createdAt')}</p>
-                            <p className="mt-1 font-semibold">{formatDate(pkg.createdAt)}</p>
-                        </div>
-                        <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.shippedAt')}</p>
-                            <p className="mt-1 font-semibold">{formatDate(pkg.shippedAt)}</p>
-                        </div>
-                        <div>
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.deliveredAt')}</p>
-                            <p className="mt-1 font-semibold">{formatDate(pkg.deliveredAt)}</p>
-                        </div>
-                        <div className="col-span-3">
-                            <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.destination')}</p>
-                            <p className="mt-1">
-                                {pkg.destination.recipientFullName} · {pkg.destination.addressLine1}
-                                {pkg.destination.addressLine2 ? `, ${pkg.destination.addressLine2}` : ''} ·{' '}
-                                {pkg.destination.locality}/{pkg.destination.administrativeArea} · {pkg.destination.postalCode} ·{' '}
-                                {pkg.destination.countryCode}
-                            </p>
-                        </div>
-                        {pkg.rejectionReason && (
-                            <div className="col-span-3">
-                                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('packages.detail.fields.rejectionReason')}</p>
-                                <p className="mt-1">{pkg.rejectionReason}</p>
-                            </div>
-                        )}
-                    </section>
-
-                    <section className="mt-10">
-                        <div className="flex items-center justify-between">
-                            <h2 className="m-0 text-xl">{t('packages.detail.itemsSection.title')}</h2>
-                            {!addingItem && (
-                                <Button size="small" variant="ghost" onClick={() => setAddingItem(true)} leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}>
-                                    {t('packages.detail.itemsSection.addButton')}
-                                </Button>
-                            )}
-                        </div>
-
-                        {addingItem && (
-                            <form className="mm-panel-soft mt-4 grid grid-cols-[1fr_auto_auto] items-end gap-3 p-4 max-[560px]:grid-cols-1" onSubmit={addItems}>
-                                <label className="grid gap-1 text-xs font-semibold">
-                                    {t('packages.detail.itemsSection.addFieldLabel')}
-                                    <input
-                                        className="min-h-10 rounded-md border border-line bg-surface px-3 dark:border-night-line dark:bg-night-canvas"
-                                        name="orderItemIds"
-                                        placeholder={t('packages.detail.itemsSection.addFieldPlaceholder')}
-                                        required
-                                    />
-                                </label>
-                                <Button size="small" type="submit" loading={busy === 'add-items'}>
-                                    {t('packages.detail.itemsSection.add')}
-                                </Button>
-                                <Button size="small" type="button" variant="ghost" onClick={() => setAddingItem(false)}>
-                                    {t('packages.detail.itemsSection.cancel')}
-                                </Button>
-                            </form>
-                        )}
-
-                        <div className="mt-4 grid gap-3">
-                            {pkg.items.map((item) => (
-                                <div className="mm-panel-soft flex flex-wrap items-center justify-between gap-4 p-4" key={item.id}>
-                                    <div>
-                                        <strong>{item.orderItem.productName}</strong>
-                                        <p className="mt-0.5 text-sm text-muted dark:text-night-muted">
-                                            {t('packages.detail.itemsSection.quantity', { count: item.quantity })} ·{' '}
-                                            {money(item.orderItem.unitAmountMinor, item.orderItem.currency)}
-                                        </p>
-                                    </div>
-                                    <Button
-                                        size="small"
-                                        variant="ghost"
-                                        className="text-origin-700"
-                                        onClick={() => removeItem(item.id)}
-                                        loading={busy === `remove-item:${item.id}`}
-                                    >
-                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                                    </Button>
-                                </div>
-                            ))}
-                            {pkg.items.length === 0 && <p className="text-sm text-muted dark:text-night-muted">{t('packages.detail.itemsSection.empty')}</p>}
-                        </div>
-                    </section>
-
-                    <section className="mt-10">
-                        <div className="flex items-center justify-between">
-                            <h2 className="m-0 text-xl">{t('packages.detail.photosSection.title')}</h2>
-                            <label>
-                                <input
-                                    ref={fileInputRef}
-                                    className="hidden"
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp,image/avif"
-                                    onChange={(event) => {
-                                        const file = event.target.files?.[0];
-                                        if (file) void uploadPhoto(file);
-                                    }}
-                                />
-                                <Button
-                                    size="small"
-                                    variant="ghost"
-                                    type="button"
-                                    loading={uploading}
-                                    leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    {uploading ? t('packages.detail.photosSection.uploadingButton') : t('packages.detail.photosSection.uploadButton')}
-                                </Button>
-                            </label>
-                        </div>
-
-                        <div className="mt-4 grid grid-cols-4 gap-4 max-[800px]:grid-cols-2 max-[460px]:grid-cols-1">
-                            {pkg.photoUrls.map((url) => (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img className="mm-panel-soft aspect-square w-full object-cover" src={url} alt={t('packages.detail.photosSection.photoAlt')} key={url} />
-                            ))}
-                            {pkg.photoUrls.length === 0 && <p className="text-sm text-muted dark:text-night-muted">{t('packages.detail.photosSection.empty')}</p>}
-                        </div>
-                    </section>
-
-                    <section className="mt-10">
-                        <PaymentAttachmentsManager
-                            resource="packages"
-                            resourceId={pkg.id}
-                            attachments={pkg.paymentAttachments}
-                            onChanged={load}
-                            canManage={!['DELIVERED', 'RETURNED', 'CANCELLED'].includes(pkg.status)}
-                        />
-                    </section>
-                </>
+            {pkg.rejectionReason && (
+                <Alert tone="danger" title={t('packages.detail.fields.rejectionReason')}>
+                    <p>{pkg.rejectionReason}</p>
+                </Alert>
             )}
 
-            <ApprovalDialog
+            {hasActions && (
+                <ActionBar
+                    description={t('packages.detail.actionBar.description')}
+                    title={t('packages.detail.actionBar.title', { status: packageStatusLabel(pkg.status) })}
+                >
+                    {canEditItems && (
+                        <Button
+                            leadingIcon={<Ruler className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('shipment')}
+                            size="small"
+                            variant="secondary"
+                        >
+                            {t('packages.detail.actions.setShipping')}
+                        </Button>
+                    )}
+                    {isDraft && (
+                        <Button
+                            leadingIcon={<ArrowUpRight className="h-4 w-4" aria-hidden="true" />}
+                            loading={busy === 'submit'}
+                            onClick={submitPackage}
+                            size="small"
+                        >
+                            {t('packages.detail.actions.submitForApproval')}
+                        </Button>
+                    )}
+                    {isAwaitingApproval && (
+                        <>
+                            <Button
+                                leadingIcon={<CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
+                                onClick={() => setDialog('approve')}
+                                size="small"
+                            >
+                                {t('packages.detail.actions.approve')}
+                            </Button>
+                            <Button
+                                leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
+                                onClick={() => setDialog('reject')}
+                                size="small"
+                                variant="danger"
+                            >
+                                {t('packages.detail.actions.reject')}
+                            </Button>
+                        </>
+                    )}
+                    {pkg.status === 'PREPARING' && (
+                        <Button
+                            leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('confirm-freight-payment-manually')}
+                            size="small"
+                        >
+                            {t('packages.detail.actions.confirmFreightPayment')}
+                        </Button>
+                    )}
+                    {pkg.status === 'READY_FOR_DISPATCH' && (
+                        <Button
+                            leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('dispatch')}
+                            size="small"
+                        >
+                            {t('packages.detail.actions.dispatch')}
+                        </Button>
+                    )}
+                </ActionBar>
+            )}
+
+            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
+                <div className="grid min-w-0 gap-5">
+                    <SectionCard
+                        flush
+                        title={t('packages.detail.itemsSection.title')}
+                        action={
+                            canEditItems ? (
+                                <Button
+                                    leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
+                                    onClick={() => setDialog('add-items')}
+                                    size="small"
+                                    variant="secondary"
+                                >
+                                    {t('packages.detail.itemsSection.addButton')}
+                                </Button>
+                            ) : undefined
+                        }
+                    >
+                        {pkg.items.length === 0 ? (
+                            <EmptyState icon={PackageIcon} title={t('packages.detail.itemsSection.empty')} />
+                        ) : (
+                            <ListRows>
+                                {pkg.items.map((item) => (
+                                    <li key={item.id}>
+                                        <ListRow
+                                            title={item.orderItem.productName}
+                                            value={money(item.orderItem.unitAmountMinor, item.orderItem.currency)}
+                                            meta={t('packages.detail.itemsSection.quantity', { count: item.quantity })}
+                                            leading={
+                                                <span className="grid h-9 w-9 place-items-center rounded-lg bg-warm-200 text-muted dark:bg-night-raised dark:text-night-muted">
+                                                    <PackageIcon className="h-4 w-4" aria-hidden="true" />
+                                                </span>
+                                            }
+                                            actions={
+                                                canEditItems ? (
+                                                    <Button
+                                                        aria-label={t('packages.detail.itemsSection.removeAria', {
+                                                            name: item.orderItem.productName,
+                                                        })}
+                                                        iconOnly
+                                                        loading={busy === `remove-item:${item.id}`}
+                                                        onClick={() => removeItem(item.id)}
+                                                        size="small"
+                                                        variant="dangerGhost"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                                    </Button>
+                                                ) : undefined
+                                            }
+                                        />
+                                    </li>
+                                ))}
+                            </ListRows>
+                        )}
+                    </SectionCard>
+
+                    <SectionCard
+                        description={t('packages.detail.photosSection.description')}
+                        icon={<Images aria-hidden="true" />}
+                        title={t('packages.detail.photosSection.title')}
+                        action={
+                            <>
+                                <input
+                                    accept="image/jpeg,image/png,image/webp,image/avif"
+                                    className="sr-only"
+                                    multiple
+                                    onChange={(event) => {
+                                        const files = Array.from(event.target.files ?? []);
+                                        if (files.length > 0) void uploadPhotos(files);
+                                    }}
+                                    ref={fileInputRef}
+                                    type="file"
+                                />
+                                <Button
+                                    leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
+                                    loading={uploading}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    size="small"
+                                    type="button"
+                                    variant="secondary"
+                                >
+                                    {uploading
+                                        ? t('packages.detail.photosSection.uploadingButton')
+                                        : t('packages.detail.photosSection.uploadButton')}
+                                </Button>
+                            </>
+                        }
+                    >
+                        {pkg.photoUrls.length === 0 ? (
+                            <EmptyState icon={Images} title={t('packages.detail.photosSection.empty')} />
+                        ) : (
+                            <MediaGrid>
+                                {pkg.photoUrls.map((url) => (
+                                    <MediaTile
+                                        alt={t('packages.detail.photosSection.photoAlt')}
+                                        key={url}
+                                        kind="IMAGE"
+                                        openLabel={t('common.actions.open')}
+                                        url={url}
+                                    />
+                                ))}
+                            </MediaGrid>
+                        )}
+                    </SectionCard>
+
+                    <PaymentAttachmentsManager
+                        attachments={pkg.paymentAttachments}
+                        canManage={!CLOSED_STATUSES.includes(pkg.status)}
+                        onChanged={load}
+                        resource="packages"
+                        resourceId={pkg.id}
+                    />
+                </div>
+
+                <div className="grid min-w-0 gap-5">
+                    <SectionCard dense title={t('packages.detail.shippingSection')}>
+                        <SummaryList
+                            rows={[
+                                {
+                                    label: t('packages.detail.fields.shipping'),
+                                    value:
+                                        pkg.shippingAmountMinor && pkg.shippingCurrency
+                                            ? money(pkg.shippingAmountMinor, pkg.shippingCurrency)
+                                            : t('common.dash'),
+                                    emphasis: true,
+                                },
+                                { label: t('packages.detail.fields.carrier'), value: pkg.carrier ?? t('common.dash') },
+                                {
+                                    label: t('packages.detail.fields.trackingCode'),
+                                    value: pkg.trackingCode ?? t('common.dash'),
+                                },
+                                {
+                                    label: t('packages.detail.fields.weight'),
+                                    value: pkg.weightGrams ? `${pkg.weightGrams} g` : t('common.dash'),
+                                },
+                                {
+                                    label: t('packages.detail.fields.dimensions'),
+                                    value:
+                                        pkg.lengthMillimeters && pkg.widthMillimeters && pkg.heightMillimeters
+                                            ? `${pkg.lengthMillimeters} × ${pkg.widthMillimeters} × ${pkg.heightMillimeters} mm`
+                                            : t('common.dash'),
+                                },
+                            ]}
+                        />
+                    </SectionCard>
+
+                    <SectionCard dense title={t('packages.detail.datesSection')}>
+                        <SummaryList
+                            rows={[
+                                { label: t('packages.detail.fields.createdAt'), value: formatDate(pkg.createdAt) },
+                                { label: t('packages.detail.fields.shippedAt'), value: formatDate(pkg.shippedAt) },
+                                { label: t('packages.detail.fields.deliveredAt'), value: formatDate(pkg.deliveredAt) },
+                            ]}
+                        />
+                    </SectionCard>
+
+                    <SectionCard dense title={t('packages.detail.fields.destination')}>
+                        <address className="m-0 text-sm leading-relaxed text-ink not-italic dark:text-night-text">
+                            <strong className="block">{pkg.destination.recipientFullName}</strong>
+                            <span className="mt-1.5 block">
+                                {pkg.destination.addressLine1}
+                                {pkg.destination.addressLine2 ? `, ${pkg.destination.addressLine2}` : ''}
+                            </span>
+                            <span className="block">
+                                {pkg.destination.locality}/{pkg.destination.administrativeArea} ·{' '}
+                                {pkg.destination.postalCode} · {pkg.destination.countryCode}
+                            </span>
+                        </address>
+                    </SectionCard>
+                </div>
+            </div>
+
+            <ActionDialog
+                confirmLabel={t('packages.detail.dialogs.approve.confirmLabel')}
+                description={t('packages.detail.dialogs.approve.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleActionConfirm}
                 open={dialog === 'approve'}
                 title={t('packages.detail.dialogs.approve.title')}
-                description={t('packages.detail.dialogs.approve.description')}
-                confirmLabel={t('packages.detail.dialogs.approve.confirmLabel')}
-                onCancel={() => setDialog(null)}
-                onConfirm={handleApprovalConfirm}
             />
-            <ApprovalDialog
-                open={dialog === 'reject'}
-                title={t('packages.detail.dialogs.reject.title')}
-                description={t('packages.detail.dialogs.reject.description')}
+            <ActionDialog
                 confirmLabel={t('packages.detail.dialogs.reject.confirmLabel')}
-                variant="danger"
-                requireReason
+                description={t('packages.detail.dialogs.reject.description')}
                 onCancel={() => setDialog(null)}
-                onConfirm={handleApprovalConfirm}
+                onConfirm={handleActionConfirm}
+                open={dialog === 'reject'}
+                requireReason
+                title={t('packages.detail.dialogs.reject.title')}
+                variant="danger"
             />
-            <ApprovalDialog
+            <ActionDialog
+                confirmLabel={t('packages.detail.dialogs.shipment.confirmLabel')}
+                description={t('packages.detail.dialogs.shipment.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleActionConfirm}
                 open={dialog === 'shipment'}
                 title={t('packages.detail.dialogs.shipment.title')}
-                description={t('packages.detail.dialogs.shipment.description')}
-                confirmLabel={t('packages.detail.dialogs.shipment.confirmLabel')}
                 fields={[
-                    { name: 'weightGrams', label: t('packages.detail.dialogs.shipment.weight'), pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '1500' },
-                    { name: 'lengthMillimeters', label: t('packages.detail.dialogs.shipment.length'), pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '300' },
-                    { name: 'widthMillimeters', label: t('packages.detail.dialogs.shipment.width'), pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '200' },
-                    { name: 'heightMillimeters', label: t('packages.detail.dialogs.shipment.height'), pattern: '[1-9]\\d{0,5}', inputMode: 'numeric', placeholder: '150' },
-                    { name: 'shippingCurrency', label: t('packages.detail.dialogs.shipment.currency'), pattern: '(BRL|CNY)', placeholder: 'BRL' },
-                    { name: 'shippingAmountMinor', label: t('packages.detail.dialogs.shipment.amount'), pattern: '0|[1-9]\\d{0,17}', inputMode: 'numeric', placeholder: '4990' },
+                    {
+                        name: 'weightGrams',
+                        label: t('packages.detail.dialogs.shipment.weight'),
+                        kind: 'number',
+                        min: 1,
+                        suffix: 'g',
+                        defaultValue: pkg.weightGrams ? String(pkg.weightGrams) : undefined,
+                        placeholder: '1500',
+                    },
+                    {
+                        name: 'lengthMillimeters',
+                        label: t('packages.detail.dialogs.shipment.length'),
+                        kind: 'number',
+                        min: 1,
+                        suffix: 'mm',
+                        defaultValue: pkg.lengthMillimeters ? String(pkg.lengthMillimeters) : undefined,
+                        placeholder: '300',
+                    },
+                    {
+                        name: 'widthMillimeters',
+                        label: t('packages.detail.dialogs.shipment.width'),
+                        kind: 'number',
+                        min: 1,
+                        suffix: 'mm',
+                        defaultValue: pkg.widthMillimeters ? String(pkg.widthMillimeters) : undefined,
+                        placeholder: '200',
+                    },
+                    {
+                        name: 'heightMillimeters',
+                        label: t('packages.detail.dialogs.shipment.height'),
+                        kind: 'number',
+                        min: 1,
+                        suffix: 'mm',
+                        defaultValue: pkg.heightMillimeters ? String(pkg.heightMillimeters) : undefined,
+                        placeholder: '150',
+                    },
+                    {
+                        name: 'shippingCurrency',
+                        label: t('packages.detail.dialogs.shipment.currency'),
+                        kind: 'select',
+                        defaultValue: pkg.shippingCurrency ?? 'BRL',
+                        options: [
+                            { value: 'BRL', label: 'BRL' },
+                            { value: 'CNY', label: 'CNY' },
+                        ],
+                    },
+                    {
+                        name: 'shippingAmountMinor',
+                        label: t('packages.detail.dialogs.shipment.amount'),
+                        kind: 'currency',
+                        defaultValue: pkg.shippingAmountMinor ?? '0',
+                    },
                 ]}
-                onCancel={() => setDialog(null)}
-                onConfirm={handleApprovalConfirm}
             />
-            <ApprovalDialog
+            <ActionDialog
+                confirmLabel={t('packages.detail.dialogs.confirmFreightPayment.confirmLabel')}
+                description={t('packages.detail.dialogs.confirmFreightPayment.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleActionConfirm}
                 open={dialog === 'confirm-freight-payment-manually'}
                 title={t('packages.detail.dialogs.confirmFreightPayment.title')}
-                description={t('packages.detail.dialogs.confirmFreightPayment.description')}
-                confirmLabel={t('packages.detail.dialogs.confirmFreightPayment.confirmLabel')}
-                onCancel={() => setDialog(null)}
-                onConfirm={handleApprovalConfirm}
             />
-            <ApprovalDialog
+            <ActionDialog
+                confirmLabel={t('packages.detail.dialogs.dispatch.confirmLabel')}
+                description={t('packages.detail.dialogs.dispatch.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleActionConfirm}
                 open={dialog === 'dispatch'}
                 title={t('packages.detail.dialogs.dispatch.title')}
-                description={t('packages.detail.dialogs.dispatch.description')}
-                confirmLabel={t('packages.detail.dialogs.dispatch.confirmLabel')}
                 fields={[
-                    { name: 'carrier', label: t('packages.detail.dialogs.dispatch.carrier'), placeholder: t('packages.detail.dialogs.dispatch.carrierPlaceholder'), minLength: 2, maxLength: 120 },
+                    {
+                        name: 'carrier',
+                        label: t('packages.detail.dialogs.dispatch.carrier'),
+                        placeholder: t('packages.detail.dialogs.dispatch.carrierPlaceholder'),
+                        minLength: 2,
+                        maxLength: 120,
+                    },
                     {
                         name: 'trackingCode',
                         label: t('packages.detail.dialogs.dispatch.trackingCode'),
@@ -442,9 +584,17 @@ export function PackageDetailPage() {
                         maxLength: 100,
                     },
                 ]}
-                onCancel={() => setDialog(null)}
-                onConfirm={handleApprovalConfirm}
             />
-        </main>
+            <AddPackageItemsDialog
+                onAdded={(updated) => {
+                    setPkg(updated);
+                    notify({ tone: 'success', title: t('packages.detail.itemsSection.addedToast') });
+                }}
+                onClose={() => setDialog(null)}
+                open={dialog === 'add-items'}
+                packageId={pkg.id}
+                userId={pkg.userId}
+            />
+        </div>
     );
 }

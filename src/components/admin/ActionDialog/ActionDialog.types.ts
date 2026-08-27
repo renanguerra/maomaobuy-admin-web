@@ -1,24 +1,38 @@
-export interface ApprovalDialogField {
+import type { SelectOption } from '@/components/ui/Select';
+
+export type ActionDialogFieldKind = 'text' | 'textarea' | 'number' | 'currency' | 'select';
+
+export interface ActionDialogField {
     name: string;
     label: string;
+    /** Padrão: `text`. `currency` guarda o valor já em centavos. */
+    kind?: ActionDialogFieldKind;
     placeholder?: string;
+    hint?: string;
+    /** Padrão: obrigatório. */
+    optional?: boolean;
+    defaultValue?: string;
     minLength?: number;
     maxLength?: number;
-    /** Restrição adicional de formato, ex. dígitos apenas. */
     pattern?: string;
     inputMode?: 'text' | 'numeric' | 'decimal';
-    /** Renderiza um `<textarea>` em vez de `<input>`, para textos longos. */
-    multiline?: boolean;
+    min?: number;
+    max?: number;
+    /** Sufixo fixo à direita (g, mm, BRL). */
+    suffix?: string;
+    options?: readonly SelectOption[];
+    /** Ocupa as duas colunas do formulário. */
+    wide?: boolean;
 }
 
-export interface ApprovalDialogProps {
+export interface ActionDialogProps {
     open: boolean;
     title: string;
     description?: string;
     confirmLabel?: string;
     variant?: 'primary' | 'danger';
-    /** Campos extras coletados antes do TOTP, como carrier/trackingCode no despacho. */
-    fields?: ApprovalDialogField[];
+    /** Campos extras da ação, como transportadora e código de rastreio no despacho. */
+    fields?: readonly ActionDialogField[];
     /**
      * TOTP temporariamente não exigido em nenhuma rota admin (ver AGENTS.md
      * do backend) — default `false`. Prop mantida para religar por ação

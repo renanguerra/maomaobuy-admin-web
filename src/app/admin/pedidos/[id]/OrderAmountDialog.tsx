@@ -1,10 +1,16 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { X } from 'lucide-react';
+import { Alert } from '@/components/admin/Alert';
 import { Button } from '@/components/ui/Button';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
+import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
+import { Textarea } from '@/components/ui/Textarea';
 import { useTranslation } from '@/i18n/LanguageProvider';
+import { money } from '@/types/api';
+
+const FORM_ID = 'order-amount-form';
 
 export interface OrderAmountDialogValues {
     totpCode: string;
@@ -23,7 +29,7 @@ interface OrderAmountDialogProps {
     /**
      * TOTP temporariamente não exigido em nenhuma rota admin (ver AGENTS.md
      * do backend) — default `false`. Prop mantida para religar quando a
-     * exigência voltar (mesmo padrão do `ApprovalDialog`).
+     * exigência voltar (mesmo padrão do `ActionDialog`).
      */
     requireTotp?: boolean;
     /**
@@ -36,9 +42,10 @@ interface OrderAmountDialogProps {
 }
 
 /**
- * Diálogo genérico para alterar um valor em BRL do pedido (preço total ou
- * frete estimado): usa `CurrencyInput` em vez do campo de texto livre do
- * `ApprovalDialog`, para não reintroduzir parsing manual de valor em reais.
+ * Diálogo para alterar um valor em BRL do pedido (preço total ou frete
+ * estimado): usa `CurrencyInput` em vez de campo de texto livre, para não
+ * reintroduzir parsing manual de valor em reais, e mostra o valor atual ao
+ * lado para o admin comparar antes de confirmar.
  */
 export function OrderAmountDialog({
     open,
@@ -54,102 +61,125 @@ export function OrderAmountDialog({
     onConfirm,
 }: OrderAmountDialogProps) {
     const { t } = useTranslation();
-    const [minor, setMinor] = useState(currentAmountMinor);
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string>();
 
-    if (!open) return null;
+    return (
+        <Modal
+            closeLabel={t('common.closeAria')}
+            description={description}
+            onClose={onCancel}
+            open={open}
+            title={title}
+            footer={
+                <>
+                    <Button disabled={submitting} onClick={onCancel} type="button" variant="ghost">
+                        {t('common.actions.cancel')}
+                    </Button>
+                    <Button form={FORM_ID} loading={submitting} type="submit">
+                        {confirmLabel}
+                    </Button>
+                </>
+            }
+        >
+            {/* Montado só enquanto o diálogo está aberto: cada abertura parte do
+                valor atual do pedido, e não do rascunho da tentativa anterior. */}
+            <OrderAmountForm
+                currentAmountMinor={currentAmountMinor}
+                fieldLabel={fieldLabel}
+                fieldName={fieldName}
+                onConfirm={onConfirm}
+                onSubmittingChange={setSubmitting}
+                requireReason={requireReason}
+                requireTotp={requireTotp}
+            />
+        </Modal>
+    );
+}
+
+function OrderAmountForm({
+    fieldLabel,
+    fieldName,
+    currentAmountMinor,
+    requireTotp,
+    requireReason,
+    onConfirm,
+    onSubmittingChange,
+}: {
+    fieldLabel: string;
+    fieldName: string;
+    currentAmountMinor: string;
+    requireTotp: boolean;
+    requireReason: boolean;
+    onConfirm: (values: OrderAmountDialogValues) => Promise<void>;
+    onSubmittingChange: (submitting: boolean) => void;
+}) {
+    const { t } = useTranslation();
+    const [minor, setMinor] = useState(currentAmountMinor);
+    const [error, setError] = useState<string>();
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        const totpCode = String(data.get('totpCode') ?? '');
-        const reason = String(data.get('reason') ?? '');
-        const newAmountMinor = String(data.get(fieldName) ?? '');
 
-        setSubmitting(true);
+        onSubmittingChange(true);
         setError(undefined);
         try {
-            await onConfirm({ totpCode, reason, newAmountMinor });
+            await onConfirm({
+                totpCode: String(data.get('totpCode') ?? ''),
+                reason: String(data.get('reason') ?? ''),
+                newAmountMinor: String(data.get(fieldName) ?? ''),
+            });
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('orders.amountDialog.error'));
+            setError(err instanceof Error ? err.message : t('actionDialog.error'));
         } finally {
-            setSubmitting(false);
+            onSubmittingChange(false);
         }
     }
 
     return (
-        <div
-            className="fixed inset-0 z-50 grid place-items-center bg-ink/50 p-4 dark:bg-black/60"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="order-amount-dialog-title"
-        >
-            <div className="mm-panel w-full max-w-md p-6">
-                <div className="flex items-start justify-between gap-4">
-                    <h2 className="m-0 text-lg" id="order-amount-dialog-title">
-                        {title}
-                    </h2>
-                    <button
-                        className="text-muted hover:text-ink dark:text-night-muted dark:hover:text-night-text"
-                        type="button"
-                        onClick={onCancel}
-                        aria-label={t('orders.amountDialog.closeAria')}
-                    >
-                        <X className="h-5 w-5" aria-hidden="true" />
-                    </button>
-                </div>
-                <p className="mt-2 text-sm text-muted dark:text-night-muted">{description}</p>
+        <form className="grid gap-4" id={FORM_ID} onSubmit={handleSubmit}>
+            <CurrencyInput
+                currency="BRL"
+                hint={t('orders.amountDialog.currentValue', { amount: money(currentAmountMinor) })}
+                label={fieldLabel}
+                minor={minor}
+                name={fieldName}
+                onMinorChange={setMinor}
+                required
+            />
 
-                <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
-                    <label className="grid gap-2 text-sm font-semibold">
-                        {fieldLabel}
-                        <CurrencyInput name={fieldName} minor={minor} onMinorChange={setMinor} required />
-                    </label>
+            {requireTotp && (
+                <Input
+                    autoComplete="one-time-code"
+                    className="font-mono tracking-[0.3em]"
+                    inputMode="numeric"
+                    label={t('common.fields.totpCode')}
+                    maxLength={6}
+                    minLength={6}
+                    name="totpCode"
+                    pattern="\d{6}"
+                    placeholder="000000"
+                    required
+                />
+            )}
 
-                    {requireTotp && (
-                        <label className="grid gap-2 text-sm font-semibold">
-                            {t('orders.amountDialog.fieldTotpLabel')}
-                            <input
-                                className="min-h-11 rounded-md border border-line bg-surface px-3 font-mono tracking-[0.3em] dark:border-night-line dark:bg-night-canvas"
-                                name="totpCode"
-                                inputMode="numeric"
-                                pattern="\d{6}"
-                                maxLength={6}
-                                minLength={6}
-                                placeholder="000000"
-                                autoComplete="one-time-code"
-                                required
-                            />
-                        </label>
-                    )}
+            {requireReason && (
+                <Textarea
+                    hint={t('common.fields.reasonHint')}
+                    label={t('common.fields.reason')}
+                    maxLength={2000}
+                    minLength={5}
+                    name="reason"
+                    placeholder={t('common.fields.reasonPlaceholder')}
+                    required
+                />
+            )}
 
-                    {requireReason && (
-                        <label className="grid gap-2 text-sm font-semibold">
-                            {t('orders.amountDialog.fieldReasonLabel')}
-                            <textarea
-                                className="min-h-24 rounded-md border border-line bg-surface px-3 py-2 dark:border-night-line dark:bg-night-canvas"
-                                name="reason"
-                                placeholder={t('orders.amountDialog.fieldReasonPlaceholder')}
-                                minLength={5}
-                                maxLength={2000}
-                                required
-                            />
-                        </label>
-                    )}
-
-                    {error && <p className="text-sm text-secondary">{error}</p>}
-
-                    <div className="mt-2 flex justify-end gap-3">
-                        <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
-                            {t('orders.amountDialog.cancel')}
-                        </Button>
-                        <Button type="submit" variant="primary" loading={submitting}>
-                            {confirmLabel}
-                        </Button>
-                    </div>
-                </form>
-            </div>
-        </div>
+            {error && (
+                <Alert tone="danger">
+                    <p>{error}</p>
+                </Alert>
+            )}
+        </form>
     );
 }

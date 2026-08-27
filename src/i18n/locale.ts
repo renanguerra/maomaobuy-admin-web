@@ -21,3 +21,9 @@ export const LOCALE_STORAGE_KEY = 'admin_locale';
 export function isLocale(value: string | undefined | null): value is Locale {
     return value !== undefined && value !== null && (LOCALES as readonly string[]).includes(value);
 }
+
+/** Sigla curta usada no seletor compacto da barra lateral. */
+export const LOCALE_SHORT_NAMES: Record<Locale, string> = {
+    'pt-BR': 'PT-BR',
+    'zh-Hans': '中文',
+};
