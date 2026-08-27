@@ -1,4 +1,14 @@
-import { Boxes, ClipboardList, LayoutDashboard, Package, ShieldCheck, Tags, Users, Wallet } from 'lucide-react';
+import {
+    Boxes,
+    ClipboardCheck,
+    ClipboardList,
+    LayoutDashboard,
+    Package,
+    ShieldCheck,
+    Tags,
+    Users,
+    Wallet,
+} from 'lucide-react';
 import type { MenuGroup } from './AdminSidebar.types';
 
 /**
@@ -14,6 +24,12 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
         key: 'logistics',
         items: [
             { key: 'orders', href: '/admin/pedidos', icon: ClipboardList, badge: 'ordersAwaitingReview' },
+            {
+                key: 'inspections',
+                href: '/admin/inspecoes',
+                icon: ClipboardCheck,
+                badge: 'inspectionsAwaitingAdmin',
+            },
             { key: 'packages', href: '/admin/pacotes', icon: Boxes, badge: 'packagesAwaitingApproval' },
         ],
     },

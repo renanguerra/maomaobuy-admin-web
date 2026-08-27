@@ -6,7 +6,15 @@ export type MenuBadge = keyof PendingCounts;
 
 /** Sufixos válidos em `sidebar.items.*` — mantém o `t()` verificado pelo TypeScript. */
 export type MenuItemKey =
-    'dashboard' | 'orders' | 'packages' | 'users' | 'products' | 'categories' | 'finance' | 'admins';
+    | 'dashboard'
+    | 'orders'
+    | 'inspections'
+    | 'packages'
+    | 'users'
+    | 'products'
+    | 'categories'
+    | 'finance'
+    | 'admins';
 
 /** Sufixos válidos em `sidebar.groups.*`. */
 export type MenuGroupKey = 'operations' | 'catalog' | 'logistics' | 'finance' | 'system';

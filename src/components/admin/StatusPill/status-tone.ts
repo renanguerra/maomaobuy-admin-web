@@ -20,6 +20,7 @@ const ORDER_STATUS_TONES: Record<string, StatusTone> = {
     PARTIALLY_SHIPPED: 'info',
     SHIPPED: 'info',
     COMPLETED: 'success',
+    REFUND_REQUESTED: 'warning',
     REFUND: 'neutral',
     INVALID: 'danger',
     CANCELLED: 'neutral',
@@ -28,7 +29,8 @@ const ORDER_STATUS_TONES: Record<string, StatusTone> = {
 const PACKAGE_STATUS_TONES: Record<string, StatusTone> = {
     DRAFT: 'neutral',
     AWAITING_APPROVAL: 'warning',
-    PREPARING: 'info',
+    AWAITING_FREIGHT_QUOTE: 'info',
+    AWAITING_FREIGHT_PAYMENT: 'warning',
     READY_FOR_DISPATCH: 'warning',
     SHIPPED: 'info',
     IN_TRANSIT: 'info',
@@ -60,6 +62,17 @@ const REFUND_STATUS_TONES: Record<string, StatusTone> = {
     REJECTED: 'danger',
     FAILED: 'danger',
 };
+
+const INSPECTION_STATUS_TONES: Record<string, StatusTone> = {
+    PENDING: 'neutral',
+    AWAITING_CUSTOMER: 'info',
+    AWAITING_ADMIN: 'warning',
+    DECIDED: 'success',
+};
+
+export function inspectionStatusTone(status: string): StatusTone {
+    return INSPECTION_STATUS_TONES[status] ?? 'neutral';
+}
 
 export function orderStatusTone(status: string): StatusTone {
     return ORDER_STATUS_TONES[status] ?? 'neutral';
