@@ -497,6 +497,42 @@ export interface AdminCategory {
 // Financeiro
 // ---------------------------------------------------------------------------
 
+export const REFUND_STATUSES = [
+    'REQUESTED',
+    'APPROVED',
+    'AWAITING_PROVIDER',
+    'PROCESSING',
+    'COMPLETED',
+    'REJECTED',
+    'FAILED',
+] as const;
+export type RefundStatus = (typeof REFUND_STATUSES)[number];
+
+const REFUND_STATUS_LABELS: Record<Locale, Record<RefundStatus, string>> = {
+    'pt-BR': {
+        REQUESTED: 'Solicitado',
+        APPROVED: 'Aprovado',
+        AWAITING_PROVIDER: 'Aguardando provedor',
+        PROCESSING: 'Em processamento',
+        COMPLETED: 'Concluído',
+        REJECTED: 'Rejeitado',
+        FAILED: 'Falhou',
+    },
+    'zh-Hans': {
+        REQUESTED: '已申请',
+        APPROVED: '已批准',
+        AWAITING_PROVIDER: '等待支付方',
+        PROCESSING: '处理中',
+        COMPLETED: '已完成',
+        REJECTED: '已拒绝',
+        FAILED: '失败',
+    },
+};
+
+export function refundStatusLabel(status: string) {
+    return REFUND_STATUS_LABELS[getStoreLocale()][status as RefundStatus] ?? status;
+}
+
 export interface AdminRefundRequest {
     id: string;
     userId: string;
@@ -526,7 +562,8 @@ export function brl(minor: string | number) {
 
 export function formatDate(value: string | null) {
     if (!value) return '—';
-    return new Intl.DateTimeFormat(LOCALE_INTL_TAG[getStoreLocale()], { dateStyle: 'short', timeStyle: 'short' }).format(
-        new Date(value),
-    );
+    return new Intl.DateTimeFormat(LOCALE_INTL_TAG[getStoreLocale()], {
+        dateStyle: 'short',
+        timeStyle: 'short',
+    }).format(new Date(value));
 }

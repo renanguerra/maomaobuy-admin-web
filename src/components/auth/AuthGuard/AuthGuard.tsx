@@ -12,14 +12,12 @@ export function AuthGuard({ children }: { children: ReactNode }) {
     const { isReady, admin } = useAdminAccountAuth();
 
     useEffect(() => {
-        if (isReady && !admin) {
-            router.replace('/login');
-        }
+        if (isReady && !admin) router.replace('/login');
     }, [admin, isReady, router]);
 
     if (!isReady || !admin) {
         return (
-            <main className="grid min-h-screen place-items-center px-4" aria-live="polite" aria-busy="true">
+            <main className="grid min-h-screen place-items-center px-4" aria-busy="true" aria-live="polite">
                 <div className="flex items-center gap-3 text-sm font-semibold text-muted dark:text-night-muted">
                     <LoaderCircle className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
                     {t('authGuard.checkingSession')}

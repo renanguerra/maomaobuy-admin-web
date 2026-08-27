@@ -1,61 +1,90 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { LogOut } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { ShieldCheck, UserPlus } from 'lucide-react';
+import { Alert } from '@/components/admin/Alert';
+import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
+import { EmptyState } from '@/components/admin/EmptyState';
+import { PageHeader } from '@/components/admin/PageHeader';
+import { SectionCard } from '@/components/admin/SectionCard';
+import { adminAccountStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { Button } from '@/components/ui/Button';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
+import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
-import { logoutAdminAccount, useAdminAccountAuth } from '@/services/auth/admin-account-auth';
+import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import type { AdminAccount, Page } from '@/types/api';
 import { adminAccountStatusLabel, formatDate } from '@/types/api';
-import { CreateAdminAccountPanel } from './CreateAdminAccountPanel';
+import { CreateAdminAccountDialog } from './CreateAdminAccountDialog';
 import { ResetAdminAccountPasswordDialog } from './ResetAdminAccountPasswordDialog';
 
 export function AdminAccountsPage() {
     const { t } = useTranslation();
+    const { notify } = useToast();
+    const confirm = useConfirm();
     const { admin } = useAdminAccountAuth();
-    const [page, setPage] = useState<Page<AdminAccount>>();
+    const [result, setResult] = useState<Page<AdminAccount>>();
     const [error, setError] = useState<string>();
     const [loading, setLoading] = useState(true);
-    const [feedback, setFeedback] = useState<string>();
+    const [creating, setCreating] = useState(false);
     const [resetTarget, setResetTarget] = useState<AdminAccount>();
-    const [signingOut, setSigningOut] = useState(false);
     const [pendingId, setPendingId] = useState<string>();
 
-    function load() {
-        setLoading(true);
+    const load = useCallback(() => {
         api<Page<AdminAccount>>('/admin-accounts?limit=100')
-            .then(setPage)
+            .then((page) => {
+                setResult(page);
+                setError(undefined);
+            })
             .catch(() => setError(t('admins.list.error')))
             .finally(() => setLoading(false));
-    }
+    }, [t]);
 
     useEffect(() => {
         if (admin) load();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [admin]);
+    }, [admin, load]);
 
     if (!admin) return null;
 
     function updateRow(updated: AdminAccount) {
-        setPage((current) => (current ? { ...current, data: current.data.map((row) => (row.id === updated.id ? updated : row)) } : current));
-    }
-
-    function addRow(created: AdminAccount) {
-        setPage((current) => (current ? { ...current, data: [created, ...current.data], total: current.total + 1 } : current));
+        setResult((current) =>
+            current
+                ? { ...current, data: current.data.map((row) => (row.id === updated.id ? updated : row)) }
+                : current,
+        );
     }
 
     async function toggleStatus(row: AdminAccount) {
+        const disabling = row.status === 'ACTIVE';
+        const confirmed = await confirm({
+            title: disabling ? t('admins.list.deactivateTitle') : t('admins.list.activateTitle'),
+            description: disabling
+                ? t('admins.list.deactivateConfirm', { name: row.name })
+                : t('admins.list.activateConfirm', { name: row.name }),
+            confirmLabel: disabling ? t('admins.list.deactivateButton') : t('admins.list.activateButton'),
+            tone: disabling ? 'danger' : 'primary',
+        });
+        if (!confirmed) return;
+
         setPendingId(row.id);
-        setError(undefined);
         try {
-            const updated = await api<AdminAccount>(`/admin-accounts/${row.id}/${row.status === 'ACTIVE' ? 'disable' : 'enable'}`, {
+            const updated = await api<AdminAccount>(`/admin-accounts/${row.id}/${disabling ? 'disable' : 'enable'}`, {
                 method: 'POST',
             });
             updateRow(updated);
-            setFeedback(t(row.status === 'ACTIVE' ? 'admins.list.feedback.deactivated' : 'admins.list.feedback.reactivated', { name: row.name }));
+            notify({
+                tone: 'success',
+                title: t(disabling ? 'admins.list.feedback.deactivated' : 'admins.list.feedback.reactivated', {
+                    name: row.name,
+                }),
+            });
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : t('admins.list.actionError'));
+            notify({
+                tone: 'danger',
+                title: t('common.errors.actionTitle'),
+                description: err instanceof ApiError ? err.message : t('admins.list.actionError'),
+            });
         } finally {
             setPendingId(undefined);
         }
@@ -68,104 +97,121 @@ export function AdminAccountsPage() {
             body: JSON.stringify({ password }),
         });
         updateRow(updated);
-        setFeedback(t('admins.feedback.passwordReset', { name: updated.name }));
         setResetTarget(undefined);
+        notify({ tone: 'success', title: t('admins.feedback.passwordReset', { name: updated.name }) });
     }
 
-    async function handleSignOut() {
-        setSigningOut(true);
-        try {
-            await logoutAdminAccount();
-        } finally {
-            setSigningOut(false);
-        }
-    }
+    const columns: DataTableColumn<AdminAccount>[] = [
+        {
+            key: 'name',
+            header: t('admins.list.columns.name'),
+            cell: (row) => (
+                <span className="font-semibold text-ink dark:text-night-text">
+                    {row.name}
+                    {row.id === admin?.id && (
+                        <span className="ml-2 text-xs font-normal text-muted dark:text-night-subtle">
+                            {t('common.you')}
+                        </span>
+                    )}
+                </span>
+            ),
+        },
+        {
+            key: 'email',
+            header: t('admins.list.columns.email'),
+            cell: (row) => <span className="text-muted dark:text-night-muted">{row.email}</span>,
+        },
+        {
+            key: 'status',
+            header: t('admins.list.columns.status'),
+            cell: (row) => (
+                <StatusPill tone={adminAccountStatusTone(row.status)}>{adminAccountStatusLabel(row.status)}</StatusPill>
+            ),
+        },
+        {
+            key: 'createdAt',
+            header: t('admins.list.columns.createdAt'),
+            hideBelow: 'md',
+            numeric: true,
+            cell: (row) => <span className="text-muted dark:text-night-muted">{formatDate(row.createdAt)}</span>,
+        },
+        {
+            key: 'actions',
+            header: <span className="sr-only">{t('admins.list.columns.actions')}</span>,
+            align: 'right',
+            card: 'full',
+            cell: (row) => (
+                <span className="flex justify-end gap-2">
+                    <Button onClick={() => setResetTarget(row)} size="small" variant="secondary">
+                        {t('admins.list.resetPasswordButton')}
+                    </Button>
+                    <Button
+                        disabled={row.id === admin?.id}
+                        loading={pendingId === row.id}
+                        onClick={() => toggleStatus(row)}
+                        size="small"
+                        variant={row.status === 'ACTIVE' ? 'dangerGhost' : 'primary'}
+                    >
+                        {row.status === 'ACTIVE' ? t('admins.list.deactivateButton') : t('admins.list.activateButton')}
+                    </Button>
+                </span>
+            ),
+        },
+    ];
 
     return (
-        <main>
-            <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <p className="mm-kicker mb-3">{t('admins.list.kicker')}</p>
-                    <h1 className="m-0 text-3xl tracking-[-.03em]">{t('admins.list.title')}</h1>
-                    <p className="mt-2 text-sm text-muted dark:text-night-muted">{t('admins.list.loggedInAs', { name: admin.name, email: admin.email })}</p>
-                </div>
-                <Button
-                    size="small"
-                    variant="ghost"
-                    onClick={handleSignOut}
-                    loading={signingOut}
-                    leadingIcon={<LogOut className="h-4 w-4" aria-hidden="true" />}
-                >
-                    {t('admins.list.signOutButton')}
-                </Button>
-            </div>
+        <div className="grid gap-6">
+            <PageHeader
+                description={t('admins.list.description')}
+                kicker={t('admins.list.kicker')}
+                title={t('admins.list.title')}
+                actions={
+                    <Button
+                        leadingIcon={<UserPlus className="h-4 w-4" aria-hidden="true" />}
+                        onClick={() => setCreating(true)}
+                    >
+                        {t('admins.create.newButton')}
+                    </Button>
+                }
+            />
 
-            {feedback && <p className="mt-4 text-sm text-success">{feedback}</p>}
-            {error && <p className="mt-4 border-l-2 border-origin-500 pl-3 text-sm">{error}</p>}
-            {loading && <p className="mt-6 text-muted">{t('admins.list.loading')}</p>}
-
-            {!loading && page && (
-                <div className="mt-6 overflow-x-auto">
-                    <table className="w-full min-w-[720px] border-collapse text-sm">
-                        <thead>
-                            <tr className="border-b border-line text-left text-xs font-bold tracking-wide text-muted uppercase dark:border-night-line dark:text-night-subtle">
-                                <th className="py-3 pr-4">{t('admins.list.columns.name')}</th>
-                                <th className="py-3 pr-4">{t('admins.list.columns.email')}</th>
-                                <th className="py-3 pr-4">{t('admins.list.columns.status')}</th>
-                                <th className="py-3 pr-4">{t('admins.list.columns.createdAt')}</th>
-                                <th className="py-3 pr-4">{t('admins.list.columns.actions')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {page.data.map((row) => (
-                                <tr className="border-b border-line dark:border-night-line" key={row.id}>
-                                    <td className="py-3 pr-4 font-semibold">
-                                        {row.name}
-                                        {row.id === admin.id && <span className="ml-2 text-xs font-normal text-muted dark:text-night-muted">{t('common.you')}</span>}
-                                    </td>
-                                    <td className="py-3 pr-4">{row.email}</td>
-                                    <td className="py-3 pr-4">
-                                        <span className="mm-kicker">{adminAccountStatusLabel(row.status)}</span>
-                                    </td>
-                                    <td className="py-3 pr-4 text-muted dark:text-night-muted">{formatDate(row.createdAt)}</td>
-                                    <td className="py-3 pr-4">
-                                        <div className="flex flex-wrap gap-2">
-                                            <Button size="small" variant="secondary" onClick={() => setResetTarget(row)}>
-                                                {t('admins.list.resetPasswordButton')}
-                                            </Button>
-                                            <Button
-                                                size="small"
-                                                variant={row.status === 'ACTIVE' ? 'danger' : 'primary'}
-                                                onClick={() => toggleStatus(row)}
-                                                loading={pendingId === row.id}
-                                                disabled={row.id === admin.id}
-                                            >
-                                                {row.status === 'ACTIVE' ? t('admins.list.deactivateButton') : t('admins.list.activateButton')}
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {page.data.length === 0 && (
-                                <tr>
-                                    <td className="py-6 text-muted" colSpan={5}>
-                                        {t('admins.list.empty')}
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+            {error && (
+                <Alert tone="danger" title={t('common.errors.loadTitle')}>
+                    <p>{error}</p>
+                </Alert>
             )}
 
-            <CreateAdminAccountPanel onCreated={addRow} />
+            <SectionCard flush>
+                <DataTable
+                    caption={t('admins.list.tableCaption')}
+                    columns={columns}
+                    loading={loading}
+                    loadingLabel={t('admins.list.loading')}
+                    minWidth="48rem"
+                    rowKey={(row) => row.id}
+                    rows={result?.data ?? []}
+                    empty={<EmptyState icon={ShieldCheck} title={t('admins.list.empty')} />}
+                />
+            </SectionCard>
+
+            <CreateAdminAccountDialog
+                onClose={() => setCreating(false)}
+                open={creating}
+                onCreated={(created) => {
+                    setResult((current) =>
+                        current ? { ...current, data: [created, ...current.data], total: current.total + 1 } : current,
+                    );
+                    setCreating(false);
+                    notify({ tone: 'success', title: t('admins.create.createdToast', { name: created.name }) });
+                }}
+            />
 
             <ResetAdminAccountPasswordDialog
-                open={Boolean(resetTarget)}
                 adminName={resetTarget?.name}
                 onCancel={() => setResetTarget(undefined)}
                 onConfirm={handleResetPassword}
+                open={Boolean(resetTarget)}
             />
-        </main>
+        </div>
     );
 }

@@ -297,3 +297,135 @@ html:lang(zh-Hans) {
         animation-iteration-count: 1 !important;
     }
 }
+
+/* ---------------------------------------------------------------------------
+ * Camada do painel administrativo
+ *
+ * O admin é uma ferramenta de trabalho: densidade alta, muita tabela e muito
+ * formulário. As classes abaixo padronizam o que se repete em todas as telas
+ * (campos, cartões, tabelas, rolagem) para que nenhuma página precise
+ * reinventar espaçamento, borda ou foco.
+ * ------------------------------------------------------------------------ */
+
+@layer components {
+    /* Base de todo campo editável: input, select, textarea. */
+    .mm-field {
+        width: 100%;
+        min-height: 2.5rem;
+        border: 1px solid var(--color-line);
+        border-radius: 0.5rem;
+        background: var(--color-surface);
+        padding: 0.5rem 0.75rem;
+        color: var(--color-ink);
+        font-size: 0.875rem;
+        line-height: 1.4;
+        transition:
+            border-color 0.15s,
+            box-shadow 0.15s;
+    }
+
+    .mm-field::placeholder {
+        color: color-mix(in srgb, var(--color-muted) 80%, transparent);
+    }
+
+    .mm-field:hover:not(:disabled, :read-only) {
+        border-color: var(--color-brand-300);
+    }
+
+    .mm-field:focus-visible,
+    .mm-field:focus {
+        border-color: var(--color-brand-400);
+        outline: none;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-400) 22%, transparent);
+    }
+
+    .mm-field:disabled,
+    .mm-field[aria-disabled='true'] {
+        opacity: 0.6;
+        background: var(--color-warm-200);
+        cursor: not-allowed;
+    }
+
+    .mm-field[aria-invalid='true'] {
+        border-color: var(--color-origin-500);
+    }
+
+    [data-theme='dark'] .mm-field:disabled,
+    [data-theme='dark'] .mm-field[aria-disabled='true'] {
+        background: var(--color-night-raised);
+    }
+
+    /* Select nativo com seta própria — o padrão do sistema não acompanha o tema. */
+    .mm-select {
+        appearance: none;
+        padding-right: 2.25rem;
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%235f6d70' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        cursor: pointer;
+    }
+
+    [data-theme='dark'] .mm-select {
+        background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23b7c2c4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+    }
+
+    /* Superfície padrão de cartão/tabela do painel. */
+    .mm-card {
+        overflow: hidden;
+        border: 1px solid var(--color-line);
+        border-radius: 0.75rem;
+        background: var(--color-surface);
+        box-shadow:
+            0 1px 2px rgb(23 34 38 / 4%),
+            0 8px 24px rgb(23 34 38 / 4%);
+    }
+
+    [data-theme='dark'] .mm-card {
+        box-shadow: 0 8px 24px rgb(4 12 15 / 20%);
+    }
+
+    /* Rolagem horizontal discreta (tabelas largas, abas de filtro). */
+    .mm-scroll-x {
+        overflow-x: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-warm-400) transparent;
+    }
+
+    .mm-scroll-x::-webkit-scrollbar {
+        height: 0.5rem;
+    }
+
+    .mm-scroll-x::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: var(--color-warm-400);
+    }
+
+    [data-theme='dark'] .mm-scroll-x {
+        scrollbar-color: var(--color-night-line) transparent;
+    }
+
+    [data-theme='dark'] .mm-scroll-x::-webkit-scrollbar-thumb {
+        background: var(--color-night-line);
+    }
+}
+
+@layer base {
+    /*
+     * O botão de limpar nativo do WebKit apareceria ao lado do nosso — que é
+     * o único visível no tema escuro e o único acessível por teclado.
+     */
+    input[type='search']::-webkit-search-cancel-button {
+        appearance: none;
+    }
+
+    /* Foco visível consistente — o painel é operado muito por teclado. */
+    :focus-visible {
+        outline: 2px solid var(--color-brand-400);
+        outline-offset: 2px;
+    }
+
+    /* Trava a rolagem do fundo enquanto um diálogo estiver aberto. */
+    body[data-dialog-open='true'] {
+        overflow: hidden;
+    }
+}

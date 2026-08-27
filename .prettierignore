@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+.next/
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.*
+
+# IDE / ferramentas
+.vscode/
+.idea/
+.claude/
+
+# OS
+.DS_Store
