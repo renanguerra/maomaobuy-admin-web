@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
+import type { MessageKey } from '@/i18n/translations';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
 import { api, ApiError } from '@/services/api';
 import { formatDate, money, packageStatusLabel, type AdminPackage, type PresignedUpload } from '@/types/api';
@@ -42,6 +43,17 @@ type DialogKind =
 
 /** Situações finais do pacote — nada mais é anexado depois delas. */
 const CLOSED_STATUSES = ['DELIVERED', 'RETURNED', 'CANCELLED'];
+
+/**
+ * Rastreio anda para frente, um evento por vez. O botão mostra sempre o próximo
+ * marco esperado — quem informa a exceção usa o suporte, não este atalho.
+ */
+const TRACKING_NEXT_STEP: Record<string, { status: string; labelKey: MessageKey }> = {
+    SHIPPED: { status: 'IN_TRANSIT', labelKey: 'packages.detail.actions.markInTransit' },
+    IN_TRANSIT: { status: 'CUSTOMS', labelKey: 'packages.detail.actions.markCustoms' },
+    CUSTOMS: { status: 'OUT_FOR_DELIVERY', labelKey: 'packages.detail.actions.markOutForDelivery' },
+    OUT_FOR_DELIVERY: { status: 'DELIVERED', labelKey: 'packages.detail.actions.markDelivered' },
+};
 
 export function PackageDetailPage() {
     const { t } = useTranslation();
@@ -114,6 +126,21 @@ export function PackageDetailPage() {
         try {
             const updated = await api<AdminPackage>(`/packages/${params.id}/submit`, { method: 'POST' });
             applyUpdate(updated, t('packages.detail.feedback.submitted'));
+        } catch (err) {
+            reportError(err);
+        } finally {
+            setBusy(undefined);
+        }
+    }
+
+    async function advanceTracking(status: string) {
+        setBusy('tracking');
+        try {
+            const updated = await api<AdminPackage>(`/packages/${params.id}/tracking`, {
+                method: 'POST',
+                body: JSON.stringify({ status }),
+            });
+            applyUpdate(updated, t('packages.detail.feedback.trackingAdvanced'));
         } catch (err) {
             reportError(err);
         } finally {
@@ -207,7 +234,13 @@ export function PackageDetailPage() {
     const isDraft = pkg.status === 'DRAFT';
     const isAwaitingApproval = pkg.status === 'AWAITING_APPROVAL';
     const canEditItems = isDraft || isAwaitingApproval;
-    const hasActions = canEditItems || pkg.status === 'PREPARING' || pkg.status === 'READY_FOR_DISPATCH';
+    const trackingStep = TRACKING_NEXT_STEP[pkg.status];
+    const hasActions =
+        canEditItems ||
+        pkg.status === 'AWAITING_FREIGHT_QUOTE' ||
+        pkg.status === 'AWAITING_FREIGHT_PAYMENT' ||
+        pkg.status === 'READY_FOR_DISPATCH' ||
+        Boolean(trackingStep);
 
     return (
         <div className="grid gap-6">
@@ -280,7 +313,16 @@ export function PackageDetailPage() {
                             </Button>
                         </>
                     )}
-                    {pkg.status === 'PREPARING' && (
+                    {pkg.status === 'AWAITING_FREIGHT_QUOTE' && (
+                        <Button
+                            leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('shipment')}
+                            size="small"
+                        >
+                            {t('packages.detail.actions.quoteFreight')}
+                        </Button>
+                    )}
+                    {pkg.status === 'AWAITING_FREIGHT_PAYMENT' && (
                         <Button
                             leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
                             onClick={() => setDialog('confirm-freight-payment-manually')}
@@ -296,6 +338,17 @@ export function PackageDetailPage() {
                             size="small"
                         >
                             {t('packages.detail.actions.dispatch')}
+                        </Button>
+                    )}
+                    {trackingStep && (
+                        <Button
+                            leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
+                            loading={busy === 'tracking'}
+                            onClick={() => advanceTracking(trackingStep.status)}
+                            size="small"
+                            variant="secondary"
+                        >
+                            {t(trackingStep.labelKey)}
                         </Button>
                     )}
                 </ActionBar>

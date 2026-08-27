@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
     CheckCircle2,
     History,
@@ -38,7 +38,12 @@ import { OrderMediaManager } from './OrderMediaManager';
 import { OrderAmountDialog, type OrderAmountDialogValues } from './OrderAmountDialog';
 
 type ApprovalDialogKind =
-    'approve' | 'reject' | 'confirm-payment-manually' | 'request-customer-approval' | 'send-for-payment';
+    | 'approve'
+    | 'reject'
+    | 'confirm-payment-manually'
+    | 'request-customer-approval'
+    | 'send-for-payment'
+    | 'confirm-refund';
 type AmountDialogKind = 'change-price' | 'change-shipping-estimate';
 type DialogKind = ApprovalDialogKind | AmountDialogKind | 'edit-description' | null;
 
@@ -48,6 +53,17 @@ const APPROVAL_FEEDBACK_KEY: Record<ApprovalDialogKind, MessageKey> = {
     'confirm-payment-manually': 'orders.detail.feedback.confirm-payment-manually',
     'request-customer-approval': 'orders.detail.feedback.request-customer-approval',
     'send-for-payment': 'orders.detail.feedback.send-for-payment',
+    'confirm-refund': 'orders.detail.feedback.confirm-refund',
+};
+
+/**
+ * Etapas de aquisição, na ordem. O botão mostrado é sempre o próximo passo do
+ * pedido — a operação nunca escolhe para onde pular.
+ */
+const SOURCING_NEXT_STEP: Record<string, { status: string; labelKey: MessageKey }> = {
+    SUBMITTED: { status: 'PURCHASED', labelKey: 'orders.detail.actions.markPurchased' },
+    PURCHASED: { status: 'SELLER_SHIPPED', labelKey: 'orders.detail.actions.markSellerShipped' },
+    SELLER_SHIPPED: { status: 'IN_WAREHOUSE', labelKey: 'orders.detail.actions.markInWarehouse' },
 };
 
 /** Situações em que o pedido já encerrou — nada mais pode ser anexado. */
@@ -57,6 +73,7 @@ export function OrderDetailPage() {
     const { t } = useTranslation();
     const { notify } = useToast();
     const params = useParams<{ id: string }>();
+    const router = useRouter();
     const [order, setOrder] = useState<AdminOrder>();
     const [error, setError] = useState<string>();
     const [dialog, setDialog] = useState<DialogKind>(null);
@@ -128,10 +145,32 @@ export function OrderDetailPage() {
         applyUpdate(updated, t('orders.detail.feedback.shippingEstimateChanged'));
     }
 
+    async function advanceSourcing(status: string) {
+        setBusy('sourcing');
+        try {
+            const updated = await api<AdminOrder>(`/orders/${params.id}/sourcing`, {
+                method: 'POST',
+                body: JSON.stringify({ status }),
+            });
+            applyUpdate(updated, t('orders.detail.feedback.sourcingAdvanced'));
+        } catch (err) {
+            notify({
+                tone: 'danger',
+                title: t('common.errors.actionTitle'),
+                description: err instanceof ApiError ? err.message : t('common.errors.generic'),
+            });
+        } finally {
+            setBusy(undefined);
+        }
+    }
+
     async function markReadyToShip() {
         setBusy('mark-ready-to-ship');
         try {
-            const updated = await api<AdminOrder>(`/orders/${params.id}/mark-ready-to-ship`, { method: 'POST' });
+            const updated = await api<AdminOrder>(`/orders/${params.id}/mark-ready-to-ship`, {
+                method: 'POST',
+                body: JSON.stringify({ reason: t('orders.detail.actions.markReadyToShipReason') }),
+            });
             applyUpdate(updated, t('orders.detail.feedback.markedReadyToShip'));
         } catch (err) {
             notify({
@@ -174,9 +213,23 @@ export function OrderDetailPage() {
 
     const canDraft = order.status === 'AWAITING_REVIEW';
     const canManagePaymentData = order.status === 'GENERATING_PAYMENT_DATA';
-    const canEditDescriptionAndMedia = canDraft || canManagePaymentData;
     const awaitingPayment = order.status === 'UNPAID' || order.status === 'PENDING';
-    const hasActions = canDraft || canManagePaymentData || awaitingPayment || order.status === 'PURCHASED';
+    // Mídia e descrição ficam abertas até o pagamento ser confirmado: é o que
+    // o cliente olha para decidir se paga.
+    const canEditDescriptionAndMedia =
+        canDraft || canManagePaymentData || awaitingPayment || order.status === 'AWAITING_CUSTOMER_APPROVAL';
+    // Valor e frete podem mudar enquanto ninguém foi cobrado.
+    const canReprice = canDraft || canManagePaymentData || order.status === 'AWAITING_CUSTOMER_APPROVAL';
+    const priceAuthorized =
+        order.customerApprovedTotalMinor !== null &&
+        BigInt(order.totalAmountMinor) <= BigInt(order.customerApprovedTotalMinor);
+    const sourcingStep = order.fulfillmentMode === 'SOURCED' ? SOURCING_NEXT_STEP[order.status] : undefined;
+    const hasActions =
+        canEditDescriptionAndMedia ||
+        canReprice ||
+        Boolean(sourcingStep) ||
+        order.status === 'INSPECTION_PENDING' ||
+        order.status === 'REFUND_REQUESTED';
 
     return (
         <div className="grid gap-6">
@@ -224,7 +277,7 @@ export function OrderDetailPage() {
                             {t('orders.detail.actions.editDescription')}
                         </Button>
                     )}
-                    {canDraft && (
+                    {canReprice && (
                         <>
                             <Button
                                 leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
@@ -242,18 +295,26 @@ export function OrderDetailPage() {
                             >
                                 {t('orders.detail.actions.changeShippingEstimate')}
                             </Button>
+                        </>
+                    )}
+                    {(canDraft || canManagePaymentData) && !priceAuthorized && (
+                        <Button
+                            leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('request-customer-approval')}
+                            size="small"
+                            variant="secondary"
+                        >
+                            {t('orders.detail.actions.requestCustomerApproval')}
+                        </Button>
+                    )}
+                    {canDraft && (
+                        <>
                             <Button
-                                leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('request-customer-approval')}
-                                size="small"
-                                variant="secondary"
-                            >
-                                {t('orders.detail.actions.requestCustomerApproval')}
-                            </Button>
-                            <Button
+                                disabled={!priceAuthorized}
                                 leadingIcon={<CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
                                 onClick={() => setDialog('approve')}
                                 size="small"
+                                title={priceAuthorized ? undefined : t('orders.detail.actions.needsCustomerApproval')}
                             >
                                 {t('orders.detail.actions.approve')}
                             </Button>
@@ -270,9 +331,11 @@ export function OrderDetailPage() {
                     {canManagePaymentData && (
                         <>
                             <Button
+                                disabled={!priceAuthorized}
                                 leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
                                 onClick={() => setDialog('send-for-payment')}
                                 size="small"
+                                title={priceAuthorized ? undefined : t('orders.detail.actions.needsCustomerApproval')}
                             >
                                 {t('orders.detail.actions.sendForPayment')}
                             </Button>
@@ -285,6 +348,16 @@ export function OrderDetailPage() {
                                 {t('orders.detail.actions.cancelOrder')}
                             </Button>
                         </>
+                    )}
+                    {order.status === 'AWAITING_CUSTOMER_APPROVAL' && (
+                        <Button
+                            leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('reject')}
+                            size="small"
+                            variant="danger"
+                        >
+                            {t('orders.detail.actions.cancelOrder')}
+                        </Button>
                     )}
                     {awaitingPayment && (
                         <>
@@ -305,14 +378,43 @@ export function OrderDetailPage() {
                             </Button>
                         </>
                     )}
-                    {order.status === 'PURCHASED' && (
+                    {sourcingStep && (
+                        <Button
+                            leadingIcon={<PackageCheck className="h-4 w-4" aria-hidden="true" />}
+                            loading={busy === 'sourcing'}
+                            onClick={() => advanceSourcing(sourcingStep.status)}
+                            size="small"
+                        >
+                            {t(sourcingStep.labelKey)}
+                        </Button>
+                    )}
+                    {order.status === 'IN_WAREHOUSE' && (
+                        <Button
+                            leadingIcon={<PackageCheck className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => router.push(`/admin/inspecoes?orderId=${order.id}`)}
+                            size="small"
+                        >
+                            {t('orders.detail.actions.openInspection')}
+                        </Button>
+                    )}
+                    {order.status === 'INSPECTION_PENDING' && (
                         <Button
                             leadingIcon={<PackageCheck className="h-4 w-4" aria-hidden="true" />}
                             loading={busy === 'mark-ready-to-ship'}
                             onClick={markReadyToShip}
                             size="small"
+                            variant="ghost"
                         >
                             {t('orders.detail.actions.markReadyToShip')}
+                        </Button>
+                    )}
+                    {order.status === 'REFUND_REQUESTED' && (
+                        <Button
+                            leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('confirm-refund')}
+                            size="small"
+                        >
+                            {t('orders.detail.actions.confirmRefund')}
                         </Button>
                     )}
                 </ActionBar>
@@ -462,27 +564,6 @@ export function OrderDetailPage() {
                         />
                     </SectionCard>
 
-                    {order.addressSnapshot && (
-                        <SectionCard dense title={t('orders.detail.fields.deliveryAddress')}>
-                            <address className="m-0 text-sm leading-relaxed text-ink not-italic dark:text-night-text">
-                                <strong className="block">{order.addressSnapshot.recipientFullName}</strong>
-                                <span className="block text-muted dark:text-night-muted">
-                                    {order.addressSnapshot.phoneE164}
-                                </span>
-                                <span className="mt-1.5 block">
-                                    {order.addressSnapshot.addressLine1}
-                                    {order.addressSnapshot.addressLine2
-                                        ? `, ${order.addressSnapshot.addressLine2}`
-                                        : ''}
-                                    {order.addressSnapshot.district ? ` — ${order.addressSnapshot.district}` : ''}
-                                </span>
-                                <span className="block">
-                                    {order.addressSnapshot.locality}/{order.addressSnapshot.administrativeArea} ·{' '}
-                                    {order.addressSnapshot.postalCode} · {order.addressSnapshot.countryCode}
-                                </span>
-                            </address>
-                        </SectionCard>
-                    )}
                 </div>
             </div>
 
@@ -527,6 +608,15 @@ export function OrderDetailPage() {
                 onConfirm={handleApprovalConfirm}
                 open={dialog === 'confirm-payment-manually'}
                 title={t('orders.detail.dialogs.confirmPaymentManually.title')}
+            />
+            <ActionDialog
+                confirmLabel={t('orders.detail.dialogs.confirmRefund.confirmLabel')}
+                description={t('orders.detail.dialogs.confirmRefund.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleApprovalConfirm}
+                open={dialog === 'confirm-refund'}
+                requireReason
+                title={t('orders.detail.dialogs.confirmRefund.title')}
             />
             <ActionDialog
                 confirmLabel={t('orders.detail.dialogs.editDescription.confirmLabel')}

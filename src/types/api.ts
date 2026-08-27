@@ -200,6 +200,7 @@ export const ORDER_STATUSES = [
     'PARTIALLY_SHIPPED',
     'SHIPPED',
     'COMPLETED',
+    'REFUND_REQUESTED',
     'REFUND',
     'INVALID',
     'CANCELLED',
@@ -222,6 +223,7 @@ const ORDER_STATUS_LABELS: Record<Locale, Record<OrderStatus, string>> = {
         PARTIALLY_SHIPPED: 'Parcialmente enviado',
         SHIPPED: 'Enviado',
         COMPLETED: 'Concluído',
+        REFUND_REQUESTED: 'Reembolso pendente',
         REFUND: 'Reembolsado',
         INVALID: 'Inválido',
         CANCELLED: 'Cancelado',
@@ -241,6 +243,7 @@ const ORDER_STATUS_LABELS: Record<Locale, Record<OrderStatus, string>> = {
         PARTIALLY_SHIPPED: '部分发货',
         SHIPPED: '已发货',
         COMPLETED: '已完成',
+        REFUND_REQUESTED: '待退款',
         REFUND: '已退款',
         INVALID: '无效',
         CANCELLED: '已取消',
@@ -308,11 +311,14 @@ export interface AdminOrder {
     userEmail: string;
     userName: string;
     origin: string | null;
+    /** `IN_STOCK` já está no armazém; `SOURCED` ainda precisa ser comprado. */
+    fulfillmentMode: 'IN_STOCK' | 'SOURCED';
     status: string;
     currency: string;
     totalAmountMinor: string;
+    /** Último total autorizado pelo cliente. Menor que o total = precisa de nova aprovação. */
+    customerApprovedTotalMinor: string | null;
     shippingEstimateAmountMinor: string | null;
-    addressSnapshot: AddressSnapshot | null;
     createdAt: string;
     reviewedAt: string | null;
     reviewedByAdminId: string | null;
@@ -320,6 +326,9 @@ export interface AdminOrder {
     providerName: string | null;
     paymentExpiresAt: string | null;
     paidAt: string | null;
+    stockReservationExpiresAt: string | null;
+    shippedAt: string | null;
+    completedAt: string | null;
     adminDescription: string | null;
     items: AdminOrderItem[];
     media: AdminOrderMedia[];
@@ -375,7 +384,8 @@ export function orderChangeLogTypeLabel(type: string) {
 export const PACKAGE_STATUSES = [
     'DRAFT',
     'AWAITING_APPROVAL',
-    'PREPARING',
+    'AWAITING_FREIGHT_QUOTE',
+    'AWAITING_FREIGHT_PAYMENT',
     'READY_FOR_DISPATCH',
     'SHIPPED',
     'IN_TRANSIT',
@@ -391,8 +401,9 @@ export type PackageStatus = (typeof PACKAGE_STATUSES)[number];
 const PACKAGE_STATUS_LABELS: Record<Locale, Record<PackageStatus, string>> = {
     'pt-BR': {
         DRAFT: 'Rascunho',
-        AWAITING_APPROVAL: 'Aguardando aprovação',
-        PREPARING: 'Em preparação',
+        AWAITING_APPROVAL: 'Aguardando conferência',
+        AWAITING_FREIGHT_QUOTE: 'Aguardando cotação do frete',
+        AWAITING_FREIGHT_PAYMENT: 'Aguardando pagamento do frete',
         READY_FOR_DISPATCH: 'Pronto para despacho',
         SHIPPED: 'Enviado',
         IN_TRANSIT: 'Em trânsito',
@@ -405,8 +416,9 @@ const PACKAGE_STATUS_LABELS: Record<Locale, Record<PackageStatus, string>> = {
     },
     'zh-Hans': {
         DRAFT: '草稿',
-        AWAITING_APPROVAL: '待审批',
-        PREPARING: '准备中',
+        AWAITING_APPROVAL: '待审核',
+        AWAITING_FREIGHT_QUOTE: '待报价运费',
+        AWAITING_FREIGHT_PAYMENT: '待支付运费',
         READY_FOR_DISPATCH: '待发货',
         SHIPPED: '已发货',
         IN_TRANSIT: '运输中',
@@ -566,4 +578,66 @@ export function formatDate(value: string | null) {
         dateStyle: 'short',
         timeStyle: 'short',
     }).format(new Date(value));
+}
+
+// ---------------------------------------------------------------------------
+// Inspeções
+// ---------------------------------------------------------------------------
+
+export const INSPECTION_STATUSES = ['PENDING', 'AWAITING_CUSTOMER', 'AWAITING_ADMIN', 'DECIDED'] as const;
+export type InspectionStatus = (typeof INSPECTION_STATUSES)[number];
+
+const INSPECTION_STATUS_LABELS: Record<Locale, Record<InspectionStatus, string>> = {
+    'pt-BR': {
+        PENDING: 'Rascunho',
+        AWAITING_CUSTOMER: 'Com o cliente',
+        AWAITING_ADMIN: 'Ação pedida pelo cliente',
+        DECIDED: 'Decidida',
+    },
+    'zh-Hans': {
+        PENDING: '草稿',
+        AWAITING_CUSTOMER: '等待客户',
+        AWAITING_ADMIN: '客户请求处理',
+        DECIDED: '已决定',
+    },
+};
+
+export function inspectionStatusLabel(status: string) {
+    return INSPECTION_STATUS_LABELS[getStoreLocale()][status as InspectionStatus] ?? status;
+}
+
+export interface AdminInspectionMedia {
+    id: string;
+    type: 'IMAGE' | 'VIDEO';
+    mimeType: string;
+    sizeBytes: string;
+    sortOrder: number;
+    altText: string | null;
+    url: string | null;
+}
+
+export interface AdminInspection {
+    id: string;
+    orderItemId: string;
+    orderId: string | null;
+    productName: string | null;
+    userId: string;
+    status: string;
+    summary: string | null;
+    tests: Array<{ name: string; result: string; notes?: string }>;
+    media: AdminInspectionMedia[];
+    decision: string | null;
+    decisionNote: string | null;
+    completedAt: string | null;
+    decisionDeadlineAt: string | null;
+    decidedAt: string | null;
+    createdAt: string;
+}
+
+/** Item que chegou ao armazém e ainda não tem laudo aberto. */
+export interface AdminPendingInspectionItem {
+    orderItemId: string;
+    orderId: string;
+    userId: string;
+    productName: string;
 }

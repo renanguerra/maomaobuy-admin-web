@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/services/api';
-import type { AdminOrder, AdminPackage, AdminRefundRequest, Page } from '@/types/api';
+import type { AdminInspection, AdminOrder, AdminPackage, AdminRefundRequest, Page } from '@/types/api';
 
 export interface PendingCounts {
     ordersAwaitingReview: number;
     ordersAwaitingPayment: number;
     packagesAwaitingApproval: number;
+    /** Inspeções em que o cliente pediu uma ação nossa — fila do armazém. */
+    inspectionsAwaitingAdmin: number;
     refundsRequested: number;
 }
 
@@ -24,10 +26,11 @@ function publish(next: PendingCounts | undefined) {
 
 async function fetchCounts(): Promise<PendingCounts> {
     // `limit=1` porque só interessa o `total` — o corpo da resposta é descartado.
-    const [awaitingReview, awaitingPayment, awaitingApproval, refunds] = await Promise.all([
+    const [awaitingReview, awaitingPayment, awaitingApproval, inspections, refunds] = await Promise.all([
         api<Page<AdminOrder>>('/orders?status=AWAITING_REVIEW&limit=1'),
         api<Page<AdminOrder>>('/orders?status=UNPAID&limit=1'),
         api<Page<AdminPackage>>('/packages?status=AWAITING_APPROVAL&limit=1'),
+        api<AdminInspection[]>('/inspections?status=AWAITING_ADMIN'),
         api<AdminRefundRequest[]>('/finance/refunds'),
     ]);
 
@@ -35,6 +38,7 @@ async function fetchCounts(): Promise<PendingCounts> {
         ordersAwaitingReview: awaitingReview.total,
         ordersAwaitingPayment: awaitingPayment.total,
         packagesAwaitingApproval: awaitingApproval.total,
+        inspectionsAwaitingAdmin: inspections.length,
         refundsRequested: refunds.filter((refund) => refund.status === 'REQUESTED').length,
     };
 }
