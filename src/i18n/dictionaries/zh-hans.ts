@@ -434,6 +434,7 @@ export const zhHans: Messages = {
         deleteAria: '删除 {{name}}',
     },
     inspections: {
+        reportTitle: '仓库验货单',
         kicker: '仓库',
         title: '验货',
         description: '为每件到仓的商品建立验货单，上传照片和视频，然后发布给客户决定。',
@@ -449,12 +450,17 @@ export const zhHans: Messages = {
         publish: '发布给客户',
         publishHint: '客户会收到待办事项，并开始计算决定期限。',
         publishNeedsMedia: '发布前请至少上传一张照片或一个视频。',
+        awaitingAdmin: {
+            title: '等待我们处理的客户请求',
+            description: '客户看过验货单后要求补充照片或调整。',
+        },
         queue: {
             title: '待验货商品',
             description: '已到仓但尚未建立验货单。',
             empty: '队列为空',
             emptyDescription: '所有到仓商品都已建立验货单。',
             open: '建立验货单',
+            goToOrder: '打开订单',
         },
         media: {
             title: '照片和视频',
@@ -536,6 +542,10 @@ export const zhHans: Messages = {
                 quantity: '数量 {{count}}',
                 size: ' · 尺码 {{size}}',
                 declaredPrice: '客户申报价格：{{amount}}',
+            },
+            inspectionSection: {
+                title: '验货',
+                description: '商品已到仓。建立验货单以上传照片和视频。',
             },
             mediaSection: {
                 title: '素材',
@@ -679,10 +689,12 @@ export const zhHans: Messages = {
                 markDelivered: '标记为已签收',
                 quoteFreight: '录入重量和运费',
                 dispatch: '发货',
+                correctDispatch: '修正物流信息',
             },
             fields: {
                 shipping: '运费',
                 carrier: '承运商',
+                carrierService: '服务类型',
                 trackingCode: '运单号',
                 weight: '重量',
                 dimensions: '尺寸（长×宽×高）',
@@ -721,6 +733,7 @@ export const zhHans: Messages = {
                 'confirm-freight-payment-manually': '已人工确认运费付款。',
                 shipment: '运费信息已更新。',
                 dispatch: '包裹已发货。',
+                correctDispatch: '物流信息已修正。',
                 trackingAdvanced: '物流状态已更新。',
                 submitted: '包裹已提交审批。',
                 photoUploaded: '照片上传成功。',
@@ -752,6 +765,11 @@ export const zhHans: Messages = {
                     description: '仅在通过自动流程之外的方式核实付款后使用。',
                     confirmLabel: '确认付款',
                 },
+                correctDispatch: {
+                    title: '修正物流信息',
+                    description: '修改在途包裹的承运商、服务类型和运单号。不改变状态——客户会看到新的运单号。',
+                    confirmLabel: '保存修正',
+                },
                 dispatch: {
                     title: '包裹发货',
                     description: '请填写承运商和运单号以通知客户。',
@@ -760,6 +778,8 @@ export const zhHans: Messages = {
                     carrierPlaceholder: '例如：Correios',
                     trackingCode: '运单号',
                     trackingCodePlaceholder: '例如：BR123456789BR',
+                    carrierService: '服务类型（选填）',
+                    carrierServicePlaceholder: 'Packet Standard',
                 },
             },
             shippingSection: '运输',

@@ -442,6 +442,7 @@ export const ptBR = {
         deleteAria: 'Excluir {{name}}',
     },
     inspections: {
+        reportTitle: 'Laudo do armazém',
         kicker: 'Armazém',
         title: 'Inspeções',
         description:
@@ -458,12 +459,17 @@ export const ptBR = {
         publish: 'Publicar para o cliente',
         publishHint: 'O cliente recebe a pendência e passa a ter prazo para decidir.',
         publishNeedsMedia: 'Anexe ao menos uma foto ou vídeo antes de publicar.',
+        awaitingAdmin: {
+            title: 'Clientes esperando uma ação nossa',
+            description: 'Pediram mais fotos ou um ajuste depois de ver o laudo.',
+        },
         queue: {
             title: 'Itens aguardando laudo',
             description: 'Chegaram ao armazém e ainda não têm inspeção aberta.',
             empty: 'Nada na fila',
             emptyDescription: 'Todo item que chegou já tem laudo aberto.',
             open: 'Abrir laudo',
+            goToOrder: 'Abrir pedido',
         },
         media: {
             title: 'Fotos e vídeos',
@@ -546,6 +552,10 @@ export const ptBR = {
                 quantity: 'quantidade {{count}}',
                 size: ' · tamanho {{size}}',
                 declaredPrice: 'Preço declarado pelo cliente: {{amount}}',
+            },
+            inspectionSection: {
+                title: 'Inspeção',
+                description: 'O item chegou ao armazém. Abra o laudo para anexar fotos e vídeos.',
             },
             mediaSection: {
                 title: 'Mídia',
@@ -694,10 +704,12 @@ export const ptBR = {
                 markDelivered: 'Marcar como entregue',
                 quoteFreight: 'Informar peso e frete',
                 dispatch: 'Despachar',
+                correctDispatch: 'Corrigir rastreio',
             },
             fields: {
                 shipping: 'Frete',
                 carrier: 'Transportadora',
+                carrierService: 'Modalidade',
                 trackingCode: 'Código de rastreio',
                 weight: 'Peso',
                 dimensions: 'Dimensões (C×L×A)',
@@ -736,6 +748,7 @@ export const ptBR = {
                 'confirm-freight-payment-manually': 'Pagamento do frete confirmado manualmente.',
                 shipment: 'Dados de frete atualizados.',
                 dispatch: 'Pacote despachado.',
+                correctDispatch: 'Dados de rastreio corrigidos.',
                 trackingAdvanced: 'Rastreio atualizado.',
                 submitted: 'Pacote enviado para aprovação.',
                 photoUploaded: 'Foto enviada com sucesso.',
@@ -767,6 +780,12 @@ export const ptBR = {
                     description: 'Use apenas quando o pagamento foi verificado fora do fluxo automático.',
                     confirmLabel: 'Confirmar pagamento',
                 },
+                correctDispatch: {
+                    title: 'Corrigir rastreio',
+                    description:
+                        'Ajusta transportadora, modalidade e código de um pacote já a caminho. Não muda o status — o cliente passa a ver o código novo.',
+                    confirmLabel: 'Salvar correção',
+                },
                 dispatch: {
                     title: 'Despachar pacote',
                     description: 'Informe a transportadora e o código de rastreio para notificar o cliente.',
@@ -775,6 +794,8 @@ export const ptBR = {
                     carrierPlaceholder: 'Ex.: Correios',
                     trackingCode: 'Código de rastreio',
                     trackingCodePlaceholder: 'Ex.: BR123456789BR',
+                    carrierService: 'Modalidade (opcional)',
+                    carrierServicePlaceholder: 'Packet Standard',
                 },
             },
             shippingSection: 'Envio',
