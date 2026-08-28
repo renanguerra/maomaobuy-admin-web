@@ -545,6 +545,24 @@ export function refundStatusLabel(status: string) {
     return REFUND_STATUS_LABELS[getStoreLocale()][status as RefundStatus] ?? status;
 }
 
+/**
+ * Reembolsos que ainda dependem de alguém do financeiro.
+ *
+ * `REQUESTED` espera a decisão; os outros três esperam o dinheiro voltar —
+ * pelo provedor ou por baixa manual. Contar só `REQUESTED` escondia da fila
+ * justamente os que já foram aprovados e nunca foram fechados.
+ */
+export const REFUND_STATUSES_NEEDING_ACTION: RefundStatus[] = [
+    'REQUESTED',
+    'AWAITING_PROVIDER',
+    'PROCESSING',
+    'FAILED',
+];
+
+export function refundNeedsAction(status: string): boolean {
+    return REFUND_STATUSES_NEEDING_ACTION.includes(status as RefundStatus);
+}
+
 export interface AdminRefundRequest {
     id: string;
     userId: string;

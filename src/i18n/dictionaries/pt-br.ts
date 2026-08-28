@@ -795,10 +795,14 @@ export const ptBR = {
         userIdPrefix: 'Usuário {{id}}',
         approveButton: 'Aprovar',
         rejectButton: 'Rejeitar',
+        executeButton: 'Devolver pelo provedor',
+        settleButton: 'Baixa manual',
         empty: 'Nenhum reembolso solicitado.',
         feedback: {
             approved: 'Reembolso aprovado.',
             rejected: 'Reembolso rejeitado.',
+            executed: 'Dinheiro devolvido pelo provedor.',
+            settled: 'Reembolso baixado manualmente.',
         },
         actionError: 'Não foi possível concluir a ação.',
         dialogs: {
@@ -811,6 +815,18 @@ export const ptBR = {
                 title: 'Rejeitar reembolso',
                 description: 'O saldo reservado será liberado de volta para a carteira do usuário.',
                 confirmLabel: 'Rejeitar',
+            },
+            execute: {
+                title: 'Devolver pelo provedor',
+                description:
+                    'O provedor estorna a cobrança de origem e o reembolso é fechado só depois que ele confirmar. Estorno parcial não é aceito: nesse caso use a baixa manual.',
+                confirmLabel: 'Devolver',
+            },
+            settle: {
+                title: 'Baixa manual do reembolso',
+                description:
+                    'Use quando o Pix de volta foi feito fora do sistema. O valor reservado sai da carteira do cliente e o reembolso é encerrado.',
+                confirmLabel: 'Dar baixa',
             },
         },
         sectionDescription: 'Cada solicitação mostra o valor líquido a devolver ao cliente.',

@@ -780,10 +780,14 @@ export const zhHans: Messages = {
         userIdPrefix: '用户 {{id}}',
         approveButton: '批准',
         rejectButton: '拒绝',
+        executeButton: '通过支付商退款',
+        settleButton: '手动结清',
         empty: '暂无退款申请。',
         feedback: {
             approved: '退款已批准。',
             rejected: '退款已拒绝。',
+            executed: '支付商已退回款项。',
+            settled: '退款已手动结清。',
         },
         actionError: '无法完成此操作。',
         dialogs: {
@@ -796,6 +800,16 @@ export const zhHans: Messages = {
                 title: '拒绝退款',
                 description: '预留余额将退回用户钱包。',
                 confirmLabel: '拒绝',
+            },
+            execute: {
+                title: '通过支付商退款',
+                description: '支付商将原订单全额退回，确认后才结清退款。不支持部分退款，此时请使用手动结清。',
+                confirmLabel: '退款',
+            },
+            settle: {
+                title: '手动结清退款',
+                description: '当退款 Pix 在系统外完成时使用。预留金额将从客户钱包扣除，退款随即结束。',
+                confirmLabel: '结清',
             },
         },
         sectionDescription: '每条申请显示应退还给客户的净额。',
