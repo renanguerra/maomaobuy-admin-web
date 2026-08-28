@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/services/api';
+import { refundNeedsAction } from '@/types/api';
 import type { AdminInspection, AdminOrder, AdminPackage, AdminRefundRequest, Page } from '@/types/api';
 
 export interface PendingCounts {
@@ -39,7 +40,7 @@ async function fetchCounts(): Promise<PendingCounts> {
         ordersAwaitingPayment: awaitingPayment.total,
         packagesAwaitingApproval: awaitingApproval.total,
         inspectionsAwaitingAdmin: inspections.length,
-        refundsRequested: refunds.filter((refund) => refund.status === 'REQUESTED').length,
+        refundsRequested: refunds.filter((refund) => refundNeedsAction(refund.status)).length,
     };
 }
 

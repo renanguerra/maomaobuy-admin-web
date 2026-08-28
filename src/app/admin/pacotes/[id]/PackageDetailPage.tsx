@@ -3,19 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import {
-    ArrowUpRight,
-    CheckCircle2,
-    Images,
-    Package as PackageIcon,
-    Plus,
-    Ruler,
-    Send,
-    Trash2,
-    Upload,
-    Wallet,
-    XCircle,
-} from 'lucide-react';
+import { ArrowUpRight, CheckCircle2, Images, Package as PackageIcon, Pencil, Plus, Ruler, Send, Trash2, Upload, Wallet, XCircle } from 'lucide-react';
 import { ActionBar } from '@/components/admin/ActionBar';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
@@ -39,7 +27,14 @@ import { formatDate, money, packageStatusLabel, type AdminPackage, type Presigne
 import { AddPackageItemsDialog } from './AddPackageItemsDialog';
 
 type DialogKind =
-    'approve' | 'reject' | 'confirm-freight-payment-manually' | 'dispatch' | 'shipment' | 'add-items' | null;
+    | 'approve'
+    | 'reject'
+    | 'confirm-freight-payment-manually'
+    | 'dispatch'
+    | 'correct-dispatch'
+    | 'shipment'
+    | 'add-items'
+    | null;
 
 /** Situações finais do pacote — nada mais é anexado depois delas. */
 const CLOSED_STATUSES = ['DELIVERED', 'RETURNED', 'CANCELLED'];
@@ -99,11 +94,14 @@ export function PackageDetailPage() {
         const action = dialog;
         if (!action || action === 'add-items') return;
 
+        // Corrigir o despacho é a mesma rota, só que PATCH: cria vs. ajusta.
+        const correcting = action === 'correct-dispatch';
+
         try {
-            const updated = await api<AdminPackage>(`/packages/${params.id}/${action}`, {
-                method: 'POST',
-                body: JSON.stringify(values),
-            });
+            const updated = await api<AdminPackage>(
+                `/packages/${params.id}/${correcting ? 'dispatch' : action}`,
+                { method: correcting ? 'PATCH' : 'POST', body: JSON.stringify(values) },
+            );
             applyUpdate(
                 updated,
                 action === 'approve'
@@ -114,7 +112,9 @@ export function PackageDetailPage() {
                         ? t('packages.detail.feedback.confirm-freight-payment-manually')
                         : action === 'shipment'
                           ? t('packages.detail.feedback.shipment')
-                          : t('packages.detail.feedback.dispatch'),
+                          : correcting
+                            ? t('packages.detail.feedback.correctDispatch')
+                            : t('packages.detail.feedback.dispatch'),
             );
         } catch (err) {
             throw err instanceof ApiError ? err : new Error(t('common.errors.generic'));
@@ -235,11 +235,14 @@ export function PackageDetailPage() {
     const isAwaitingApproval = pkg.status === 'AWAITING_APPROVAL';
     const canEditItems = isDraft || isAwaitingApproval;
     const trackingStep = TRACKING_NEXT_STEP[pkg.status];
+    // Corrigir o rastreio só faz sentido enquanto o pacote está a caminho.
+    const canCorrectDispatch = pkg.shippedAt !== null && !CLOSED_STATUSES.includes(pkg.status);
     const hasActions =
         canEditItems ||
         pkg.status === 'AWAITING_FREIGHT_QUOTE' ||
         pkg.status === 'AWAITING_FREIGHT_PAYMENT' ||
         pkg.status === 'READY_FOR_DISPATCH' ||
+        canCorrectDispatch ||
         Boolean(trackingStep);
 
     return (
@@ -349,6 +352,16 @@ export function PackageDetailPage() {
                             variant="secondary"
                         >
                             {t(trackingStep.labelKey)}
+                        </Button>
+                    )}
+                    {canCorrectDispatch && (
+                        <Button
+                            leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('correct-dispatch')}
+                            size="small"
+                            variant="ghost"
+                        >
+                            {t('packages.detail.actions.correctDispatch')}
                         </Button>
                     )}
                 </ActionBar>
@@ -481,6 +494,14 @@ export function PackageDetailPage() {
                                     emphasis: true,
                                 },
                                 { label: t('packages.detail.fields.carrier'), value: pkg.carrier ?? t('common.dash') },
+                                ...(pkg.carrierService
+                                    ? [
+                                          {
+                                              label: t('packages.detail.fields.carrierService'),
+                                              value: pkg.carrierService,
+                                          },
+                                      ]
+                                    : []),
                                 {
                                     label: t('packages.detail.fields.trackingCode'),
                                     value: pkg.trackingCode ?? t('common.dash'),
@@ -635,6 +656,44 @@ export function PackageDetailPage() {
                         placeholder: t('packages.detail.dialogs.dispatch.trackingCodePlaceholder'),
                         minLength: 2,
                         maxLength: 100,
+                    },
+                    {
+                        name: 'carrierService',
+                        label: t('packages.detail.dialogs.dispatch.carrierService'),
+                        placeholder: t('packages.detail.dialogs.dispatch.carrierServicePlaceholder'),
+                        optional: true,
+                        maxLength: 120,
+                    },
+                ]}
+            />
+            <ActionDialog
+                confirmLabel={t('packages.detail.dialogs.correctDispatch.confirmLabel')}
+                description={t('packages.detail.dialogs.correctDispatch.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleActionConfirm}
+                open={dialog === 'correct-dispatch'}
+                title={t('packages.detail.dialogs.correctDispatch.title')}
+                fields={[
+                    {
+                        name: 'carrier',
+                        label: t('packages.detail.dialogs.dispatch.carrier'),
+                        defaultValue: pkg.carrier ?? undefined,
+                        minLength: 2,
+                        maxLength: 120,
+                    },
+                    {
+                        name: 'trackingCode',
+                        label: t('packages.detail.dialogs.dispatch.trackingCode'),
+                        defaultValue: pkg.trackingCode ?? undefined,
+                        minLength: 2,
+                        maxLength: 100,
+                    },
+                    {
+                        name: 'carrierService',
+                        label: t('packages.detail.dialogs.dispatch.carrierService'),
+                        defaultValue: pkg.carrierService ?? undefined,
+                        optional: true,
+                        maxLength: 120,
                     },
                 ]}
             />

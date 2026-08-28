@@ -332,6 +332,7 @@ export interface AdminOrder {
     adminDescription: string | null;
     items: AdminOrderItem[];
     media: AdminOrderMedia[];
+    inspections: OrderInspection[];
     paymentAttachments: AdminPaymentAttachment[];
     changeLogs: AdminOrderChangeLog[];
 }
@@ -545,6 +546,24 @@ export function refundStatusLabel(status: string) {
     return REFUND_STATUS_LABELS[getStoreLocale()][status as RefundStatus] ?? status;
 }
 
+/**
+ * Reembolsos que ainda dependem de alguém do financeiro.
+ *
+ * `REQUESTED` espera a decisão; os outros três esperam o dinheiro voltar —
+ * pelo provedor ou por baixa manual. Contar só `REQUESTED` escondia da fila
+ * justamente os que já foram aprovados e nunca foram fechados.
+ */
+export const REFUND_STATUSES_NEEDING_ACTION: RefundStatus[] = [
+    'REQUESTED',
+    'AWAITING_PROVIDER',
+    'PROCESSING',
+    'FAILED',
+];
+
+export function refundNeedsAction(status: string): boolean {
+    return REFUND_STATUSES_NEEDING_ACTION.includes(status as RefundStatus);
+}
+
 export interface AdminRefundRequest {
     id: string;
     userId: string;
@@ -632,6 +651,21 @@ export interface AdminInspection {
     decisionDeadlineAt: string | null;
     decidedAt: string | null;
     createdAt: string;
+}
+
+/** O laudo como ele chega dentro do pedido — a forma que o painel edita. */
+export interface OrderInspection {
+    id: string;
+    orderItemId: string;
+    productName: string;
+    status: string;
+    summary: string | null;
+    tests: Array<{ name: string; result: string; notes?: string }>;
+    media: AdminInspectionMedia[];
+    decision: string | null;
+    decisionNote: string | null;
+    decisionDeadlineAt: string | null;
+    decidedAt: string | null;
 }
 
 /** Item que chegou ao armazém e ainda não tem laudo aberto. */

@@ -34,6 +34,7 @@ import type { MessageKey } from '@/i18n/translations';
 import { api, ApiError } from '@/services/api';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
 import { formatDate, money, orderChangeLogTypeLabel, orderStatusLabel, type AdminOrder } from '@/types/api';
+import { InspectionCard } from '@/components/admin/InspectionCard';
 import { OrderMediaManager } from './OrderMediaManager';
 import { OrderAmountDialog, type OrderAmountDialogValues } from './OrderAmountDialog';
 
@@ -164,6 +165,44 @@ export function OrderDetailPage() {
         }
     }
 
+    /** Abre o laudo de um item que chegou ao armazém. */
+    async function openInspection(orderItemId: string) {
+        setBusy('inspection');
+        try {
+            await api(`/inspections`, {
+                method: 'POST',
+                body: JSON.stringify({ orderItemId }),
+            });
+            load();
+        } catch (err) {
+            notify({
+                tone: 'danger',
+                title: t('common.errors.actionTitle'),
+                description: err instanceof ApiError ? err.message : t('common.errors.generic'),
+            });
+        } finally {
+            setBusy(undefined);
+        }
+    }
+
+    async function publishInspection(inspectionId: string) {
+        setBusy('inspection');
+        try {
+            await api(`/inspections/${inspectionId}/publish`, { method: 'POST' });
+            notify({ tone: 'success', title: t('inspections.feedback.published') });
+            void refreshPendingCounts();
+            load();
+        } catch (err) {
+            notify({
+                tone: 'danger',
+                title: t('common.errors.actionTitle'),
+                description: err instanceof ApiError ? err.message : t('common.errors.generic'),
+            });
+        } finally {
+            setBusy(undefined);
+        }
+    }
+
     async function markReadyToShip() {
         setBusy('mark-ready-to-ship');
         try {
@@ -224,6 +263,10 @@ export function OrderDetailPage() {
         order.customerApprovedTotalMinor !== null &&
         BigInt(order.totalAmountMinor) <= BigInt(order.customerApprovedTotalMinor);
     const sourcingStep = order.fulfillmentMode === 'SOURCED' ? SOURCING_NEXT_STEP[order.status] : undefined;
+    // Itens que chegaram ao armazém e ainda não têm laudo aberto.
+    const inspectedItemIds = new Set(order.inspections.map((inspection) => inspection.orderItemId));
+    const itemsWithoutInspection =
+        order.status === 'IN_WAREHOUSE' ? order.items.filter((item) => !inspectedItemIds.has(item.id)) : [];
     const hasActions =
         canEditDescriptionAndMedia ||
         canReprice ||
@@ -474,6 +517,51 @@ export function OrderDetailPage() {
                             </p>
                         </SectionCard>
                     )}
+
+                    {itemsWithoutInspection.length > 0 && (
+                        <SectionCard
+                            description={t('orders.detail.inspectionSection.description')}
+                            title={t('orders.detail.inspectionSection.title')}
+                        >
+                            <ul className="m-0 grid list-none gap-2 p-0">
+                                {itemsWithoutInspection.map((item) => (
+                                    <li
+                                        className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 dark:border-night-line"
+                                        key={item.id}
+                                    >
+                                        <span className="min-w-0 truncate text-sm font-semibold text-ink dark:text-night-text">
+                                            {item.productName}
+                                        </span>
+                                        <Button
+                                            loading={busy === 'inspection'}
+                                            onClick={() => openInspection(item.id)}
+                                            size="small"
+                                        >
+                                            {t('inspections.queue.open')}
+                                        </Button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </SectionCard>
+                    )}
+
+                    {order.inspections.map((inspection) => (
+                        <InspectionCard
+                            busy={busy === 'inspection'}
+                            inspection={inspection}
+                            key={inspection.id}
+                            onChanged={async () => load()}
+                            onFail={(err) =>
+                                notify({
+                                    tone: 'danger',
+                                    title: t('common.errors.actionTitle'),
+                                    description:
+                                        err instanceof ApiError ? err.message : t('common.errors.generic'),
+                                })
+                            }
+                            onPublish={() => publishInspection(inspection.id)}
+                        />
+                    ))}
 
                     {canEditDescriptionAndMedia ? (
                         <OrderMediaManager media={order.media} onChanged={load} orderId={order.id} />

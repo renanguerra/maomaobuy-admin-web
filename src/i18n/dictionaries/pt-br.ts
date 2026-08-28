@@ -442,6 +442,7 @@ export const ptBR = {
         deleteAria: 'Excluir {{name}}',
     },
     inspections: {
+        reportTitle: 'Laudo do armazém',
         kicker: 'Armazém',
         title: 'Inspeções',
         description:
@@ -458,12 +459,17 @@ export const ptBR = {
         publish: 'Publicar para o cliente',
         publishHint: 'O cliente recebe a pendência e passa a ter prazo para decidir.',
         publishNeedsMedia: 'Anexe ao menos uma foto ou vídeo antes de publicar.',
+        awaitingAdmin: {
+            title: 'Clientes esperando uma ação nossa',
+            description: 'Pediram mais fotos ou um ajuste depois de ver o laudo.',
+        },
         queue: {
             title: 'Itens aguardando laudo',
             description: 'Chegaram ao armazém e ainda não têm inspeção aberta.',
             empty: 'Nada na fila',
             emptyDescription: 'Todo item que chegou já tem laudo aberto.',
             open: 'Abrir laudo',
+            goToOrder: 'Abrir pedido',
         },
         media: {
             title: 'Fotos e vídeos',
@@ -546,6 +552,10 @@ export const ptBR = {
                 quantity: 'quantidade {{count}}',
                 size: ' · tamanho {{size}}',
                 declaredPrice: 'Preço declarado pelo cliente: {{amount}}',
+            },
+            inspectionSection: {
+                title: 'Inspeção',
+                description: 'O item chegou ao armazém. Abra o laudo para anexar fotos e vídeos.',
             },
             mediaSection: {
                 title: 'Mídia',
@@ -694,10 +704,12 @@ export const ptBR = {
                 markDelivered: 'Marcar como entregue',
                 quoteFreight: 'Informar peso e frete',
                 dispatch: 'Despachar',
+                correctDispatch: 'Corrigir rastreio',
             },
             fields: {
                 shipping: 'Frete',
                 carrier: 'Transportadora',
+                carrierService: 'Modalidade',
                 trackingCode: 'Código de rastreio',
                 weight: 'Peso',
                 dimensions: 'Dimensões (C×L×A)',
@@ -736,6 +748,7 @@ export const ptBR = {
                 'confirm-freight-payment-manually': 'Pagamento do frete confirmado manualmente.',
                 shipment: 'Dados de frete atualizados.',
                 dispatch: 'Pacote despachado.',
+                correctDispatch: 'Dados de rastreio corrigidos.',
                 trackingAdvanced: 'Rastreio atualizado.',
                 submitted: 'Pacote enviado para aprovação.',
                 photoUploaded: 'Foto enviada com sucesso.',
@@ -767,6 +780,12 @@ export const ptBR = {
                     description: 'Use apenas quando o pagamento foi verificado fora do fluxo automático.',
                     confirmLabel: 'Confirmar pagamento',
                 },
+                correctDispatch: {
+                    title: 'Corrigir rastreio',
+                    description:
+                        'Ajusta transportadora, modalidade e código de um pacote já a caminho. Não muda o status — o cliente passa a ver o código novo.',
+                    confirmLabel: 'Salvar correção',
+                },
                 dispatch: {
                     title: 'Despachar pacote',
                     description: 'Informe a transportadora e o código de rastreio para notificar o cliente.',
@@ -775,6 +794,8 @@ export const ptBR = {
                     carrierPlaceholder: 'Ex.: Correios',
                     trackingCode: 'Código de rastreio',
                     trackingCodePlaceholder: 'Ex.: BR123456789BR',
+                    carrierService: 'Modalidade (opcional)',
+                    carrierServicePlaceholder: 'Packet Standard',
                 },
             },
             shippingSection: 'Envio',
@@ -795,10 +816,14 @@ export const ptBR = {
         userIdPrefix: 'Usuário {{id}}',
         approveButton: 'Aprovar',
         rejectButton: 'Rejeitar',
+        executeButton: 'Devolver pelo provedor',
+        settleButton: 'Baixa manual',
         empty: 'Nenhum reembolso solicitado.',
         feedback: {
             approved: 'Reembolso aprovado.',
             rejected: 'Reembolso rejeitado.',
+            executed: 'Dinheiro devolvido pelo provedor.',
+            settled: 'Reembolso baixado manualmente.',
         },
         actionError: 'Não foi possível concluir a ação.',
         dialogs: {
@@ -811,6 +836,18 @@ export const ptBR = {
                 title: 'Rejeitar reembolso',
                 description: 'O saldo reservado será liberado de volta para a carteira do usuário.',
                 confirmLabel: 'Rejeitar',
+            },
+            execute: {
+                title: 'Devolver pelo provedor',
+                description:
+                    'O provedor estorna a cobrança de origem e o reembolso é fechado só depois que ele confirmar. Estorno parcial não é aceito: nesse caso use a baixa manual.',
+                confirmLabel: 'Devolver',
+            },
+            settle: {
+                title: 'Baixa manual do reembolso',
+                description:
+                    'Use quando o Pix de volta foi feito fora do sistema. O valor reservado sai da carteira do cliente e o reembolso é encerrado.',
+                confirmLabel: 'Dar baixa',
             },
         },
         sectionDescription: 'Cada solicitação mostra o valor líquido a devolver ao cliente.',
