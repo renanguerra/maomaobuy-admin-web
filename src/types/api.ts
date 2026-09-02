@@ -564,13 +564,41 @@ export function refundNeedsAction(status: string): boolean {
     return REFUND_STATUSES_NEEDING_ACTION.includes(status as RefundStatus);
 }
 
+/**
+ * A carteira de um cliente vista pela operação. Todos os valores são fen: o
+ * saldo conta em yuan desde que a recarga passou a cobrar o câmbio uma vez só.
+ */
+export interface AdminWallet {
+    userId: string;
+    currency: string;
+    status: string;
+    pendingAmountMinor: string;
+    availableAmountMinor: string;
+    reservedAmountMinor: string;
+    blockedAmountMinor: string;
+    /** Valor em aberto depois de um estorno; é o que trava a carteira. */
+    debtAmountMinor: string;
+    totalAmountMinor: string;
+    lockReason: string | null;
+    lockedAt: string | null;
+}
+
 export interface AdminRefundRequest {
     id: string;
     userId: string;
+    /** Fen retirados do saldo do cliente. */
     amountMinor: string;
     feeAmountMinor: string;
     netAmountMinor: string;
     currency: string;
+    /**
+     * Centavos de BRL que voltam ao cliente: a soma do que cada recarga de
+     * origem custou, não uma conversão do câmbio de hoje. É este o valor que o
+     * provedor precisa estornar, e é por ele que a devolução automática só
+     * funciona quando bate com a cobrança original.
+     */
+    payoutAmountMinor: string;
+    payoutCurrency: string;
     status: string;
     reason: string;
     adminNote: string | null;
@@ -589,6 +617,21 @@ export function money(minor: string | number, currency = 'BRL') {
 
 export function brl(minor: string | number) {
     return money(minor, 'BRL');
+}
+
+export function cny(minor: string | number) {
+    return money(minor, 'CNY');
+}
+
+/**
+ * A cotação com mais casas do que uma moeda: 0,75 e 0,80803 são números
+ * diferentes e arredondar para centavos apagaria a diferença.
+ */
+export function exchangeRate(value: string) {
+    return new Intl.NumberFormat(LOCALE_INTL_TAG[getStoreLocale()], {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 5,
+    }).format(Number(value));
 }
 
 export function formatDate(value: string | null) {

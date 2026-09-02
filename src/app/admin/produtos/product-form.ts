@@ -13,7 +13,6 @@ export interface ProductFormValues {
     description: string;
     marketplace: string;
     marketplaceUrl: string;
-    sourceCurrency: string;
     sourceAmountMinor: string;
     estimatedShippingAmountMinor: string;
     stock: string;
@@ -29,7 +28,6 @@ const EMPTY: ProductFormValues = {
     description: '',
     marketplace: MARKETPLACE_NAMES[0],
     marketplaceUrl: '',
-    sourceCurrency: 'CNY',
     sourceAmountMinor: '0',
     estimatedShippingAmountMinor: '0',
     stock: '0',
@@ -49,7 +47,6 @@ function fromProduct(product: AdminProduct): ProductFormValues {
             ? product.marketplace
             : MARKETPLACE_NAMES[0],
         marketplaceUrl: product.marketplaceUrl ?? '',
-        sourceCurrency: product.sourceCurrency,
         sourceAmountMinor: product.sourceAmountMinor,
         estimatedShippingAmountMinor: product.estimatedShippingAmountMinor ?? '0',
         stock: String(product.stock),
@@ -123,7 +120,6 @@ export function toProductPayload(values: ProductFormValues) {
         description: values.description,
         marketplace: isOwnStock ? 'MAOMAOBUY' : values.marketplace,
         marketplaceUrl: isOwnStock ? undefined : values.marketplaceUrl,
-        sourceCurrency: isOwnStock ? 'BRL' : values.sourceCurrency,
         sourceAmountMinor: values.sourceAmountMinor,
         estimatedShippingAmountMinor: values.estimatedShippingAmountMinor,
         stock: Number(values.stock),

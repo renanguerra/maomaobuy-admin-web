@@ -206,7 +206,7 @@ export function ProductDetailPage() {
                             },
                             {
                                 label: t('products.detail.view.basePrice'),
-                                value: `${minorToAmount(product.sourceAmountMinor)} ${product.sourceCurrency}`,
+                                value: `${minorToAmount(product.sourceAmountMinor)} CNY`,
                                 numeric: true,
                             },
                             {

@@ -20,6 +20,7 @@ import { api, ApiError } from '@/services/api';
 import type { AdminOrder, AdminPackage, AdminUser, AdminUserAddress } from '@/types/api';
 import { formatDate, money, orderStatusLabel, packageStatusLabel, userStatusLabel } from '@/types/api';
 import { CreatePackageDialog } from './CreatePackageDialog';
+import { UserWalletCard } from './UserWalletCard';
 
 type DialogKind = 'suspend' | 'reactivate' | 'request-password-reset' | 'create-package' | null;
 
@@ -193,6 +194,8 @@ export function UserDetailPage() {
                     ]}
                 />
             </SectionCard>
+
+            <UserWalletCard userId={user.id} />
 
             <LazySection<AdminUserAddress[]>
                 description={t('users.detail.addressesSection.description')}

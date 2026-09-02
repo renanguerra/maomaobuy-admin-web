@@ -164,23 +164,11 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                     )}
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                        {!isOwnStock && (
-                            <Select
-                                label={t('products.new.originPrice.sourceCurrency')}
-                                onChange={(event) => patch({ sourceCurrency: event.target.value })}
-                                options={[
-                                    { value: 'CNY', label: 'CNY' },
-                                    { value: 'BRL', label: 'BRL' },
-                                ]}
-                                required
-                                value={values.sourceCurrency}
-                            />
-                        )}
                         <CurrencyInput
-                            currency={isOwnStock ? 'BRL' : values.sourceCurrency}
+                            currency="CNY"
                             label={
                                 isOwnStock
-                                    ? t('products.new.originPrice.salePriceBrl')
+                                    ? t('products.new.originPrice.salePriceCny')
                                     : t('products.new.originPrice.basePrice')
                             }
                             minor={values.sourceAmountMinor}

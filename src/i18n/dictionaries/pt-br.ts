@@ -177,8 +177,29 @@ export const ptBR = {
                 description: 'Todos os pacotes deste cliente.',
                 count: '{{count}} pacote(s)',
             },
+            walletSection: {
+                title: 'Carteira',
+                description: 'Saldo em yuan. O cliente compra a moeda na recarga e gasta em pedidos e frete.',
+                error: 'Não foi possível carregar a carteira.',
+                active: 'Ativa',
+                available: 'Disponível',
+                pending: 'Aguardando Pix',
+                reserved: 'Reservado',
+                debt: 'Em aberto',
+                lockedTitle: 'Carteira bloqueada para análise',
+                lockedFallback: 'Um pagamento desta carteira foi contestado.',
+                lockedAt: 'Bloqueada em {{date}}.',
+                unlockButton: 'Desbloquear',
+                unlocked: 'Carteira desbloqueada.',
+            },
             addressDefaultSuffix: ' (padrão)',
             dialogs: {
+                unlockWallet: {
+                    title: 'Desbloquear carteira',
+                    description:
+                        'A carteira foi travada por um estorno. Só desbloqueie depois de concluir a análise: o cliente volta a poder gastar o saldo na hora.',
+                    confirmLabel: 'Desbloquear',
+                },
                 suspend: {
                     title: 'Suspender usuário',
                     description: 'Essa ação impede o usuário de acessar a conta. Informe o código TOTP e o motivo.',
@@ -342,13 +363,12 @@ export const ptBR = {
                 descriptionMarketplace: 'Dados do anúncio comprado sob encomenda no marketplace de origem.',
                 marketplace: 'Marketplace de origem',
                 originUrl: 'URL do produto de origem',
-                sourceCurrency: 'Moeda de origem',
-                basePrice: 'Preço base (na moeda de origem)',
-                salePriceBrl: 'Preço de venda (BRL)',
+                basePrice: 'Preço do anúncio (CNY)',
+                salePriceCny: 'Preço de venda (CNY)',
             },
             shippingStock: {
                 title: 'Frete e estoque',
-                estimatedShipping: 'Frete estimado (BRL, opcional)',
+                estimatedShipping: 'Frete estimado (CNY, opcional)',
                 estimatedShippingHint:
                     'Só informativo — mostrado ao cliente na página do produto, não é cobrado com o pedido.',
                 stock: 'Estoque',
@@ -840,7 +860,7 @@ export const ptBR = {
             execute: {
                 title: 'Devolver pelo provedor',
                 description:
-                    'O provedor estorna a cobrança de origem e o reembolso é fechado só depois que ele confirmar. Estorno parcial não é aceito: nesse caso use a baixa manual.',
+                    'O provedor estorna a cobrança de origem em reais e o reembolso é fechado só depois que ele confirmar. Só a cobrança integral é aceita: quando o valor a devolver não bate com o que a recarga custou, use a baixa manual.',
                 confirmLabel: 'Devolver',
             },
             settle: {
@@ -850,7 +870,9 @@ export const ptBR = {
                 confirmLabel: 'Dar baixa',
             },
         },
-        sectionDescription: 'Cada solicitação mostra o valor líquido a devolver ao cliente.',
+        sectionDescription:
+            'O valor em destaque é o saldo em yuan que sai da carteira; abaixo dele, o que o cliente recebe em reais.',
+        payoutHint: 'devolve {{amount}}',
         tableCaption: 'Lista de reembolsos',
         filterLabel: 'Filtrar reembolsos',
         emptyAll: 'Nenhum reembolso registrado',

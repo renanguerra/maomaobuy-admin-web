@@ -555,8 +555,7 @@ export function OrderDetailPage() {
                                 notify({
                                     tone: 'danger',
                                     title: t('common.errors.actionTitle'),
-                                    description:
-                                        err instanceof ApiError ? err.message : t('common.errors.generic'),
+                                    description: err instanceof ApiError ? err.message : t('common.errors.generic'),
                                 })
                             }
                             onPublish={() => publishInspection(inspection.id)}
@@ -651,7 +650,6 @@ export function OrderDetailPage() {
                             ]}
                         />
                     </SectionCard>
-
                 </div>
             </div>
 

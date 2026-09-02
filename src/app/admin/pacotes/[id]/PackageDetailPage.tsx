@@ -3,7 +3,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowUpRight, CheckCircle2, Images, Package as PackageIcon, Pencil, Plus, Ruler, Send, Trash2, Upload, Wallet, XCircle } from 'lucide-react';
+import {
+    ArrowUpRight,
+    CheckCircle2,
+    Images,
+    Package as PackageIcon,
+    Pencil,
+    Plus,
+    Ruler,
+    Send,
+    Trash2,
+    Upload,
+    Wallet,
+    XCircle,
+} from 'lucide-react';
 import { ActionBar } from '@/components/admin/ActionBar';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
@@ -98,10 +111,10 @@ export function PackageDetailPage() {
         const correcting = action === 'correct-dispatch';
 
         try {
-            const updated = await api<AdminPackage>(
-                `/packages/${params.id}/${correcting ? 'dispatch' : action}`,
-                { method: correcting ? 'PATCH' : 'POST', body: JSON.stringify(values) },
-            );
+            const updated = await api<AdminPackage>(`/packages/${params.id}/${correcting ? 'dispatch' : action}`, {
+                method: correcting ? 'PATCH' : 'POST',
+                body: JSON.stringify(values),
+            });
             applyUpdate(
                 updated,
                 action === 'approve'

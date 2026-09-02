@@ -17,7 +17,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
 import { api, ApiError } from '@/services/api';
-import { formatDate, money, refundNeedsAction, refundStatusLabel, type AdminRefundRequest } from '@/types/api';
+import { brl, formatDate, money, refundNeedsAction, refundStatusLabel, type AdminRefundRequest } from '@/types/api';
 
 type RefundFilter = 'requested' | 'all';
 type RefundAction = 'approve' | 'reject' | 'execute' | 'settle-manually';
@@ -94,10 +94,21 @@ export function FinancePage() {
 
     const columns: DataTableColumn<AdminRefundRequest>[] = [
         {
+            // As duas moedas juntas de propósito: o que sai do saldo do cliente
+            // é yuan, o que o provedor estorna é real, e é o segundo que
+            // precisa bater com a cobrança original para a devolução
+            // automática ser aceita.
             key: 'amount',
             header: t('finance.columns.amount'),
             numeric: true,
-            cell: (refund) => <span className="font-semibold">{money(refund.netAmountMinor, refund.currency)}</span>,
+            cell: (refund) => (
+                <span className="grid justify-items-end gap-0.5">
+                    <span className="font-semibold">{money(refund.netAmountMinor, refund.currency)}</span>
+                    <span className="text-xs text-muted dark:text-night-subtle">
+                        {t('finance.payoutHint', { amount: brl(refund.payoutAmountMinor) })}
+                    </span>
+                </span>
+            ),
         },
         {
             key: 'user',
