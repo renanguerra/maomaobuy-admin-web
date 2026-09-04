@@ -4,6 +4,7 @@ import {
     ClipboardList,
     LayoutDashboard,
     Package,
+    PackageSearch,
     ShieldCheck,
     Tags,
     Users,
@@ -31,6 +32,12 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
                 badge: 'inspectionsAwaitingAdmin',
             },
             { key: 'packages', href: '/admin/pacotes', icon: Boxes, badge: 'packagesAwaitingApproval' },
+            {
+                key: 'productRequests',
+                href: '/admin/pedidos-de-produto',
+                icon: PackageSearch,
+                badge: 'productRequestsNew',
+            },
         ],
     },
     {
