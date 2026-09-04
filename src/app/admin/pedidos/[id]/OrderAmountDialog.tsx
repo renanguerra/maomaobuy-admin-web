@@ -55,7 +55,7 @@ export function OrderAmountDialog({
     fieldName,
     currentAmountMinor,
     confirmLabel,
-    requireTotp = false,
+    requireTotp = true,
     requireReason = false,
     onCancel,
     onConfirm,

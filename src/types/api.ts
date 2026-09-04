@@ -178,7 +178,7 @@ export interface PresignedUpload {
     key: string;
     uploadUrl: string;
     expiresAt: string;
-    headers: Record<string, string>;
+    fields: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------

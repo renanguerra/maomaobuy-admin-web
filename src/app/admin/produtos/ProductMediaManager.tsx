@@ -10,7 +10,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
-import { api } from '@/services/api';
+import { api, uploadToPresignedUrl } from '@/services/api';
 import type { AdminProductMedia, PresignedUpload } from '@/types/api';
 import { mediaTypeFromMimeType } from './media-utils';
 
@@ -50,11 +50,7 @@ export function ProductMediaManager({ productId, media, onChanged }: ProductMedi
             method: 'POST',
             body: JSON.stringify({ type, mimeType: file.type, sizeBytes: file.size }),
         });
-        const uploadResponse = await fetch(presigned.uploadUrl, {
-            method: 'PUT',
-            headers: presigned.headers,
-            body: file,
-        });
+        const uploadResponse = await uploadToPresignedUrl(presigned, file);
         if (!uploadResponse.ok) throw new Error(t('products.media.uploadFailed', { name: file.name }));
 
         await api(`/products/${productId}/media`, {
