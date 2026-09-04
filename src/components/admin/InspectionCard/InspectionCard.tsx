@@ -8,7 +8,7 @@ import { SectionCard } from '@/components/admin/SectionCard';
 import { inspectionStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { Button } from '@/components/ui/Button';
 import { useTranslation } from '@/i18n/LanguageProvider';
-import { api } from '@/services/api';
+import { api, uploadToPresignedUrl } from '@/services/api';
 import { inspectionStatusLabel, type OrderInspection, type PresignedUpload } from '@/types/api';
 
 function mediaTypeFromMimeType(mimeType: string): 'IMAGE' | 'VIDEO' | undefined {
@@ -65,11 +65,7 @@ export function InspectionCard({
                     method: 'POST',
                     body: JSON.stringify({ type, mimeType: file.type, sizeBytes: file.size }),
                 });
-                const uploaded = await fetch(presigned.uploadUrl, {
-                    method: 'PUT',
-                    headers: presigned.headers,
-                    body: file,
-                });
+                const uploaded = await uploadToPresignedUrl(presigned, file);
                 if (!uploaded.ok) throw new Error(t('inspections.media.uploadFailed', { name: file.name }));
 
                 await api(`/inspections/${inspection.id}/media`, {

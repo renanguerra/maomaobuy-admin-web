@@ -35,7 +35,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import type { MessageKey } from '@/i18n/translations';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
-import { api, ApiError } from '@/services/api';
+import { api, ApiError, uploadToPresignedUrl } from '@/services/api';
 import { formatDate, money, packageStatusLabel, type AdminPackage, type PresignedUpload } from '@/types/api';
 import { AddPackageItemsDialog } from './AddPackageItemsDialog';
 
@@ -193,11 +193,7 @@ export function PackageDetailPage() {
                     method: 'POST',
                     body: JSON.stringify({ mimeType: file.type, sizeBytes: file.size }),
                 });
-                const uploadResponse = await fetch(presigned.uploadUrl, {
-                    method: 'PUT',
-                    headers: presigned.headers,
-                    body: file,
-                });
+                const uploadResponse = await uploadToPresignedUrl(presigned, file);
                 if (!uploadResponse.ok) throw new Error(t('packages.detail.photosSection.uploadFailed'));
                 keys.push(presigned.key);
             }

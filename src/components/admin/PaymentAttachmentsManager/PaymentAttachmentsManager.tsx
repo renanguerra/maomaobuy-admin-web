@@ -9,7 +9,7 @@ import { SectionCard } from '@/components/admin/SectionCard';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
-import { api } from '@/services/api';
+import { api, uploadToPresignedUrl } from '@/services/api';
 import type { AdminPaymentAttachment, PresignedUpload } from '@/types/api';
 
 interface PaymentAttachmentsManagerProps {
@@ -56,11 +56,7 @@ export function PaymentAttachmentsManager({
             method: 'POST',
             body: JSON.stringify({ mimeType: file.type, sizeBytes: file.size }),
         });
-        const uploadResponse = await fetch(presigned.uploadUrl, {
-            method: 'PUT',
-            headers: presigned.headers,
-            body: file,
-        });
+        const uploadResponse = await uploadToPresignedUrl(presigned, file);
         if (!uploadResponse.ok) throw new Error(t('paymentAttachments.uploadFailed', { name: file.name }));
 
         await api(basePath, {

@@ -29,7 +29,7 @@ export function ActionDialog({
     confirmLabel,
     variant = 'primary',
     fields = [],
-    requireTotp = false,
+    requireTotp = true,
     requireReason = false,
     onCancel,
     onConfirm,
