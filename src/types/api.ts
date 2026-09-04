@@ -564,6 +564,43 @@ export function refundNeedsAction(status: string): boolean {
     return REFUND_STATUSES_NEEDING_ACTION.includes(status as RefundStatus);
 }
 
+// ---------------------------------------------------------------------------
+// Pedidos de produto
+// ---------------------------------------------------------------------------
+
+export const PRODUCT_REQUEST_STATUSES = ['NEW', 'REVIEWING', 'FULFILLED', 'DECLINED'] as const;
+export type ProductRequestStatus = (typeof PRODUCT_REQUEST_STATUSES)[number];
+
+const PRODUCT_REQUEST_STATUS_LABELS: Record<Locale, Record<ProductRequestStatus, string>> = {
+    'pt-BR': {
+        NEW: 'Novo',
+        REVIEWING: 'Em análise',
+        FULFILLED: 'Disponibilizado',
+        DECLINED: 'Recusado',
+    },
+    'zh-Hans': {
+        NEW: '新请求',
+        REVIEWING: '审核中',
+        FULFILLED: '已提供',
+        DECLINED: '已拒绝',
+    },
+};
+
+export function productRequestStatusLabel(status: string) {
+    return PRODUCT_REQUEST_STATUS_LABELS[getStoreLocale()][status as ProductRequestStatus] ?? status;
+}
+
+export interface AdminProductRequest {
+    id: string;
+    userId: string;
+    description: string;
+    referenceUrl: string | null;
+    status: string;
+    adminNote: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
 /**
  * A carteira de um cliente vista pela operação. Todos os valores são fen: o
  * saldo conta em yuan desde que a recarga passou a cobrar o câmbio uma vez só.

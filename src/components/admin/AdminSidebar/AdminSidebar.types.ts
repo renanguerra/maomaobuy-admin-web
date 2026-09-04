@@ -14,7 +14,8 @@ export type MenuItemKey =
     | 'products'
     | 'categories'
     | 'finance'
-    | 'admins';
+    | 'admins'
+    | 'productRequests';
 
 /** Sufixos válidos em `sidebar.groups.*`. */
 export type MenuGroupKey = 'operations' | 'catalog' | 'logistics' | 'finance' | 'system';

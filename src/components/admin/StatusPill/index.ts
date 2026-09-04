@@ -5,6 +5,7 @@ export {
     inspectionStatusTone,
     orderStatusTone,
     packageStatusTone,
+    productRequestStatusTone,
     publishedTone,
     refundStatusTone,
     userStatusTone,

@@ -70,6 +70,13 @@ const INSPECTION_STATUS_TONES: Record<string, StatusTone> = {
     DECIDED: 'success',
 };
 
+const PRODUCT_REQUEST_STATUS_TONES: Record<string, StatusTone> = {
+    NEW: 'warning',
+    REVIEWING: 'info',
+    FULFILLED: 'success',
+    DECLINED: 'neutral',
+};
+
 export function inspectionStatusTone(status: string): StatusTone {
     return INSPECTION_STATUS_TONES[status] ?? 'neutral';
 }
@@ -96,4 +103,8 @@ export function refundStatusTone(status: string): StatusTone {
 
 export function publishedTone(isPublished: boolean): StatusTone {
     return isPublished ? 'success' : 'neutral';
+}
+
+export function productRequestStatusTone(status: string): StatusTone {
+    return PRODUCT_REQUEST_STATUS_TONES[status] ?? 'neutral';
 }
