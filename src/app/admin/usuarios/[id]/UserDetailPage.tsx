@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
-import type { AdminOrder, AdminPackage, AdminUser, AdminUserAddress } from '@/types/api';
+import type { AdminOrder, AdminPackage, AdminUser, AdminUserAddress, Page } from '@/types/api';
 import { formatDate, money, orderStatusLabel, packageStatusLabel, userStatusLabel } from '@/types/api';
 import { CreatePackageDialog } from './CreatePackageDialog';
 import { UserWalletCard } from './UserWalletCard';
@@ -232,7 +232,7 @@ export function UserDetailPage() {
             <LazySection<AdminOrder[]>
                 description={t('users.detail.ordersSection.description')}
                 errorMessage={t('users.detail.ordersSection.error')}
-                fetcher={() => api<AdminOrder[]>(`/orders?userId=${user.id}`)}
+                fetcher={() => api<Page<AdminOrder>>(`/orders?userId=${user.id}`).then((page) => page.data)}
                 icon={<ShoppingBag aria-hidden="true" />}
                 summary={(orders) => t('users.detail.ordersSection.count', { count: orders.length })}
                 title={t('users.detail.ordersSection.title')}
@@ -267,7 +267,7 @@ export function UserDetailPage() {
             <LazySection<AdminPackage[]>
                 description={t('users.detail.packagesSection.description')}
                 errorMessage={t('users.detail.packagesSection.error')}
-                fetcher={() => api<AdminPackage[]>(`/packages?userId=${user.id}`)}
+                fetcher={() => api<Page<AdminPackage>>(`/packages?userId=${user.id}`).then((page) => page.data)}
                 icon={<Package aria-hidden="true" />}
                 summary={(packages) => t('users.detail.packagesSection.count', { count: packages.length })}
                 title={t('users.detail.packagesSection.title')}

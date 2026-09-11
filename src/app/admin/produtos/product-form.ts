@@ -17,6 +17,9 @@ export interface ProductFormValues {
     estimatedShippingAmountMinor: string;
     stock: string;
     isPublished: boolean;
+    isPreSale: boolean;
+    /** `YYYY-MM-DD`, como o `<input type="date">` entrega e o backend espera. */
+    releaseDate: string;
     categoryIds: string[];
     subcategoryIds: string[];
 }
@@ -32,6 +35,8 @@ const EMPTY: ProductFormValues = {
     estimatedShippingAmountMinor: '0',
     stock: '0',
     isPublished: false,
+    isPreSale: false,
+    releaseDate: '',
     categoryIds: [],
     subcategoryIds: [],
 };
@@ -51,6 +56,8 @@ function fromProduct(product: AdminProduct): ProductFormValues {
         estimatedShippingAmountMinor: product.estimatedShippingAmountMinor ?? '0',
         stock: String(product.stock),
         isPublished: product.isPublished,
+        isPreSale: product.isPreSale,
+        releaseDate: product.releaseDate ?? '',
         categoryIds: product.categories.map((category) => category.id),
         subcategoryIds: product.subcategories.map((subcategory) => subcategory.id),
     };
@@ -124,6 +131,10 @@ export function toProductPayload(values: ProductFormValues) {
         estimatedShippingAmountMinor: values.estimatedShippingAmountMinor,
         stock: Number(values.stock),
         isPublished: values.isPublished,
+        isPreSale: values.isPreSale,
+        // Fora da pré-venda a data não é enviada em branco: o backend recusa
+        // string vazia e apaga a data sozinho quando a pré-venda cai.
+        releaseDate: values.isPreSale ? values.releaseDate : undefined,
         categoryIds: values.categoryIds,
         subcategoryIds: values.subcategoryIds,
     };

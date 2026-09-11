@@ -25,7 +25,16 @@ export function resolveMessage(locale: Locale, key: MessageKey): string {
     return node;
 }
 
+/**
+ * Devolver o `{{campo}}` cru quando falta a variável transforma um esquecimento
+ * de quem chamou `t()` em texto visível para o admin. Some com o marcador e
+ * grita no console fora de produção, onde ainda dá para corrigir.
+ */
 export function interpolate(template: string, vars?: Record<string, string | number>): string {
-    if (!vars) return template;
-    return template.replace(/\{\{(\w+)\}\}/g, (match, name: string) => (name in vars ? String(vars[name]) : match));
+    return template.replace(/\{\{(\w+)\}\}/g, (_match, name: string) => {
+        if (vars && name in vars) return String(vars[name]);
+        if (process.env.NODE_ENV !== 'production')
+            console.warn(`i18n: variável "${name}" não foi informada para a mensagem "${template}".`);
+        return '';
+    });
 }

@@ -77,6 +77,18 @@ const PRODUCT_REQUEST_STATUS_TONES: Record<string, StatusTone> = {
     DECLINED: 'neutral',
 };
 
+/** Fila de e-mails: pendente é normal, falha é problema, ignorado é inerte. */
+const EMAIL_DELIVERY_STATUS_TONES: Record<string, StatusTone> = {
+    PENDING: 'info',
+    SENT: 'success',
+    FAILED: 'danger',
+    SKIPPED: 'neutral',
+};
+
+export function emailDeliveryStatusTone(status: string): StatusTone {
+    return EMAIL_DELIVERY_STATUS_TONES[status] ?? 'neutral';
+}
+
 export function inspectionStatusTone(status: string): StatusTone {
     return INSPECTION_STATUS_TONES[status] ?? 'neutral';
 }

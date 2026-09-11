@@ -8,6 +8,17 @@ export interface Page<T> {
     total: number;
 }
 
+/**
+ * Resultado das ações em lote de produtos. `ignoredIds` traz o que o banco não
+ * alcançou — excluído por outro admin, por exemplo — para a tela dizer "3 de 4"
+ * sem chutar.
+ */
+export interface BulkResult {
+    requested: number;
+    affected: number;
+    ignoredIds: string[];
+}
+
 // ---------------------------------------------------------------------------
 // Usuários
 // ---------------------------------------------------------------------------
@@ -166,6 +177,9 @@ export interface AdminProduct {
     estimatedShippingAmountMinor: string | null;
     stock: number;
     isPublished: boolean;
+    /** Pré-venda e o dia de lançamento anunciado (`YYYY-MM-DD`), sempre juntos. */
+    isPreSale: boolean;
+    releaseDate: string | null;
     variants: AdminProductVariant[];
     media: AdminProductMedia[];
     categories: AdminProductCategoryRef[];
@@ -178,7 +192,6 @@ export interface PresignedUpload {
     key: string;
     uploadUrl: string;
     expiresAt: string;
-    fields: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -305,6 +318,38 @@ export interface AdminOrderChangeLog {
     createdAt: string;
 }
 
+export interface OptionalService {
+    id: string;
+    code: string;
+    name: string;
+    description: string;
+    kind: 'SERVICE' | 'BUNDLE';
+    pricingUnit: 'PER_ITEM' | 'PER_PHOTO' | 'PER_ORDER';
+    currency: string;
+    priceCnyMinor: string;
+    /** Teto da faixa em adicional de preço variável; `null` em preço fixo. */
+    maxPriceCnyMinor: string | null;
+    maxQuantity: number | null;
+    isActive: boolean;
+    sortOrder: number;
+}
+
+export interface OrderOptionalService {
+    id: string;
+    optionalServiceId: string;
+    code: string;
+    name: string;
+    pricingUnit: 'PER_ITEM' | 'PER_PHOTO' | 'PER_ORDER';
+    currency: string;
+    quantity: number;
+    unitAmountMinor: string;
+    totalAmountMinor: string;
+    status: 'REQUESTED' | 'COMPLETED' | 'CANCELLED';
+    customerNote: string | null;
+    adminNote: string | null;
+    completedAt: string | null;
+}
+
 export interface AdminOrder {
     id: string;
     userId: string;
@@ -315,7 +360,16 @@ export interface AdminOrder {
     fulfillmentMode: 'IN_STOCK' | 'SOURCED';
     status: string;
     currency: string;
+    /** Valor da mercadoria, sem os adicionais. */
     totalAmountMinor: string;
+    /** Soma dos adicionais contratados. */
+    optionalServicesAmountMinor: string;
+    /** O que sai da carteira do cliente: mercadoria mais adicionais. */
+    chargeableTotalAmountMinor: string;
+    /** Entrada no armazém — início da contagem da armazenagem. */
+    warehouseArrivedAt: string | null;
+    /** Armazenagem já cobrada deste pedido, em fen. */
+    storageFeeChargedMinor: string;
     /** Último total autorizado pelo cliente. Menor que o total = precisa de nova aprovação. */
     customerApprovedTotalMinor: string | null;
     shippingEstimateAmountMinor: string | null;
@@ -331,6 +385,7 @@ export interface AdminOrder {
     completedAt: string | null;
     adminDescription: string | null;
     items: AdminOrderItem[];
+    optionalServices: OrderOptionalService[];
     media: AdminOrderMedia[];
     inspections: OrderInspection[];
     paymentAttachments: AdminPaymentAttachment[];
@@ -344,6 +399,10 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         MEDIA_ADDED: 'Mídia adicionada',
         MEDIA_REMOVED: 'Mídia removida',
         APPROVED: 'Pedido aprovado',
+        OPTIONAL_SERVICES_UPDATED: 'Serviços adicionais atualizados',
+        OPTIONAL_SERVICE_COMPLETED: 'Serviço adicional concluído',
+        OPTIONAL_SERVICE_CANCELLED: 'Serviço adicional cancelado',
+        STORAGE_FEE_CHARGED: 'Armazenagem cobrada',
         REJECTED: 'Pedido rejeitado',
         SHIPPING_ESTIMATE_CHANGED: 'Frete estimado alterado',
         CHANGES_REQUESTED: 'Aprovação do cliente solicitada',
@@ -361,6 +420,10 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         MEDIA_ADDED: '已添加素材',
         MEDIA_REMOVED: '已移除素材',
         APPROVED: '订单已批准',
+        OPTIONAL_SERVICES_UPDATED: '增值服务已更新',
+        OPTIONAL_SERVICE_COMPLETED: '增值服务已完成',
+        OPTIONAL_SERVICE_CANCELLED: '增值服务已取消',
+        STORAGE_FEE_CHARGED: '仓储费已计收',
         REJECTED: '订单已拒绝',
         SHIPPING_ESTIMATE_CHANGED: '预估运费已修改',
         CHANGES_REQUESTED: '已请求客户确认',
@@ -468,7 +531,16 @@ export interface AdminPackage {
     widthMillimeters: number | null;
     heightMillimeters: number | null;
     shippingCurrency: string | null;
+    /** Frete cobrado do cliente: custo mais margem. */
     shippingAmountMinor: string | null;
+    /** Custo da transportadora, digitado pelo admin. */
+    freightCostAmountMinor: string | null;
+    /** Margem aplicada naquela cotação, em pontos-base. */
+    freightMarkupBasisPoints: number | null;
+    /** Armazenagem dos pedidos do pacote, cobrada junto com o frete. */
+    storageFeeAmountMinor: string;
+    /** Frete mais armazenagem: o que sai da carteira do cliente. */
+    totalDueAmountMinor: string | null;
     destination: AddressSnapshot;
     shippedAt: string | null;
     estimatedDeliveryAt: string | null;
@@ -487,6 +559,18 @@ export interface AdminPackage {
     userId: string;
     userEmail: string;
     userName: string;
+}
+
+// ---------------------------------------------------------------------------
+// Configurações
+// ---------------------------------------------------------------------------
+
+export interface AdminSetting {
+    key: string;
+    type: 'INTEGER' | 'DECIMAL';
+    value: string;
+    description: string | null;
+    updatedAt: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -589,6 +673,30 @@ const PRODUCT_REQUEST_STATUS_LABELS: Record<Locale, Record<ProductRequestStatus,
 export function productRequestStatusLabel(status: string) {
     return PRODUCT_REQUEST_STATUS_LABELS[getStoreLocale()][status as ProductRequestStatus] ?? status;
 }
+
+/**
+ * Uma linha da fila de saída de e-mails. Sem o endereço do destinatário: o
+ * painel precisa saber se o e-mail saiu, não ler o e-mail de ninguém — por
+ * isso o backend devolve só o domínio.
+ */
+export interface AdminEmailDelivery {
+    id: string;
+    kind: string;
+    category: string;
+    status: string;
+    recipientDomain: string;
+    userId: string | null;
+    subjectId: string | null;
+    attempts: number;
+    scheduledFor: string;
+    sentAt: string | null;
+    lastError: string | null;
+    createdAt: string;
+}
+
+export const EMAIL_DELIVERY_STATUSES = ['PENDING', 'SENT', 'FAILED', 'SKIPPED'] as const;
+
+export type EmailDeliveryStatus = (typeof EMAIL_DELIVERY_STATUSES)[number];
 
 export interface AdminProductRequest {
     id: string;

@@ -495,10 +495,35 @@ export function PackageDetailPage() {
                         <SummaryList
                             rows={[
                                 {
+                                    label: t('packages.detail.fields.freightCost'),
+                                    value:
+                                        pkg.freightCostAmountMinor && pkg.shippingCurrency
+                                            ? money(pkg.freightCostAmountMinor, pkg.shippingCurrency)
+                                            : t('common.dash'),
+                                },
+                                {
+                                    label: t('packages.detail.fields.freightMarkup'),
+                                    value:
+                                        pkg.freightMarkupBasisPoints === null
+                                            ? t('common.dash')
+                                            : `${(pkg.freightMarkupBasisPoints / 100).toFixed(2)}%`,
+                                },
+                                {
                                     label: t('packages.detail.fields.shipping'),
                                     value:
                                         pkg.shippingAmountMinor && pkg.shippingCurrency
                                             ? money(pkg.shippingAmountMinor, pkg.shippingCurrency)
+                                            : t('common.dash'),
+                                },
+                                {
+                                    label: t('packages.detail.fields.storageFee'),
+                                    value: money(pkg.storageFeeAmountMinor, pkg.shippingCurrency ?? 'CNY'),
+                                },
+                                {
+                                    label: t('packages.detail.fields.totalDue'),
+                                    value:
+                                        pkg.totalDueAmountMinor && pkg.shippingCurrency
+                                            ? money(pkg.totalDueAmountMinor, pkg.shippingCurrency)
                                             : t('common.dash'),
                                     emphasis: true,
                                 },
@@ -629,10 +654,11 @@ export function PackageDetailPage() {
                         ],
                     },
                     {
-                        name: 'shippingAmountMinor',
+                        name: 'freightCostAmountMinor',
                         label: t('packages.detail.dialogs.shipment.amount'),
+                        hint: t('packages.detail.dialogs.shipment.amountHint'),
                         kind: 'currency',
-                        defaultValue: pkg.shippingAmountMinor ?? '0',
+                        defaultValue: pkg.freightCostAmountMinor ?? '0',
                     },
                 ]}
             />

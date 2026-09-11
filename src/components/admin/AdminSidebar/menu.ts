@@ -3,9 +3,12 @@ import {
     ClipboardCheck,
     ClipboardList,
     LayoutDashboard,
+    Mail,
     Package,
     PackageSearch,
+    Settings,
     ShieldCheck,
+    Sparkles,
     Tags,
     Users,
     Wallet,
@@ -49,6 +52,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
         items: [
             { key: 'products', href: '/admin/produtos', icon: Package },
             { key: 'categories', href: '/admin/categorias', icon: Tags },
+            { key: 'optionalServices', href: '/admin/servicos-adicionais', icon: Sparkles },
         ],
     },
     {
@@ -57,7 +61,11 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
     },
     {
         key: 'system',
-        items: [{ key: 'admins', href: '/admin/admins', icon: ShieldCheck }],
+        items: [
+            { key: 'admins', href: '/admin/admins', icon: ShieldCheck },
+            { key: 'emails', href: '/admin/emails', icon: Mail },
+            { key: 'settings', href: '/admin/configuracoes', icon: Settings },
+        ],
     },
 ];
 
