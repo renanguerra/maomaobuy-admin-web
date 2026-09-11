@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { FilterX, ImageOff, Package, Plus } from 'lucide-react';
+import { CheckCircle2, FileX, FilterX, ImageOff, Package, Plus, Trash2, Upload, X } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
 import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -12,11 +12,16 @@ import { SectionCard } from '@/components/admin/SectionCard';
 import { publishedTone, StatusPill } from '@/components/admin/StatusPill';
 import { Toolbar } from '@/components/admin/Toolbar';
 import { Button, ButtonLink } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { Select } from '@/components/ui/Select';
+import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
-import { api } from '@/services/api';
-import type { AdminCategory, AdminProduct, Page } from '@/types/api';
+import { api, ApiError } from '@/services/api';
+import type { AdminCategory, AdminProduct, BulkResult, Page } from '@/types/api';
 import { money, productSourceLabel } from '@/types/api';
+
+type BulkAction = 'publish' | 'draft' | 'delete';
 
 const LIMIT = 20;
 
@@ -45,16 +50,22 @@ function filtersKey(filters: Filters, pageNumber: number) {
 
 export function ProductsListPage() {
     const { t } = useTranslation();
+    const { notify } = useToast();
+    const confirm = useConfirm();
     const [categories, setCategories] = useState<AdminCategory[]>([]);
     const [filters, setFilters] = useState<Filters>(NO_FILTERS);
     const [pageNumber, setPageNumber] = useState(1);
     const [loaded, setLoaded] = useState<LoadedPage>();
     const [failure, setFailure] = useState<Failure>();
+    const [refreshToken, setRefreshToken] = useState(0);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [bulkAction, setBulkAction] = useState<BulkAction>();
 
     const queryKey = filtersKey(filters, pageNumber);
     const result = loaded?.key === queryKey ? loaded.page : undefined;
     const error = failure?.key === queryKey ? failure.message : undefined;
     const loading = !result && !error;
+    const rows = useMemo(() => result?.data ?? [], [result]);
 
     useEffect(() => {
         api<AdminCategory[]>('/categories')
@@ -83,11 +94,18 @@ export function ProductsListPage() {
         return () => {
             active = false;
         };
-    }, [filters, pageNumber, t]);
+    }, [filters, pageNumber, refreshToken, t]);
+
+    // Muda a página sem deixar uma seleção de outra listagem sobreviver.
+    const changePage = useCallback((next: number) => {
+        setPageNumber(next);
+        setSelectedIds(new Set());
+    }, []);
 
     const updateFilters = useCallback((patch: Partial<Filters>) => {
         setPageNumber(1);
         setFilters((current) => ({ ...current, ...patch }));
+        setSelectedIds(new Set());
     }, []);
 
     const subcategoryOptions = useMemo(
@@ -98,7 +116,87 @@ export function ProductsListPage() {
     const hasFilters = filters.category !== '' || filters.subcategory !== '' || filters.status !== '';
     const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 1;
 
+    const allOnPageSelected = rows.length > 0 && rows.every((product) => selectedIds.has(product.id));
+
+    const toggleSelected = useCallback((id: string) => {
+        setSelectedIds((current) => {
+            const next = new Set(current);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }, []);
+
+    const toggleSelectAllOnPage = useCallback(() => {
+        setSelectedIds((current) => {
+            if (rows.length > 0 && rows.every((product) => current.has(product.id))) return new Set();
+            return new Set(rows.map((product) => product.id));
+        });
+    }, [rows]);
+
+    async function runBulkAction(action: BulkAction) {
+        const ids = Array.from(selectedIds);
+        if (ids.length === 0) return;
+
+        if (action === 'delete') {
+            const confirmed = await confirm({
+                title: t('products.list.bulk.deleteTitle', { count: ids.length }),
+                description: t('products.list.bulk.deleteConfirm', { count: ids.length }),
+                confirmLabel: t('common.actions.delete'),
+                tone: 'danger',
+            });
+            if (!confirmed) return;
+        }
+
+        setBulkAction(action);
+        // Uma requisição para a seleção inteira, resolvida no banco com um
+        // UPDATE só. O backend não recusa o lote por causa de um id que sumiu
+        // no meio do caminho: devolve quantos pegou e quais ficaram de fora.
+        let succeeded = 0;
+        try {
+            const result = await api<BulkResult>(`/products/bulk/${action}`, {
+                method: 'POST',
+                body: JSON.stringify({ ids }),
+            });
+            succeeded = result.affected;
+        } catch (err) {
+            if (!(err instanceof ApiError)) throw err;
+        } finally {
+            setBulkAction(undefined);
+        }
+        setSelectedIds(new Set());
+        setRefreshToken((current) => current + 1);
+
+        const failed = ids.length - succeeded;
+        notify({
+            tone: failed === 0 ? 'success' : succeeded === 0 ? 'danger' : 'warning',
+            title: t(`products.list.bulk.${action}ResultTitle`, { count: succeeded }),
+            description: failed > 0 ? t('products.list.bulk.partialFailure', { failed, total: ids.length }) : undefined,
+        });
+    }
+
     const columns: DataTableColumn<AdminProduct>[] = [
+        {
+            key: 'select',
+            header: (
+                <Checkbox
+                    checked={allOnPageSelected}
+                    label={<span className="sr-only">{t('products.list.bulk.selectAllAria')}</span>}
+                    onChange={toggleSelectAllOnPage}
+                />
+            ),
+            card: 'hide',
+            width: '2.75rem',
+            cell: (product) => (
+                <Checkbox
+                    checked={selectedIds.has(product.id)}
+                    label={
+                        <span className="sr-only">{t('products.list.bulk.selectAria', { name: product.name })}</span>
+                    }
+                    onChange={() => toggleSelected(product.id)}
+                />
+            ),
+        },
         {
             key: 'product',
             header: t('products.list.columns.product'),
@@ -165,9 +263,12 @@ export function ProductsListPage() {
             key: 'status',
             header: t('products.list.columns.status'),
             cell: (product) => (
-                <StatusPill tone={publishedTone(product.isPublished)}>
-                    {product.isPublished ? t('products.list.statusPublished') : t('products.list.statusDraft')}
-                </StatusPill>
+                <div className="flex flex-wrap items-center gap-1.5">
+                    <StatusPill tone={publishedTone(product.isPublished)}>
+                        {product.isPublished ? t('products.list.statusPublished') : t('products.list.statusDraft')}
+                    </StatusPill>
+                    {product.isPreSale && <StatusPill tone="warning">{t('products.list.statusPreSale')}</StatusPill>}
+                </div>
             ),
         },
     ];
@@ -179,12 +280,21 @@ export function ProductsListPage() {
                 kicker={t('products.list.kicker')}
                 title={t('products.list.title')}
                 actions={
-                    <ButtonLink
-                        href="/admin/produtos/novo"
-                        leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
-                    >
-                        {t('products.list.newButton')}
-                    </ButtonLink>
+                    <>
+                        <ButtonLink
+                            href="/admin/produtos/importar"
+                            leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
+                            variant="secondary"
+                        >
+                            {t('products.list.importButton')}
+                        </ButtonLink>
+                        <ButtonLink
+                            href="/admin/produtos/novo"
+                            leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
+                        >
+                            {t('products.list.newButton')}
+                        </ButtonLink>
+                    </>
                 }
             />
 
@@ -203,6 +313,7 @@ export function ProductsListPage() {
                                 onClick={() => {
                                     setPageNumber(1);
                                     setFilters(NO_FILTERS);
+                                    setSelectedIds(new Set());
                                 }}
                                 size="small"
                                 variant="ghost"
@@ -245,6 +356,60 @@ export function ProductsListPage() {
                     />
                 </Toolbar>
 
+                {selectedIds.size > 0 && (
+                    <Toolbar
+                        className="bg-warm-100 dark:bg-night-canvas"
+                        actions={
+                            <>
+                                <Button
+                                    leadingIcon={<CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
+                                    loading={bulkAction === 'publish'}
+                                    disabled={bulkAction !== undefined && bulkAction !== 'publish'}
+                                    onClick={() => runBulkAction('publish')}
+                                    size="small"
+                                    variant="secondary"
+                                >
+                                    {t('products.list.bulk.markPublished')}
+                                </Button>
+                                <Button
+                                    leadingIcon={<FileX className="h-4 w-4" aria-hidden="true" />}
+                                    loading={bulkAction === 'draft'}
+                                    disabled={bulkAction !== undefined && bulkAction !== 'draft'}
+                                    onClick={() => runBulkAction('draft')}
+                                    size="small"
+                                    variant="secondary"
+                                >
+                                    {t('products.list.bulk.markDraft')}
+                                </Button>
+                                <Button
+                                    leadingIcon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+                                    loading={bulkAction === 'delete'}
+                                    disabled={bulkAction !== undefined && bulkAction !== 'delete'}
+                                    onClick={() => runBulkAction('delete')}
+                                    size="small"
+                                    variant="dangerGhost"
+                                >
+                                    {t('products.list.bulk.deleteButton')}
+                                </Button>
+                            </>
+                        }
+                    >
+                        <span className="flex items-center gap-2 text-sm font-semibold text-ink dark:text-night-text">
+                            {t('products.list.bulk.selectedCount', { count: selectedIds.size })}
+                            <Button
+                                aria-label={t('products.list.bulk.clearSelection')}
+                                disabled={bulkAction !== undefined}
+                                iconOnly
+                                onClick={() => setSelectedIds(new Set())}
+                                size="small"
+                                variant="ghost"
+                            >
+                                <X className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                        </span>
+                    </Toolbar>
+                )}
+
                 <DataTable
                     caption={t('products.list.tableCaption')}
                     columns={columns}
@@ -252,7 +417,7 @@ export function ProductsListPage() {
                     loadingLabel={t('products.list.loading')}
                     minWidth="56rem"
                     rowKey={(product) => product.id}
-                    rows={result?.data ?? []}
+                    rows={rows}
                     empty={
                         <EmptyState
                             description={hasFilters ? t('products.list.emptyFilteredDescription') : undefined}
@@ -281,7 +446,7 @@ export function ProductsListPage() {
                     <Pagination
                         disabled={loading}
                         nextLabel={t('common.pagination.next')}
-                        onChange={setPageNumber}
+                        onChange={changePage}
                         page={pageNumber}
                         previousLabel={t('common.pagination.previous')}
                         totalPages={totalPages}

@@ -36,6 +36,7 @@ import { refreshPendingCounts } from '@/services/admin/pending-counts';
 import { formatDate, money, orderChangeLogTypeLabel, orderStatusLabel, type AdminOrder } from '@/types/api';
 import { InspectionCard } from '@/components/admin/InspectionCard';
 import { OrderMediaManager } from './OrderMediaManager';
+import { OrderOptionalServicesSection } from './OrderOptionalServices';
 import { OrderAmountDialog, type OrderAmountDialogValues } from './OrderAmountDialog';
 
 type ApprovalDialogKind =
@@ -510,6 +511,8 @@ export function OrderDetailPage() {
                         </ListRows>
                     </SectionCard>
 
+                    <OrderOptionalServicesSection order={order} onChanged={load} />
+
                     {order.adminDescription && (
                         <SectionCard title={t('orders.detail.fields.adminDescription')}>
                             <p className="m-0 text-sm leading-relaxed whitespace-pre-wrap text-ink dark:text-night-text">
@@ -635,7 +638,23 @@ export function OrderDetailPage() {
                                 {
                                     label: t('orders.detail.fields.total'),
                                     value: money(order.totalAmountMinor, order.currency),
+                                },
+                                {
+                                    label: t('orders.detail.fields.optionalServices'),
+                                    value: money(order.optionalServicesAmountMinor, order.currency),
+                                },
+                                {
+                                    label: t('orders.detail.fields.chargeableTotal'),
+                                    value: money(order.chargeableTotalAmountMinor, order.currency),
                                     emphasis: true,
+                                },
+                                {
+                                    label: t('orders.detail.fields.warehouseArrivedAt'),
+                                    value: formatDate(order.warehouseArrivedAt),
+                                },
+                                {
+                                    label: t('orders.detail.fields.storageFeeCharged'),
+                                    value: money(order.storageFeeChargedMinor, order.currency),
                                 },
                                 {
                                     label: t('orders.detail.fields.paymentProvider'),

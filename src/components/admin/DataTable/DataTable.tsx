@@ -69,7 +69,13 @@ export function DataTable<T>({
     if (loading) return <SkeletonTable columns={Math.min(columns.length, 5)} label={loadingLabel} />;
     if (rows.length === 0) return <>{empty}</>;
 
-    const [primary, ...rest] = columns;
+    // No cartão do celular, a primeira coluna vira o título em destaque. Uma
+    // coluna marcada `card: 'hide'` (ex.: checkbox de seleção em lote, que só
+    // faz sentido na tabela) nunca deve ocupar esse lugar — se ela vier
+    // primeiro, pulamos para a próxima coluna visível.
+    const primaryIndex = columns.findIndex((column) => column.card !== 'hide');
+    const primary = columns[primaryIndex === -1 ? 0 : primaryIndex];
+    const rest = columns.filter((_, index) => index !== (primaryIndex === -1 ? 0 : primaryIndex));
 
     return (
         <>

@@ -33,15 +33,15 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 /**
- * Grava um arquivo na URL pré-assinada. É um POST com content-length-range,
- * não um PUT: o storage recusa o envio se o tamanho fugir do que o backend
- * autorizou. `file` precisa ser o último campo do form — é o que a política
- * assinada exige. Devolve a `Response` crua para cada chamador decidir a
- * mensagem de erro (traduzida, com o nome do arquivo etc.).
+ * Grava um arquivo na URL pré-assinada com um PUT direto — o R2 não
+ * implementa o POST pré-assinado do S3 (responde 501 mesmo com CORS
+ * liberado para POST). Devolve a `Response` crua para cada chamador decidir
+ * a mensagem de erro (traduzida, com o nome do arquivo etc.).
  */
 export async function uploadToPresignedUrl(presigned: PresignedUpload, file: File): Promise<Response> {
-    const form = new FormData();
-    for (const [field, value] of Object.entries(presigned.fields)) form.append(field, value);
-    form.append('file', file);
-    return fetch(presigned.uploadUrl, { method: 'POST', body: form });
+    return fetch(presigned.uploadUrl, {
+        method: 'PUT',
+        headers: { 'content-type': file.type },
+        body: file,
+    });
 }

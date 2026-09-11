@@ -211,6 +211,36 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                 />
             </SectionCard>
 
+            <SectionCard description={t('products.new.preSale.description')} title={t('products.new.preSale.title')}>
+                <Checkbox
+                    boxed
+                    checked={values.isPreSale}
+                    description={t('products.new.preSale.checkboxHint')}
+                    label={t('products.new.preSale.checkbox')}
+                    // Desmarcar limpa a data no mesmo gesto: o backend a apaga
+                    // de qualquer jeito, e deixá-la na tela sugere que ela
+                    // continua valendo.
+                    onChange={(event) =>
+                        patch({
+                            isPreSale: event.target.checked,
+                            ...(event.target.checked ? {} : { releaseDate: '' }),
+                        })
+                    }
+                />
+                {values.isPreSale && (
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <Input
+                            hint={t('products.new.preSale.releaseDateHint')}
+                            label={t('products.new.preSale.releaseDate')}
+                            onChange={(event) => patch({ releaseDate: event.target.value })}
+                            required
+                            type="date"
+                            value={values.releaseDate}
+                        />
+                    </div>
+                )}
+            </SectionCard>
+
             {categories.length > 0 && (
                 <SectionCard
                     description={t('products.new.categoriesDescription')}
