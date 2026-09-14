@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
     CheckCircle2,
     History,
+    MessageSquare,
     PackageCheck,
     Package as PackageIcon,
     Pencil,
@@ -19,8 +20,8 @@ import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
+import { MessageThread } from '@/components/admin/MessageThread';
 import { PageHeader } from '@/components/admin/PageHeader';
-import { PaymentAttachmentsManager } from '@/components/admin/PaymentAttachmentsManager';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { orderStatusTone, StatusPill } from '@/components/admin/StatusPill';
@@ -67,9 +68,6 @@ const SOURCING_NEXT_STEP: Record<string, { status: string; labelKey: MessageKey 
     PURCHASED: { status: 'SELLER_SHIPPED', labelKey: 'orders.detail.actions.markSellerShipped' },
     SELLER_SHIPPED: { status: 'IN_WAREHOUSE', labelKey: 'orders.detail.actions.markInWarehouse' },
 };
-
-/** Situações em que o pedido já encerrou — nada mais pode ser anexado. */
-const CLOSED_STATUSES = ['COMPLETED', 'REFUND', 'INVALID', 'CANCELLED'];
 
 export function OrderDetailPage() {
     const { t } = useTranslation();
@@ -587,14 +585,6 @@ export function OrderDetailPage() {
                         </SectionCard>
                     )}
 
-                    <PaymentAttachmentsManager
-                        attachments={order.paymentAttachments}
-                        canManage={!CLOSED_STATUSES.includes(order.status)}
-                        onChanged={load}
-                        resource="orders"
-                        resourceId={order.id}
-                    />
-
                     <SectionCard
                         description={t('orders.detail.history.description')}
                         icon={<History aria-hidden="true" />}
@@ -622,6 +612,14 @@ export function OrderDetailPage() {
                                 }))}
                             />
                         )}
+                    </SectionCard>
+
+                    <SectionCard
+                        description={t('messages.description')}
+                        icon={<MessageSquare aria-hidden="true" />}
+                        title={t('messages.title')}
+                    >
+                        <MessageThread endpoint={`/orders/${params.id}/messages`} />
                     </SectionCard>
                 </div>
 
@@ -656,16 +654,8 @@ export function OrderDetailPage() {
                                     label: t('orders.detail.fields.storageFeeCharged'),
                                     value: money(order.storageFeeChargedMinor, order.currency),
                                 },
-                                {
-                                    label: t('orders.detail.fields.paymentProvider'),
-                                    value: order.providerName ?? t('common.dash'),
-                                },
                                 { label: t('orders.detail.fields.createdAt'), value: formatDate(order.createdAt) },
                                 { label: t('orders.detail.fields.paidAt'), value: formatDate(order.paidAt) },
-                                {
-                                    label: t('orders.detail.fields.paymentExpiresAt'),
-                                    value: formatDate(order.paymentExpiresAt),
-                                },
                             ]}
                         />
                     </SectionCard>

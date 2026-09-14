@@ -7,6 +7,7 @@ import {
     ArrowUpRight,
     CheckCircle2,
     Images,
+    MessageSquare,
     Package as PackageIcon,
     Pencil,
     Plus,
@@ -23,8 +24,8 @@ import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
 import { MediaGrid, MediaTile } from '@/components/admin/MediaGrid';
+import { MessageThread } from '@/components/admin/MessageThread';
 import { PageHeader } from '@/components/admin/PageHeader';
-import { PaymentAttachmentsManager } from '@/components/admin/PaymentAttachmentsManager';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { packageStatusTone, StatusPill } from '@/components/admin/StatusPill';
@@ -481,13 +482,13 @@ export function PackageDetailPage() {
                         )}
                     </SectionCard>
 
-                    <PaymentAttachmentsManager
-                        attachments={pkg.paymentAttachments}
-                        canManage={!CLOSED_STATUSES.includes(pkg.status)}
-                        onChanged={load}
-                        resource="packages"
-                        resourceId={pkg.id}
-                    />
+                    <SectionCard
+                        description={t('messages.description')}
+                        icon={<MessageSquare aria-hidden="true" />}
+                        title={t('messages.title')}
+                    >
+                        <MessageThread endpoint={`/packages/${params.id}/messages`} />
+                    </SectionCard>
                 </div>
 
                 <div className="grid min-w-0 gap-5">

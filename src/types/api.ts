@@ -296,17 +296,6 @@ export interface AdminOrderMedia {
     createdAt: string;
 }
 
-export interface AdminPaymentAttachment {
-    id: string;
-    mimeType: string;
-    sizeBytes: string;
-    url: string | null;
-    uploadedBy: 'ADMIN' | 'USER';
-    createdByAdminId: string | null;
-    createdByUserId: string | null;
-    createdAt: string;
-}
-
 export interface AdminOrderChangeLog {
     id: string;
     type: string;
@@ -377,8 +366,6 @@ export interface AdminOrder {
     reviewedAt: string | null;
     reviewedByAdminId: string | null;
     rejectionReason: string | null;
-    providerName: string | null;
-    paymentExpiresAt: string | null;
     paidAt: string | null;
     stockReservationExpiresAt: string | null;
     shippedAt: string | null;
@@ -388,7 +375,6 @@ export interface AdminOrder {
     optionalServices: OrderOptionalService[];
     media: AdminOrderMedia[];
     inspections: OrderInspection[];
-    paymentAttachments: AdminPaymentAttachment[];
     changeLogs: AdminOrderChangeLog[];
 }
 
@@ -548,12 +534,9 @@ export interface AdminPackage {
     lastTrackingEventAt: string | null;
     reviewedAt: string | null;
     rejectionReason: string | null;
-    pixCopyPaste: string | null;
-    paymentExpiresAt: string | null;
     paidAt: string | null;
     markedPaidByUserAt: string | null;
     photoUrls: string[];
-    paymentAttachments: AdminPaymentAttachment[];
     createdAt: string;
     items: AdminPackageItem[];
     userId: string;
