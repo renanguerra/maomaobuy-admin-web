@@ -40,15 +40,7 @@ import { api, ApiError, uploadToPresignedUrl } from '@/services/api';
 import { formatDate, money, packageStatusLabel, type AdminPackage, type PresignedUpload } from '@/types/api';
 import { AddPackageItemsDialog } from './AddPackageItemsDialog';
 
-type DialogKind =
-    | 'approve'
-    | 'reject'
-    | 'confirm-freight-payment-manually'
-    | 'dispatch'
-    | 'correct-dispatch'
-    | 'shipment'
-    | 'add-items'
-    | null;
+type DialogKind = 'approve' | 'reject' | 'dispatch' | 'correct-dispatch' | 'shipment' | 'add-items' | null;
 
 /** Situações finais do pacote — nada mais é anexado depois delas. */
 const CLOSED_STATUSES = ['DELIVERED', 'RETURNED', 'CANCELLED'];
@@ -122,13 +114,11 @@ export function PackageDetailPage() {
                     ? t('packages.detail.feedback.approve')
                     : action === 'reject'
                       ? t('packages.detail.feedback.reject')
-                      : action === 'confirm-freight-payment-manually'
-                        ? t('packages.detail.feedback.confirm-freight-payment-manually')
-                        : action === 'shipment'
-                          ? t('packages.detail.feedback.shipment')
-                          : correcting
-                            ? t('packages.detail.feedback.correctDispatch')
-                            : t('packages.detail.feedback.dispatch'),
+                      : action === 'shipment'
+                        ? t('packages.detail.feedback.shipment')
+                        : correcting
+                          ? t('packages.detail.feedback.correctDispatch')
+                          : t('packages.detail.feedback.dispatch'),
             );
         } catch (err) {
             throw err instanceof ApiError ? err : new Error(t('common.errors.generic'));
@@ -333,15 +323,6 @@ export function PackageDetailPage() {
                             size="small"
                         >
                             {t('packages.detail.actions.quoteFreight')}
-                        </Button>
-                    )}
-                    {pkg.status === 'AWAITING_FREIGHT_PAYMENT' && (
-                        <Button
-                            leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('confirm-freight-payment-manually')}
-                            size="small"
-                        >
-                            {t('packages.detail.actions.confirmFreightPayment')}
                         </Button>
                     )}
                     {pkg.status === 'READY_FOR_DISPATCH' && (
@@ -662,14 +643,6 @@ export function PackageDetailPage() {
                         defaultValue: pkg.freightCostAmountMinor ?? '0',
                     },
                 ]}
-            />
-            <ActionDialog
-                confirmLabel={t('packages.detail.dialogs.confirmFreightPayment.confirmLabel')}
-                description={t('packages.detail.dialogs.confirmFreightPayment.description')}
-                onCancel={() => setDialog(null)}
-                onConfirm={handleActionConfirm}
-                open={dialog === 'confirm-freight-payment-manually'}
-                title={t('packages.detail.dialogs.confirmFreightPayment.title')}
             />
             <ActionDialog
                 confirmLabel={t('packages.detail.dialogs.dispatch.confirmLabel')}

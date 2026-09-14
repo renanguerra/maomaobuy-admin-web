@@ -91,11 +91,36 @@ export function adminAccountStatusLabel(status: string) {
     return ADMIN_ACCOUNT_STATUS_LABELS[getStoreLocale()][status as AdminAccountStatus] ?? status;
 }
 
+export const ADMIN_ROLES = ['SUPPORT', 'CATALOG', 'WAREHOUSE', 'FINANCE', 'SUPERADMIN'] as const;
+export type AdminRole = (typeof ADMIN_ROLES)[number];
+
+const ADMIN_ROLE_LABELS: Record<Locale, Record<AdminRole, string>> = {
+    'pt-BR': {
+        SUPPORT: 'Suporte',
+        CATALOG: 'Catálogo',
+        WAREHOUSE: 'Armazém',
+        FINANCE: 'Financeiro',
+        SUPERADMIN: 'Superadmin',
+    },
+    'zh-Hans': {
+        SUPPORT: '客服',
+        CATALOG: '商品目录',
+        WAREHOUSE: '仓库',
+        FINANCE: '财务',
+        SUPERADMIN: '超级管理员',
+    },
+};
+
+export function adminRoleLabel(role: string) {
+    return ADMIN_ROLE_LABELS[getStoreLocale()][role as AdminRole] ?? role;
+}
+
 export interface AdminAccount {
     id: string;
     name: string;
     email: string;
     status: string;
+    role: string;
     createdAt: string;
     passwordChangedAt: string;
 }
@@ -201,9 +226,7 @@ export interface PresignedUpload {
 export const ORDER_STATUSES = [
     'AWAITING_REVIEW',
     'AWAITING_CUSTOMER_APPROVAL',
-    'GENERATING_PAYMENT_DATA',
     'UNPAID',
-    'PENDING',
     'SUBMITTED',
     'PURCHASED',
     'SELLER_SHIPPED',
@@ -215,7 +238,6 @@ export const ORDER_STATUSES = [
     'COMPLETED',
     'REFUND_REQUESTED',
     'REFUND',
-    'INVALID',
     'CANCELLED',
 ] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -224,9 +246,7 @@ const ORDER_STATUS_LABELS: Record<Locale, Record<OrderStatus, string>> = {
     'pt-BR': {
         AWAITING_REVIEW: 'Aguardando análise',
         AWAITING_CUSTOMER_APPROVAL: 'Aguardando aprovação do cliente',
-        GENERATING_PAYMENT_DATA: 'Gerando dados de pagamento',
         UNPAID: 'Aguardando pagamento',
-        PENDING: 'Pendente',
         SUBMITTED: 'Enviado ao fornecedor',
         PURCHASED: 'Comprado',
         SELLER_SHIPPED: 'Enviado pelo vendedor',
@@ -238,15 +258,12 @@ const ORDER_STATUS_LABELS: Record<Locale, Record<OrderStatus, string>> = {
         COMPLETED: 'Concluído',
         REFUND_REQUESTED: 'Reembolso pendente',
         REFUND: 'Reembolsado',
-        INVALID: 'Inválido',
         CANCELLED: 'Cancelado',
     },
     'zh-Hans': {
         AWAITING_REVIEW: '待审核',
         AWAITING_CUSTOMER_APPROVAL: '待客户确认',
-        GENERATING_PAYMENT_DATA: '生成付款信息中',
         UNPAID: '待付款',
-        PENDING: '待处理',
         SUBMITTED: '已提交给供应商',
         PURCHASED: '已购买',
         SELLER_SHIPPED: '卖家已发货',
@@ -258,7 +275,6 @@ const ORDER_STATUS_LABELS: Record<Locale, Record<OrderStatus, string>> = {
         COMPLETED: '已完成',
         REFUND_REQUESTED: '待退款',
         REFUND: '已退款',
-        INVALID: '无效',
         CANCELLED: '已取消',
     },
 };
@@ -394,11 +410,9 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         CHANGES_REQUESTED: 'Aprovação do cliente solicitada',
         CUSTOMER_APPROVED_CHANGES: 'Cliente aprovou as alterações',
         CUSTOMER_REJECTED_CHANGES: 'Cliente rejeitou as alterações',
-        PAYMENT_DATA_SENT: 'Dados de pagamento enviados ao cliente',
+        PAYMENT_DATA_SENT: 'Pedido liberado para pagamento',
         MARKED_PAID_BY_CUSTOMER: 'Cliente marcou como pago',
         PAYMENT_CONFIRMED: 'Pagamento confirmado',
-        PAYMENT_ATTACHMENT_ADDED: 'Documento de pagamento anexado',
-        PAYMENT_ATTACHMENT_REMOVED: 'Documento de pagamento removido',
     },
     'zh-Hans': {
         DESCRIPTION_UPDATED: '描述已更新',
@@ -415,11 +429,9 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         CHANGES_REQUESTED: '已请求客户确认',
         CUSTOMER_APPROVED_CHANGES: '客户已确认修改',
         CUSTOMER_REJECTED_CHANGES: '客户已拒绝修改',
-        PAYMENT_DATA_SENT: '付款信息已发送给客户',
+        PAYMENT_DATA_SENT: '订单已开放付款',
         MARKED_PAID_BY_CUSTOMER: '客户已标记为已付款',
         PAYMENT_CONFIRMED: '付款已确认',
-        PAYMENT_ATTACHMENT_ADDED: '已添加付款单据',
-        PAYMENT_ATTACHMENT_REMOVED: '已移除付款单据',
     },
 };
 
@@ -749,17 +761,6 @@ export function brl(minor: string | number) {
 
 export function cny(minor: string | number) {
     return money(minor, 'CNY');
-}
-
-/**
- * A cotação com mais casas do que uma moeda: 0,75 e 0,80803 são números
- * diferentes e arredondar para centavos apagaria a diferença.
- */
-export function exchangeRate(value: string) {
-    return new Intl.NumberFormat(LOCALE_INTL_TAG[getStoreLocale()], {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 5,
-    }).format(Number(value));
 }
 
 export function formatDate(value: string | null) {

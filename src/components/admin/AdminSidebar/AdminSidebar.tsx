@@ -12,6 +12,7 @@ import { clearPendingCounts, usePendingCounts } from '@/services/admin/pending-c
 import { logoutAdminAccount, useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import type { MenuItem } from './AdminSidebar.types';
 import { MENU_GROUPS, initials, isMenuItemActive } from './menu';
+import { canSeeMenuItem } from './roles';
 
 export interface AdminSidebarProps {
     /** Chamado ao navegar — fecha a gaveta no celular. */
@@ -44,6 +45,10 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
     }
 
     const name = admin?.name ?? t('sidebar.accountFallback');
+    const visibleGroups = MENU_GROUPS.map((group) => ({
+        ...group,
+        items: group.items.filter((item) => canSeeMenuItem(admin?.role, item.key)),
+    })).filter((group) => group.items.length > 0);
 
     return (
         <div className="flex h-full min-h-0 flex-col bg-brand-800 text-white dark:bg-night-deep">
@@ -68,7 +73,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
                 className="mm-scroll-x min-h-0 flex-1 overflow-y-auto px-2.5 pb-3"
                 aria-label={t('sidebar.areasLabel')}
             >
-                {MENU_GROUPS.map((group, index) => (
+                {visibleGroups.map((group, index) => (
                     <section className="mb-4 last:mb-0" key={group.key ?? `group-${index}`}>
                         {group.key && (
                             <h2 className="mt-3 mb-1.5 px-2.5 text-[0.65rem] font-bold tracking-[.12em] text-white/40 uppercase">

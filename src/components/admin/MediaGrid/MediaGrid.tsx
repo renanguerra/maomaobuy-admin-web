@@ -6,7 +6,7 @@ export interface MediaGridProps {
     className?: string;
 }
 
-/** Grade de miniaturas usada por produto, pedido, pacote e comprovantes. */
+/** Grade de miniaturas usada por produto, pedido, pacote e inspeção. */
 export function MediaGrid({ children, className = '' }: MediaGridProps) {
     return (
         <div

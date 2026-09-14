@@ -528,9 +528,6 @@ export const zhHans: Messages = {
         description: '为每件到仓的商品建立验货单，上传照片和视频，然后发布给客户决定。',
         error: '无法加载验货单。',
         loading: '正在加载验货单…',
-        empty: '该筛选下没有验货单',
-        emptyDescription: '目前没有处于该状态的验货单。',
-        filterLabel: '验货状态',
         unnamedItem: '未命名商品',
         customerNote: '客户请求',
         summaryLabel: '验货说明',
@@ -560,7 +557,6 @@ export const zhHans: Messages = {
             uploadFailed: '无法上传 {{name}}。',
         },
         feedback: {
-            created: '验货单已建立。',
             published: '验货单已发布给客户。',
         },
     },
@@ -600,9 +596,7 @@ export const zhHans: Messages = {
                 requestCustomerApproval: '请求客户确认',
                 approve: '批准',
                 reject: '拒绝',
-                sendForPayment: '发送付款信息',
                 cancelOrder: '取消订单',
-                confirmPaymentManually: '人工确认付款',
                 cancelOrderRestock: '取消订单（恢复库存）',
                 markReadyToShip: '标记为可发货',
                 markReadyToShipReason: '验货期限已过，客户未回复。',
@@ -622,7 +616,6 @@ export const zhHans: Messages = {
                 shippingEstimate: '预估运费',
                 createdAt: '创建时间',
                 paidAt: '支付时间',
-                deliveryAddress: '收货地址',
                 adminDescription: '管理员备注',
                 rejectionReason: '拒绝原因',
             },
@@ -651,7 +644,7 @@ export const zhHans: Messages = {
             dialogs: {
                 approve: {
                     title: '批准订单',
-                    description: '没有待处理的变更：订单将直接进入付款信息准备阶段。',
+                    description: '没有待处理的变更：库存将被预留，订单开放给客户用余额付款。',
                     confirmLabel: '批准',
                 },
                 reject: {
@@ -668,16 +661,6 @@ export const zhHans: Messages = {
                     title: '请求客户确认',
                     description: '在修改金额和/或预估运费后使用。客户将看到修改原因，并可以选择确认或拒绝。',
                     confirmLabel: '发送给客户',
-                },
-                sendForPayment: {
-                    title: '发送付款信息',
-                    description: '请确认已附上相关文件和 Pix 付款二维码。订单状态将对客户显示为待付款。',
-                    confirmLabel: '发送',
-                },
-                confirmPaymentManually: {
-                    title: '人工确认付款',
-                    description: '仅在通过自动流程之外的方式核实付款后使用。',
-                    confirmLabel: '确认付款',
                 },
                 editDescription: {
                     title: '编辑订单描述',
@@ -700,11 +683,9 @@ export const zhHans: Messages = {
                 },
             },
             feedback: {
-                approve: '订单已批准 — 进入付款信息准备阶段。',
+                approve: '订单已批准 — 已开放给客户用余额付款。',
                 reject: '订单已拒绝。',
-                'confirm-payment-manually': '已人工确认付款。',
                 'request-customer-approval': '订单已退回，等待客户确认修改内容。',
-                'send-for-payment': '订单已发送付款信息。',
                 descriptionUpdated: '描述已更新。',
                 priceChanged: '订单金额已修改。',
                 shippingEstimateChanged: '预估运费已修改。',
@@ -792,7 +773,6 @@ export const zhHans: Messages = {
                 submitForApproval: '提交审批',
                 approve: '批准',
                 reject: '拒绝',
-                confirmFreightPayment: '确认运费付款',
                 markInTransit: '标记为运输中',
                 markCustoms: '标记为清关中',
                 markOutForDelivery: '标记为派送中',
@@ -844,7 +824,6 @@ export const zhHans: Messages = {
             feedback: {
                 approve: '包裹已批准。',
                 reject: '包裹已拒绝。',
-                'confirm-freight-payment-manually': '已人工确认运费付款。',
                 shipment: '运费信息已更新。',
                 dispatch: '包裹已发货。',
                 correctDispatch: '物流信息已修正。',
@@ -874,11 +853,6 @@ export const zhHans: Messages = {
                     currency: '货币（BRL 或 CNY）',
                     amount: '承运商成本',
                     amountHint: '表价成本，不含加价。客户支付该成本加上配置的加价。',
-                },
-                confirmFreightPayment: {
-                    title: '人工确认运费付款',
-                    description: '仅在通过自动流程之外的方式核实付款后使用。',
-                    confirmLabel: '确认付款',
                 },
                 correctDispatch: {
                     title: '修正物流信息',
@@ -1056,6 +1030,7 @@ export const zhHans: Messages = {
                 name: '姓名',
                 email: '邮箱',
                 status: '状态',
+                role: '角色',
                 createdAt: '创建时间',
                 actions: '操作',
             },
@@ -1063,9 +1038,11 @@ export const zhHans: Messages = {
             activateButton: '启用',
             deactivateButton: '停用',
             empty: '未找到任何管理员。',
+            roleAria: '{{name}} 的角色',
             feedback: {
                 deactivated: '{{name}} 已被停用。',
                 reactivated: '{{name}} 已重新启用。',
+                roleChanged: '{{name}} 现在是{{role}}。',
             },
             actionError: '无法完成此操作。',
             description: '有权访问本面板的人员。',
@@ -1080,6 +1057,9 @@ export const zhHans: Messages = {
             newButton: '新增管理员',
             nameLabel: '姓名',
             emailLabel: '邮箱',
+            roleLabel: '角色',
+            roleHint:
+                '所有管理员均可查看。客服管理用户；商品目录管理商品和分类；仓库管理包裹和验货；财务管理退款和钱包；超级管理员拥有全部权限。',
             passwordLabel: '密码',
             passwordHint: '至少 8 个字符，需包含大写字母、数字和符号。',
             cancel: '取消',

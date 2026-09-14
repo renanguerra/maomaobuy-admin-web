@@ -9,13 +9,14 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { adminAccountStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import type { AdminAccount, Page } from '@/types/api';
-import { adminAccountStatusLabel, formatDate } from '@/types/api';
+import { ADMIN_ROLES, adminAccountStatusLabel, adminRoleLabel, formatDate } from '@/types/api';
 import { CreateAdminAccountDialog } from './CreateAdminAccountDialog';
 import { ResetAdminAccountPasswordDialog } from './ResetAdminAccountPasswordDialog';
 
@@ -90,6 +91,30 @@ export function AdminAccountsPage() {
         }
     }
 
+    async function changeRole(row: AdminAccount, role: string) {
+        if (role === row.role) return;
+        setPendingId(row.id);
+        try {
+            const updated = await api<AdminAccount>(`/admin-accounts/${row.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ role }),
+            });
+            updateRow(updated);
+            notify({
+                tone: 'success',
+                title: t('admins.list.feedback.roleChanged', { name: row.name, role: adminRoleLabel(role) }),
+            });
+        } catch (err) {
+            notify({
+                tone: 'danger',
+                title: t('common.errors.actionTitle'),
+                description: err instanceof ApiError ? err.message : t('admins.list.actionError'),
+            });
+        } finally {
+            setPendingId(undefined);
+        }
+    }
+
     async function handleResetPassword(password: string) {
         if (!resetTarget) return;
         const updated = await api<AdminAccount>(`/admin-accounts/${resetTarget.id}/reset-password`, {
@@ -126,6 +151,21 @@ export function AdminAccountsPage() {
             header: t('admins.list.columns.status'),
             cell: (row) => (
                 <StatusPill tone={adminAccountStatusTone(row.status)}>{adminAccountStatusLabel(row.status)}</StatusPill>
+            ),
+        },
+        {
+            key: 'role',
+            header: t('admins.list.columns.role'),
+            cell: (row) => (
+                <Select
+                    disabled={row.id === admin?.id || pendingId === row.id}
+                    fieldClassName="min-w-36"
+                    hideLabel
+                    label={t('admins.list.roleAria', { name: row.name })}
+                    onChange={(event) => void changeRole(row, event.target.value)}
+                    options={ADMIN_ROLES.map((role) => ({ value: role, label: adminRoleLabel(role) }))}
+                    value={row.role}
+                />
             ),
         },
         {
