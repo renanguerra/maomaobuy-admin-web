@@ -5,9 +5,10 @@ import { Alert } from '@/components/admin/Alert';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { Select } from '@/components/ui/Select';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
-import type { AdminAccount } from '@/types/api';
+import { ADMIN_ROLES, adminRoleLabel, type AdminAccount } from '@/types/api';
 
 interface CreateAdminAccountDialogProps {
     open: boolean;
@@ -34,6 +35,7 @@ export function CreateAdminAccountDialog({ open, onClose, onCreated }: CreateAdm
                     name: String(data.get('name') ?? ''),
                     email: String(data.get('email') ?? ''),
                     password: String(data.get('password') ?? ''),
+                    role: String(data.get('role') ?? ''),
                 }),
             });
             form.reset();
@@ -68,6 +70,14 @@ export function CreateAdminAccountDialog({ open, onClose, onCreated }: CreateAdm
             <form className="grid gap-4" id={formId} onSubmit={handleSubmit}>
                 <Input label={t('admins.create.nameLabel')} maxLength={120} minLength={2} name="name" required />
                 <Input label={t('admins.create.emailLabel')} maxLength={320} name="email" required type="email" />
+                <Select
+                    defaultValue="SUPPORT"
+                    hint={t('admins.create.roleHint')}
+                    label={t('admins.create.roleLabel')}
+                    name="role"
+                    options={ADMIN_ROLES.map((role) => ({ value: role, label: adminRoleLabel(role) }))}
+                    required
+                />
                 <Input
                     autoComplete="new-password"
                     hint={t('admins.create.passwordHint')}

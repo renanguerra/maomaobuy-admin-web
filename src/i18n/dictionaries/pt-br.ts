@@ -541,9 +541,6 @@ export const ptBR = {
             'Abra o laudo de cada item que chegou, anexe fotos e vídeos e publique para o cliente decidir o destino dele.',
         error: 'Não foi possível carregar as inspeções.',
         loading: 'Carregando inspeções…',
-        empty: 'Nenhuma inspeção nesse filtro',
-        emptyDescription: 'Nenhuma inspeção está nessa situação no momento.',
-        filterLabel: 'Situação da inspeção',
         unnamedItem: 'Item sem nome',
         customerNote: 'O cliente pediu',
         summaryLabel: 'Laudo',
@@ -573,7 +570,6 @@ export const ptBR = {
             uploadFailed: 'Não foi possível enviar {{name}}.',
         },
         feedback: {
-            created: 'Laudo aberto.',
             published: 'Inspeção publicada para o cliente.',
         },
     },
@@ -614,9 +610,7 @@ export const ptBR = {
                 requestCustomerApproval: 'Solicitar aprovação do cliente',
                 approve: 'Aprovar',
                 reject: 'Rejeitar',
-                sendForPayment: 'Enviar para pagamento',
                 cancelOrder: 'Cancelar pedido',
-                confirmPaymentManually: 'Confirmar pagamento manualmente',
                 cancelOrderRestock: 'Cancelar pedido (devolve estoque)',
                 markReadyToShip: 'Marcar pronto para envio',
                 markReadyToShipReason: 'Prazo de inspeção encerrado sem resposta do cliente.',
@@ -636,7 +630,6 @@ export const ptBR = {
                 shippingEstimate: 'Frete estimado',
                 createdAt: 'Criado em',
                 paidAt: 'Pago em',
-                deliveryAddress: 'Endereço de entrega',
                 adminDescription: 'Descrição do admin',
                 rejectionReason: 'Motivo da rejeição',
             },
@@ -666,7 +659,7 @@ export const ptBR = {
                 approve: {
                     title: 'Aprovar pedido',
                     description:
-                        'Sem alterações pendentes: o pedido segue direto para o preparo dos dados de pagamento.',
+                        'Sem alterações pendentes: a unidade é reservada e o pedido fica liberado para o cliente pagar com o saldo.',
                     confirmLabel: 'Aprovar',
                 },
                 reject: {
@@ -685,17 +678,6 @@ export const ptBR = {
                     description:
                         'Use depois de alterar o valor e/ou o frete estimado. O cliente vai ver o motivo e poderá aprovar ou rejeitar.',
                     confirmLabel: 'Enviar para o cliente',
-                },
-                sendForPayment: {
-                    title: 'Enviar para pagamento',
-                    description:
-                        'Confirme que os documentos e o QR code do Pix já foram anexados. O pedido ficará visível ao cliente como aguardando pagamento.',
-                    confirmLabel: 'Enviar',
-                },
-                confirmPaymentManually: {
-                    title: 'Confirmar pagamento manualmente',
-                    description: 'Use apenas quando o pagamento foi verificado fora do fluxo automático.',
-                    confirmLabel: 'Confirmar pagamento',
                 },
                 editDescription: {
                     title: 'Editar descrição do pedido',
@@ -719,11 +701,9 @@ export const ptBR = {
                 },
             },
             feedback: {
-                approve: 'Pedido aprovado — pedido movido para preparo dos dados de pagamento.',
+                approve: 'Pedido aprovado — liberado para o cliente pagar com o saldo.',
                 reject: 'Pedido rejeitado.',
-                'confirm-payment-manually': 'Pagamento confirmado manualmente.',
                 'request-customer-approval': 'Pedido devolvido para o cliente aprovar as alterações.',
-                'send-for-payment': 'Pedido enviado para pagamento.',
                 descriptionUpdated: 'Descrição atualizada.',
                 priceChanged: 'Valor do pedido alterado.',
                 shippingEstimateChanged: 'Frete estimado alterado.',
@@ -814,7 +794,6 @@ export const ptBR = {
                 submitForApproval: 'Enviar para aprovação',
                 approve: 'Aprovar',
                 reject: 'Rejeitar',
-                confirmFreightPayment: 'Confirmar pagamento do frete',
                 markInTransit: 'Marcar em trânsito',
                 markCustoms: 'Marcar na alfândega',
                 markOutForDelivery: 'Marcar saiu para entrega',
@@ -866,7 +845,6 @@ export const ptBR = {
             feedback: {
                 approve: 'Pacote aprovado.',
                 reject: 'Pacote rejeitado.',
-                'confirm-freight-payment-manually': 'Pagamento do frete confirmado manualmente.',
                 shipment: 'Dados de frete atualizados.',
                 dispatch: 'Pacote despachado.',
                 correctDispatch: 'Dados de rastreio corrigidos.',
@@ -897,11 +875,6 @@ export const ptBR = {
                     currency: 'Moeda',
                     amount: 'Custo da transportadora',
                     amountHint: 'Valor de tabela, sem margem. O cliente paga este custo mais a margem configurada.',
-                },
-                confirmFreightPayment: {
-                    title: 'Confirmar pagamento do frete manualmente',
-                    description: 'Use apenas quando o pagamento foi verificado fora do fluxo automático.',
-                    confirmLabel: 'Confirmar pagamento',
                 },
                 correctDispatch: {
                     title: 'Corrigir rastreio',
@@ -1004,8 +977,7 @@ export const ptBR = {
         tableCaption: 'Envios de e-mail transacional',
         filterLabel: 'Situação do envio',
         empty: 'Nenhum envio nesta situação',
-        emptyDescription:
-            'A fila guarda 90 dias de envios entregues. Falhas ficam até serem resolvidas.',
+        emptyDescription: 'A fila guarda 90 dias de envios entregues. Falhas ficam até serem resolvidas.',
         countUnit: '{{count}} envios',
         filters: {
             all: 'Todos',
@@ -1084,9 +1056,11 @@ export const ptBR = {
                 name: 'Nome',
                 email: 'E-mail',
                 status: 'Status',
+                role: 'Papel',
                 createdAt: 'Criado em',
                 actions: 'Ações',
             },
+            roleAria: 'Papel de {{name}}',
             resetPasswordButton: 'Redefinir senha',
             activateButton: 'Ativar',
             deactivateButton: 'Desativar',
@@ -1094,6 +1068,7 @@ export const ptBR = {
             feedback: {
                 deactivated: '{{name}} foi desativado.',
                 reactivated: '{{name}} foi reativado.',
+                roleChanged: '{{name}} agora é {{role}}.',
             },
             actionError: 'Não foi possível concluir a ação.',
             description: 'Quem tem acesso a este painel.',
@@ -1108,6 +1083,9 @@ export const ptBR = {
             newButton: 'Novo admin',
             nameLabel: 'Nome',
             emailLabel: 'E-mail',
+            roleLabel: 'Papel',
+            roleHint:
+                'Leitura é aberta a todo admin. Suporte mexe em usuários; Catálogo em produtos e categorias; Armazém em pacotes e inspeções; Financeiro em reembolsos e carteiras; Superadmin em tudo.',
             passwordLabel: 'Senha',
             passwordHint: 'Mínimo 8 caracteres, com uma maiúscula, um número e um símbolo.',
             cancel: 'Cancelar',

@@ -40,22 +40,14 @@ import { OrderMediaManager } from './OrderMediaManager';
 import { OrderOptionalServicesSection } from './OrderOptionalServices';
 import { OrderAmountDialog, type OrderAmountDialogValues } from './OrderAmountDialog';
 
-type ApprovalDialogKind =
-    | 'approve'
-    | 'reject'
-    | 'confirm-payment-manually'
-    | 'request-customer-approval'
-    | 'send-for-payment'
-    | 'confirm-refund';
+type ApprovalDialogKind = 'approve' | 'reject' | 'request-customer-approval' | 'confirm-refund';
 type AmountDialogKind = 'change-price' | 'change-shipping-estimate';
 type DialogKind = ApprovalDialogKind | AmountDialogKind | 'edit-description' | null;
 
 const APPROVAL_FEEDBACK_KEY: Record<ApprovalDialogKind, MessageKey> = {
     approve: 'orders.detail.feedback.approve',
     reject: 'orders.detail.feedback.reject',
-    'confirm-payment-manually': 'orders.detail.feedback.confirm-payment-manually',
     'request-customer-approval': 'orders.detail.feedback.request-customer-approval',
-    'send-for-payment': 'orders.detail.feedback.send-for-payment',
     'confirm-refund': 'orders.detail.feedback.confirm-refund',
 };
 
@@ -250,14 +242,13 @@ export function OrderDetailPage() {
     }
 
     const canDraft = order.status === 'AWAITING_REVIEW';
-    const canManagePaymentData = order.status === 'GENERATING_PAYMENT_DATA';
-    const awaitingPayment = order.status === 'UNPAID' || order.status === 'PENDING';
+    const awaitingPayment = order.status === 'UNPAID';
     // Mídia e descrição ficam abertas até o pagamento ser confirmado: é o que
     // o cliente olha para decidir se paga.
-    const canEditDescriptionAndMedia =
-        canDraft || canManagePaymentData || awaitingPayment || order.status === 'AWAITING_CUSTOMER_APPROVAL';
-    // Valor e frete podem mudar enquanto ninguém foi cobrado.
-    const canReprice = canDraft || canManagePaymentData || order.status === 'AWAITING_CUSTOMER_APPROVAL';
+    const canEditDescriptionAndMedia = canDraft || awaitingPayment || order.status === 'AWAITING_CUSTOMER_APPROVAL';
+    // Valor e frete podem mudar enquanto ninguém foi cobrado. Em UNPAID,
+    // subir o valor devolve o pedido à aprovação do cliente.
+    const canReprice = canDraft || awaitingPayment || order.status === 'AWAITING_CUSTOMER_APPROVAL';
     const priceAuthorized =
         order.customerApprovedTotalMinor !== null &&
         BigInt(order.totalAmountMinor) <= BigInt(order.customerApprovedTotalMinor);
@@ -339,7 +330,7 @@ export function OrderDetailPage() {
                             </Button>
                         </>
                     )}
-                    {(canDraft || canManagePaymentData) && !priceAuthorized && (
+                    {(canDraft || awaitingPayment) && !priceAuthorized && (
                         <Button
                             leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
                             onClick={() => setDialog('request-customer-approval')}
@@ -370,27 +361,6 @@ export function OrderDetailPage() {
                             </Button>
                         </>
                     )}
-                    {canManagePaymentData && (
-                        <>
-                            <Button
-                                disabled={!priceAuthorized}
-                                leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('send-for-payment')}
-                                size="small"
-                                title={priceAuthorized ? undefined : t('orders.detail.actions.needsCustomerApproval')}
-                            >
-                                {t('orders.detail.actions.sendForPayment')}
-                            </Button>
-                            <Button
-                                leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('reject')}
-                                size="small"
-                                variant="danger"
-                            >
-                                {t('orders.detail.actions.cancelOrder')}
-                            </Button>
-                        </>
-                    )}
                     {order.status === 'AWAITING_CUSTOMER_APPROVAL' && (
                         <Button
                             leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
@@ -402,23 +372,14 @@ export function OrderDetailPage() {
                         </Button>
                     )}
                     {awaitingPayment && (
-                        <>
-                            <Button
-                                leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('confirm-payment-manually')}
-                                size="small"
-                            >
-                                {t('orders.detail.actions.confirmPaymentManually')}
-                            </Button>
-                            <Button
-                                leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('reject')}
-                                size="small"
-                                variant="danger"
-                            >
-                                {t('orders.detail.actions.cancelOrderRestock')}
-                            </Button>
-                        </>
+                        <Button
+                            leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('reject')}
+                            size="small"
+                            variant="danger"
+                        >
+                            {t('orders.detail.actions.cancelOrderRestock')}
+                        </Button>
                     )}
                     {sourcingStep && (
                         <Button
@@ -687,22 +648,6 @@ export function OrderDetailPage() {
                 onConfirm={handleApprovalConfirm}
                 open={dialog === 'request-customer-approval'}
                 title={t('orders.detail.dialogs.requestCustomerApproval.title')}
-            />
-            <ActionDialog
-                confirmLabel={t('orders.detail.dialogs.sendForPayment.confirmLabel')}
-                description={t('orders.detail.dialogs.sendForPayment.description')}
-                onCancel={() => setDialog(null)}
-                onConfirm={handleApprovalConfirm}
-                open={dialog === 'send-for-payment'}
-                title={t('orders.detail.dialogs.sendForPayment.title')}
-            />
-            <ActionDialog
-                confirmLabel={t('orders.detail.dialogs.confirmPaymentManually.confirmLabel')}
-                description={t('orders.detail.dialogs.confirmPaymentManually.description')}
-                onCancel={() => setDialog(null)}
-                onConfirm={handleApprovalConfirm}
-                open={dialog === 'confirm-payment-manually'}
-                title={t('orders.detail.dialogs.confirmPaymentManually.title')}
             />
             <ActionDialog
                 confirmLabel={t('orders.detail.dialogs.confirmRefund.confirmLabel')}

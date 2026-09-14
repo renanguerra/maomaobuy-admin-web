@@ -8,9 +8,7 @@ export type StatusTone = 'neutral' | 'info' | 'warning' | 'success' | 'danger';
 const ORDER_STATUS_TONES: Record<string, StatusTone> = {
     AWAITING_REVIEW: 'warning',
     AWAITING_CUSTOMER_APPROVAL: 'warning',
-    GENERATING_PAYMENT_DATA: 'warning',
     UNPAID: 'warning',
-    PENDING: 'info',
     SUBMITTED: 'info',
     PURCHASED: 'info',
     SELLER_SHIPPED: 'info',
@@ -22,7 +20,6 @@ const ORDER_STATUS_TONES: Record<string, StatusTone> = {
     COMPLETED: 'success',
     REFUND_REQUESTED: 'warning',
     REFUND: 'neutral',
-    INVALID: 'danger',
     CANCELLED: 'neutral',
 };
 
