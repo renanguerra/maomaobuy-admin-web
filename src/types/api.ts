@@ -551,6 +551,8 @@ export interface AdminPackage {
     paidAt: string | null;
     markedPaidByUserAt: string | null;
     photoUrls: string[];
+    /** Chaves do bucket paralelas a `photoUrls` (mesmo índice) — usadas para remover uma foto. */
+    photoKeys: string[];
     createdAt: string;
     items: AdminPackageItem[];
     userId: string;
