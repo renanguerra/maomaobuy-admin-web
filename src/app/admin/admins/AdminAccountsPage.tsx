@@ -115,6 +115,31 @@ export function AdminAccountsPage() {
         }
     }
 
+    async function resetTotp(row: AdminAccount) {
+        const confirmed = await confirm({
+            title: t('admins.list.resetTotpTitle'),
+            description: t('admins.list.resetTotpConfirm', { name: row.name }),
+            confirmLabel: t('admins.list.resetTotpButton'),
+            tone: 'danger',
+        });
+        if (!confirmed) return;
+
+        setPendingId(row.id);
+        try {
+            const updated = await api<AdminAccount>(`/admin-accounts/${row.id}/reset-totp`, { method: 'POST' });
+            updateRow(updated);
+            notify({ tone: 'success', title: t('admins.feedback.totpReset', { name: row.name }) });
+        } catch (err) {
+            notify({
+                tone: 'danger',
+                title: t('common.errors.actionTitle'),
+                description: err instanceof ApiError ? err.message : t('admins.list.actionError'),
+            });
+        } finally {
+            setPendingId(undefined);
+        }
+    }
+
     async function handleResetPassword(password: string) {
         if (!resetTarget) return;
         const updated = await api<AdminAccount>(`/admin-accounts/${resetTarget.id}/reset-password`, {
@@ -150,7 +175,14 @@ export function AdminAccountsPage() {
             key: 'status',
             header: t('admins.list.columns.status'),
             cell: (row) => (
-                <StatusPill tone={adminAccountStatusTone(row.status)}>{adminAccountStatusLabel(row.status)}</StatusPill>
+                <span className="flex flex-wrap gap-1.5">
+                    <StatusPill tone={adminAccountStatusTone(row.status)}>
+                        {adminAccountStatusLabel(row.status)}
+                    </StatusPill>
+                    <StatusPill tone={row.totpEnrolled ? 'success' : 'warning'}>
+                        {row.totpEnrolled ? t('admins.list.totpEnrolled') : t('admins.list.totpPending')}
+                    </StatusPill>
+                </span>
             ),
         },
         {
@@ -185,6 +217,16 @@ export function AdminAccountsPage() {
                     <Button onClick={() => setResetTarget(row)} size="small" variant="secondary">
                         {t('admins.list.resetPasswordButton')}
                     </Button>
+                    {row.totpEnrolled && (
+                        <Button
+                            loading={pendingId === row.id}
+                            onClick={() => resetTotp(row)}
+                            size="small"
+                            variant="secondary"
+                        >
+                            {t('admins.list.resetTotpButton')}
+                        </Button>
+                    )}
                     <Button
                         disabled={row.id === admin?.id}
                         loading={pendingId === row.id}

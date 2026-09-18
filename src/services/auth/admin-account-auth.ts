@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/services/api';
+import { onTotpEnrollmentRequired } from '@/services/totp-enrollment-required';
 import type { AdminAccount } from '@/types/api';
 
 const listeners = new Set<() => void>();
@@ -62,6 +63,24 @@ export async function loginAdminAccount(email: string, password: string) {
     emitChanged();
     return admin;
 }
+
+/**
+ * O admin acabou de confirmar o autenticador: reflete na sessão em memória
+ * sem um novo `/me`, para o diálogo da ação abrir na sequência.
+ */
+export function markTotpEnrolled() {
+    setTotpEnrolled(true);
+}
+
+function setTotpEnrolled(totpEnrolled: boolean) {
+    if (!current || current.totpEnrolled === totpEnrolled) return;
+    current = { ...current, totpEnrolled };
+    emitChanged();
+}
+
+// Um 428 do backend derruba a marca em memória e o diálogo aberto passa a
+// mostrar o cadastro — sem isso o admin ficaria vendo "código inválido".
+onTotpEnrollmentRequired(() => setTotpEnrolled(false));
 
 export async function logoutAdminAccount() {
     await api('/admin-auth/logout', { method: 'POST' });

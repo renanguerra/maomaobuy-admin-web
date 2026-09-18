@@ -20,6 +20,16 @@ import { ORDER_STATUSES, formatDate, money, orderStatusLabel, type AdminOrder, t
 
 const LIMIT = 20;
 
+/**
+ * O pedido não tem título próprio: o que identifica ele para quem olha a fila
+ * é o produto. Com mais de um item, o primeiro dá nome e o resto vira contagem.
+ */
+function orderTitle(order: AdminOrder): string {
+    const [first, ...rest] = order.items;
+    if (!first) return '—';
+    return rest.length > 0 ? `${first.productName} +${rest.length}` : first.productName;
+}
+
 interface LoadedPage {
     /** Identifica a consulta que produziu estes dados (página + status). */
     key: string;
@@ -85,12 +95,21 @@ export function OrdersListPage() {
             key: 'order',
             header: t('orders.list.columns.order'),
             cell: (order) => (
-                <Link
-                    className="mm-data font-semibold text-primary no-underline hover:underline dark:text-night-accent"
-                    href={`/admin/pedidos/${order.id}`}
-                >
-                    #{order.id.slice(0, 8)}
-                </Link>
+                <span className="block min-w-0">
+                    <Link
+                        className="block truncate font-semibold text-ink no-underline hover:underline dark:text-night-text"
+                        href={`/admin/pedidos/${order.id}`}
+                        title={orderTitle(order)}
+                    >
+                        {orderTitle(order)}
+                    </Link>
+                    <Link
+                        className="mm-data block text-xs text-primary no-underline hover:underline dark:text-night-accent"
+                        href={`/admin/pedidos/${order.id}`}
+                    >
+                        #{order.id.slice(0, 8)}
+                    </Link>
+                </span>
             ),
         },
         {
@@ -181,7 +200,7 @@ export function OrdersListPage() {
                     columns={columns}
                     loading={loading}
                     loadingLabel={t('orders.list.loading')}
-                    minWidth="52rem"
+                    minWidth="60rem"
                     rowKey={(order) => order.id}
                     rows={result?.data ?? []}
                     empty={

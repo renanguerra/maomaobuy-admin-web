@@ -121,8 +121,17 @@ export interface AdminAccount {
     email: string;
     status: string;
     role: string;
+    /** Autenticador TOTP cadastrado e confirmado no backend. */
+    totpEnrolled: boolean;
     createdAt: string;
     passwordChangedAt: string;
+}
+
+export interface TotpEnrollmentStart {
+    /** Base32, para digitar à mão quando a câmera não lê o QR. */
+    secret: string;
+    /** `otpauth://totp/...` — é o conteúdo do QR. */
+    otpauthUri: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -201,6 +210,11 @@ export interface AdminProduct {
     sourceAmountMinor: string;
     estimatedShippingAmountMinor: string | null;
     stock: number;
+    /** Peso e medidas do item embalado — só a importação em lote os edita hoje. */
+    weightGrams: number | null;
+    lengthMm: number | null;
+    widthMm: number | null;
+    heightMm: number | null;
     isPublished: boolean;
     /** Pré-venda e o dia de lançamento anunciado (`YYYY-MM-DD`), sempre juntos. */
     isPreSale: boolean;

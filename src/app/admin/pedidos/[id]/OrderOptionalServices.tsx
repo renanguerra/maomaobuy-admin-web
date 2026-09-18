@@ -29,6 +29,7 @@ const STATUS_TONE = {
  *
  * Marcar como concluído não mexe em dinheiro (o valor já foi cobrado no
  * pagamento), então não pede TOTP; fica registrado no histórico com o admin.
+ * Cancelar credita o saldo do cliente sozinho (ver AGENTS.md do backend).
  */
 export function OrderOptionalServicesSection({ order, onChanged }: { order: AdminOrder; onChanged: () => void }) {
     const { t } = useTranslation();

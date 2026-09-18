@@ -262,7 +262,9 @@ export function BulkImportProductsPage() {
         },
     ];
 
-    const hasFailures = Object.values(outcomes).some((item) => item.status === 'error') || (rows?.some((row) => !row.result.ok) ?? false);
+    const hasFailures =
+        Object.values(outcomes).some((item) => item.status === 'error') ||
+        (rows?.some((row) => !row.result.ok) ?? false);
 
     return (
         <div className="grid gap-6">

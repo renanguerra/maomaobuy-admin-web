@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { useTotpEnrollmentGate } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
+import { TotpEnrollmentDialog } from '@/components/admin/TotpEnrollmentDialog';
 import { Button } from '@/components/ui/Button';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Input } from '@/components/ui/Input';
@@ -26,11 +28,7 @@ interface OrderAmountDialogProps {
     fieldName: string;
     currentAmountMinor: string;
     confirmLabel: string;
-    /**
-     * TOTP temporariamente não exigido em nenhuma rota admin (ver AGENTS.md
-     * do backend) — default `false`. Prop mantida para religar quando a
-     * exigência voltar (mesmo padrão do `ActionDialog`).
-     */
+    /** Mesmo comportamento do `ActionDialog`: default `true`, com cadastro do autenticador antes se preciso. */
     requireTotp?: boolean;
     /**
      * Motivo também não é exigido por padrão (mudar preço/frete não está na
@@ -62,6 +60,11 @@ export function OrderAmountDialog({
 }: OrderAmountDialogProps) {
     const { t } = useTranslation();
     const [submitting, setSubmitting] = useState(false);
+    const needsEnrollment = useTotpEnrollmentGate(open, requireTotp);
+
+    if (needsEnrollment) {
+        return <TotpEnrollmentDialog onCancel={onCancel} onEnrolled={() => undefined} open />;
+    }
 
     return (
         <Modal
