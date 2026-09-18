@@ -175,6 +175,30 @@ export function PackageDetailPage() {
         }
     }
 
+    async function removePhoto(key: string) {
+        const confirmed = await confirm({
+            title: t('packages.detail.photosSection.removeTitle'),
+            description: t('packages.detail.photosSection.removeConfirm'),
+            confirmLabel: t('common.actions.remove'),
+            tone: 'danger',
+        });
+        if (!confirmed) return;
+
+        setBusy(`remove-photo:${key}`);
+        try {
+            const updated = await api<AdminPackage>(`/packages/${params.id}/photos`, {
+                method: 'DELETE',
+                body: JSON.stringify({ key }),
+            });
+            setPkg(updated);
+            notify({ tone: 'success', title: t('packages.detail.photosSection.removedToast') });
+        } catch (err) {
+            reportError(err);
+        } finally {
+            setBusy(undefined);
+        }
+    }
+
     async function uploadPhotos(files: File[]) {
         setUploading(true);
         try {
@@ -450,15 +474,31 @@ export function PackageDetailPage() {
                             <EmptyState icon={Images} title={t('packages.detail.photosSection.empty')} />
                         ) : (
                             <MediaGrid>
-                                {pkg.photoUrls.map((url) => (
-                                    <MediaTile
-                                        alt={t('packages.detail.photosSection.photoAlt')}
-                                        key={url}
-                                        kind="IMAGE"
-                                        openLabel={t('common.actions.open')}
-                                        url={url}
-                                    />
-                                ))}
+                                {pkg.photoUrls.map((url, index) => {
+                                    const key = pkg.photoKeys[index];
+                                    return (
+                                        <MediaTile
+                                            alt={t('packages.detail.photosSection.photoAlt')}
+                                            key={key ?? url}
+                                            kind="IMAGE"
+                                            openLabel={t('common.actions.open')}
+                                            url={url}
+                                            footer={
+                                                key ? (
+                                                    <Button
+                                                        leadingIcon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
+                                                        loading={busy === `remove-photo:${key}`}
+                                                        onClick={() => removePhoto(key)}
+                                                        size="small"
+                                                        variant="dangerGhost"
+                                                    >
+                                                        {t('packages.detail.photosSection.remove')}
+                                                    </Button>
+                                                ) : undefined
+                                            }
+                                        />
+                                    );
+                                })}
                             </MediaGrid>
                         )}
                     </SectionCard>

@@ -820,6 +820,10 @@ export const zhHans: Messages = {
                 photoAlt: '包裹照片',
                 uploadFailed: '照片上传到存储服务失败。',
                 description: '发货前的内容存证。',
+                remove: '移除',
+                removeTitle: '移除包裹照片',
+                removeConfirm: '确定要移除这张照片吗？',
+                removedToast: '照片已从包裹中移除。',
             },
             feedback: {
                 approve: '包裹已批准。',

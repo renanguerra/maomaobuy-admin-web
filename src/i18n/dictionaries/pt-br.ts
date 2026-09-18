@@ -841,6 +841,10 @@ export const ptBR = {
                 photoAlt: 'Foto do pacote',
                 uploadFailed: 'Falha ao enviar a foto para o armazenamento.',
                 description: 'Registro do conteúdo antes do despacho.',
+                remove: 'Remover',
+                removeTitle: 'Remover foto do pacote',
+                removeConfirm: 'Remover esta foto?',
+                removedToast: 'Foto removida do pacote.',
             },
             feedback: {
                 approve: 'Pacote aprovado.',
