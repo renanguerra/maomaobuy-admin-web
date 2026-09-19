@@ -618,6 +618,17 @@ export function OrderDetailPage() {
                                     label: t('orders.detail.fields.total'),
                                     value: money(order.totalAmountMinor, order.currency),
                                 },
+                                // Pedido do carrinho: a taxa vem separada dos
+                                // itens, e o admin precisa vê-la para reprecificar
+                                // sem apagá-la por engano.
+                                ...(order.serviceFeeMinor !== '0'
+                                    ? [
+                                          {
+                                              label: t('orders.detail.fields.serviceFee'),
+                                              value: money(order.serviceFeeMinor, order.currency),
+                                          },
+                                      ]
+                                    : []),
                                 {
                                     label: t('orders.detail.fields.optionalServices'),
                                     value: money(order.optionalServicesAmountMinor, order.currency),

@@ -681,6 +681,7 @@ export const ptBR = {
             },
             fields: {
                 total: 'Mercadoria',
+                serviceFee: 'Sendo taxa do serviço',
                 optionalServices: 'Serviços adicionais',
                 chargeableTotal: 'Total cobrado',
                 warehouseArrivedAt: 'Chegada no armazém',

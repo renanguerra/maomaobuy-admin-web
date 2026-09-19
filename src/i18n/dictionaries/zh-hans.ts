@@ -665,6 +665,7 @@ export const zhHans: Messages = {
             },
             fields: {
                 total: '商品金额',
+                serviceFee: '其中服务费',
                 optionalServices: '增值服务',
                 chargeableTotal: '应收总额',
                 warehouseArrivedAt: '入仓时间',

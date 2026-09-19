@@ -381,6 +381,8 @@ export interface AdminOrder {
     currency: string;
     /** Valor da mercadoria, sem os adicionais. */
     totalAmountMinor: string;
+    /** Taxa do serviço dentro de `totalAmountMinor`; `'0'` fora do pedido do carrinho. */
+    serviceFeeMinor: string;
     /** Soma dos adicionais contratados. */
     optionalServicesAmountMinor: string;
     /** O que sai da carteira do cliente: mercadoria mais adicionais. */
