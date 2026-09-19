@@ -633,6 +633,14 @@ export function OrderDetailPage() {
                                     label: t('orders.detail.fields.optionalServices'),
                                     value: money(order.optionalServicesAmountMinor, order.currency),
                                 },
+                                ...(order.couponCode
+                                    ? [
+                                          {
+                                              label: t('orders.detail.fields.coupon', { code: order.couponCode }),
+                                              value: `−${money(order.discountAmountMinor, order.currency)}`,
+                                          },
+                                      ]
+                                    : []),
                                 {
                                     label: t('orders.detail.fields.chargeableTotal'),
                                     value: money(order.chargeableTotalAmountMinor, order.currency),
