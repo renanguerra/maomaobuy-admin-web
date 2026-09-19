@@ -353,6 +353,64 @@ export interface OptionalService {
     sortOrder: number;
 }
 
+// ---------------------------------------------------------------------------
+// Cupons
+// ---------------------------------------------------------------------------
+
+export type CouponScope = 'ORDER' | 'SHIPPING';
+export type CouponDiscountType = 'PERCENTAGE' | 'FIXED';
+
+export interface Coupon {
+    id: string;
+    code: string;
+    name: string;
+    description: string | null;
+    scope: CouponScope;
+    discountType: CouponDiscountType;
+    /** Pontos-base no percentual (1000 = 10%), fen no fixo. */
+    discountValue: string;
+    maxDiscountMinor: string | null;
+    minAmountMinor: string | null;
+    maxUses: number | null;
+    maxUsesPerUser: number;
+    usedCount: number;
+    startsAt: string | null;
+    expiresAt: string | null;
+    isActive: boolean;
+    /** `null` é cupom aberto a todo mundo. */
+    user: { id: string; name: string; email: string } | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CouponRedemption {
+    id: string;
+    user: { id: string; name: string; email: string };
+    referenceType: 'order' | 'checkout' | 'package';
+    referenceId: string;
+    discountAmountMinor: string;
+    createdAt: string;
+}
+
+export interface CouponDetail extends Coupon {
+    redemptions: CouponRedemption[];
+}
+
+/**
+ * Situação derivada: o backend só guarda `isActive`; expirado e esgotado
+ * são lidos das datas e do contador, e importam mais para quem olha a
+ * lista do que o interruptor.
+ */
+export type CouponStatus = 'ACTIVE' | 'SCHEDULED' | 'INACTIVE' | 'EXPIRED' | 'EXHAUSTED';
+
+export function couponStatus(coupon: Coupon, now = new Date()): CouponStatus {
+    if (!coupon.isActive) return 'INACTIVE';
+    if (coupon.expiresAt && new Date(coupon.expiresAt) <= now) return 'EXPIRED';
+    if (coupon.maxUses !== null && coupon.usedCount >= coupon.maxUses) return 'EXHAUSTED';
+    if (coupon.startsAt && new Date(coupon.startsAt) > now) return 'SCHEDULED';
+    return 'ACTIVE';
+}
+
 export interface OrderOptionalService {
     id: string;
     optionalServiceId: string;
@@ -381,8 +439,13 @@ export interface AdminOrder {
     currency: string;
     /** Valor da mercadoria, sem os adicionais. */
     totalAmountMinor: string;
+    /** Taxa do serviço dentro de `totalAmountMinor`; `'0'` fora do pedido do carrinho. */
+    serviceFeeMinor: string;
     /** Soma dos adicionais contratados. */
     optionalServicesAmountMinor: string;
+    /** Cupom aplicado no pagamento e quanto abateu. */
+    couponCode: string | null;
+    discountAmountMinor: string;
     /** O que sai da carteira do cliente: mercadoria mais adicionais. */
     chargeableTotalAmountMinor: string;
     /** Entrada no armazém — início da contagem da armazenagem. */
@@ -557,7 +620,10 @@ export interface AdminPackage {
     freightMarkupBasisPoints: number | null;
     /** Armazenagem dos pedidos do pacote, cobrada junto com o frete. */
     storageFeeAmountMinor: string;
-    /** Frete mais armazenagem: o que sai da carteira do cliente. */
+    /** Cupom de frete aplicado ao pagar e quanto abateu. */
+    couponCode: string | null;
+    discountAmountMinor: string;
+    /** Frete mais armazenagem, menos o cupom: o que sai da carteira do cliente. */
     totalDueAmountMinor: string | null;
     destination: AddressSnapshot;
     shippedAt: string | null;

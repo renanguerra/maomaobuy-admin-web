@@ -17,6 +17,7 @@ export type MenuItemKey =
     | 'admins'
     | 'emails'
     | 'optionalServices'
+    | 'coupons'
     | 'productRequests'
     | 'settings';
 

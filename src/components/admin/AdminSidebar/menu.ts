@@ -10,6 +10,7 @@ import {
     ShieldCheck,
     Sparkles,
     Tags,
+    TicketPercent,
     Users,
     Wallet,
 } from 'lucide-react';
@@ -57,7 +58,10 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
     },
     {
         key: 'finance',
-        items: [{ key: 'finance', href: '/admin/financeiro', icon: Wallet, badge: 'refundsRequested' }],
+        items: [
+            { key: 'finance', href: '/admin/financeiro', icon: Wallet, badge: 'refundsRequested' },
+            { key: 'coupons', href: '/admin/cupons', icon: TicketPercent },
+        ],
     },
     {
         key: 'system',

@@ -551,6 +551,14 @@ export function PackageDetailPage() {
                                     label: t('packages.detail.fields.storageFee'),
                                     value: money(pkg.storageFeeAmountMinor, pkg.shippingCurrency ?? 'CNY'),
                                 },
+                                ...(pkg.couponCode
+                                    ? [
+                                          {
+                                              label: t('packages.detail.fields.coupon', { code: pkg.couponCode }),
+                                              value: `−${money(pkg.discountAmountMinor, pkg.shippingCurrency ?? 'CNY')}`,
+                                          },
+                                      ]
+                                    : []),
                                 {
                                     label: t('packages.detail.fields.totalDue'),
                                     value:
