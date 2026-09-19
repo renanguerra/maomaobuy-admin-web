@@ -834,6 +834,7 @@ export const zhHans: Messages = {
                 quoteFreight: '录入重量和运费',
                 dispatch: '发货',
                 correctDispatch: '修正物流信息',
+                cancel: '取消包裹',
             },
             fields: {
                 shipping: '收取运费',
@@ -881,7 +882,8 @@ export const zhHans: Messages = {
             },
             feedback: {
                 approve: '包裹已批准。',
-                reject: '包裹已拒绝。',
+                reject: '包裹已拒绝并关闭；商品已重新可用。',
+                cancel: '包裹已取消；商品已重新可用。',
                 shipment: '运费信息已更新。',
                 dispatch: '包裹已发货。',
                 correctDispatch: '物流信息已修正。',
@@ -897,8 +899,14 @@ export const zhHans: Messages = {
                 },
                 reject: {
                     title: '拒绝包裹',
-                    description: '请说明拒绝原因 — 客户将会看到该信息。',
+                    description: '关闭该包裹并释放商品以便重新打包。请说明原因 — 客户将会看到该信息。',
                     confirmLabel: '拒绝',
+                },
+                cancel: {
+                    title: '取消包裹',
+                    description:
+                        '尚未收取任何费用：报价不是扣款。关闭该包裹并释放商品以便重新打包。请说明原因 — 客户将会看到该信息。',
+                    confirmLabel: '取消包裹',
                 },
                 shipment: {
                     title: '设置包裹运费',

@@ -857,6 +857,7 @@ export const ptBR = {
                 quoteFreight: 'Informar peso e frete',
                 dispatch: 'Despachar',
                 correctDispatch: 'Corrigir rastreio',
+                cancel: 'Cancelar pacote',
             },
             fields: {
                 shipping: 'Frete cobrado',
@@ -904,7 +905,8 @@ export const ptBR = {
             },
             feedback: {
                 approve: 'Pacote aprovado.',
-                reject: 'Pacote rejeitado.',
+                reject: 'Pacote rejeitado e encerrado; os itens voltaram a ficar disponíveis.',
+                cancel: 'Pacote cancelado; os itens voltaram a ficar disponíveis.',
                 shipment: 'Dados de frete atualizados.',
                 dispatch: 'Pacote despachado.',
                 correctDispatch: 'Dados de rastreio corrigidos.',
@@ -920,8 +922,15 @@ export const ptBR = {
                 },
                 reject: {
                     title: 'Rejeitar pacote',
-                    description: 'Explique o motivo da rejeição — o cliente poderá visualizá-lo.',
+                    description:
+                        'Encerra o pacote e libera os itens para outro. Explique o motivo — o cliente poderá visualizá-lo.',
                     confirmLabel: 'Rejeitar',
+                },
+                cancel: {
+                    title: 'Cancelar pacote',
+                    description:
+                        'Nada foi cobrado: a cotação não é dinheiro. Encerra o pacote e libera os itens para outro. Explique o motivo — o cliente poderá visualizá-lo.',
+                    confirmLabel: 'Cancelar pacote',
                 },
                 shipment: {
                     title: 'Definir frete do pacote',

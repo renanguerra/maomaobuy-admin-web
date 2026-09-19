@@ -40,7 +40,7 @@ import { api, ApiError, uploadToPresignedUrl } from '@/services/api';
 import { formatDate, money, packageStatusLabel, type AdminPackage, type PresignedUpload } from '@/types/api';
 import { AddPackageItemsDialog } from './AddPackageItemsDialog';
 
-type DialogKind = 'approve' | 'reject' | 'dispatch' | 'correct-dispatch' | 'shipment' | 'add-items' | null;
+type DialogKind = 'approve' | 'reject' | 'cancel' | 'dispatch' | 'correct-dispatch' | 'shipment' | 'add-items' | null;
 
 /** Situações finais do pacote — nada mais é anexado depois delas. */
 const CLOSED_STATUSES = ['DELIVERED', 'RETURNED', 'CANCELLED'];
@@ -114,11 +114,13 @@ export function PackageDetailPage() {
                     ? t('packages.detail.feedback.approve')
                     : action === 'reject'
                       ? t('packages.detail.feedback.reject')
-                      : action === 'shipment'
-                        ? t('packages.detail.feedback.shipment')
-                        : correcting
-                          ? t('packages.detail.feedback.correctDispatch')
-                          : t('packages.detail.feedback.dispatch'),
+                      : action === 'cancel'
+                        ? t('packages.detail.feedback.cancel')
+                        : action === 'shipment'
+                          ? t('packages.detail.feedback.shipment')
+                          : correcting
+                            ? t('packages.detail.feedback.correctDispatch')
+                            : t('packages.detail.feedback.dispatch'),
             );
         } catch (err) {
             throw err instanceof ApiError ? err : new Error(t('common.errors.generic'));
@@ -258,16 +260,14 @@ export function PackageDetailPage() {
     const isDraft = pkg.status === 'DRAFT';
     const isAwaitingApproval = pkg.status === 'AWAITING_APPROVAL';
     const canEditItems = isDraft || isAwaitingApproval;
+    // Espelha `PackagesRepository.cancel`: tudo antes do pagamento do frete.
+    const canCancel =
+        canEditItems || pkg.status === 'AWAITING_FREIGHT_QUOTE' || pkg.status === 'AWAITING_FREIGHT_PAYMENT';
     const trackingStep = TRACKING_NEXT_STEP[pkg.status];
     // Corrigir o rastreio só faz sentido enquanto o pacote está a caminho.
     const canCorrectDispatch = pkg.shippedAt !== null && !CLOSED_STATUSES.includes(pkg.status);
     const hasActions =
-        canEditItems ||
-        pkg.status === 'AWAITING_FREIGHT_QUOTE' ||
-        pkg.status === 'AWAITING_FREIGHT_PAYMENT' ||
-        pkg.status === 'READY_FOR_DISPATCH' ||
-        canCorrectDispatch ||
-        Boolean(trackingStep);
+        canEditItems || canCancel || pkg.status === 'READY_FOR_DISPATCH' || canCorrectDispatch || Boolean(trackingStep);
 
     return (
         <div className="grid gap-6">
@@ -347,6 +347,16 @@ export function PackageDetailPage() {
                             size="small"
                         >
                             {t('packages.detail.actions.quoteFreight')}
+                        </Button>
+                    )}
+                    {canCancel && !isAwaitingApproval && (
+                        <Button
+                            leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('cancel')}
+                            size="small"
+                            variant="danger"
+                        >
+                            {t('packages.detail.actions.cancel')}
                         </Button>
                     )}
                     {pkg.status === 'READY_FOR_DISPATCH' && (
@@ -619,6 +629,16 @@ export function PackageDetailPage() {
                 open={dialog === 'reject'}
                 requireReason
                 title={t('packages.detail.dialogs.reject.title')}
+                variant="danger"
+            />
+            <ActionDialog
+                confirmLabel={t('packages.detail.dialogs.cancel.confirmLabel')}
+                description={t('packages.detail.dialogs.cancel.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleActionConfirm}
+                open={dialog === 'cancel'}
+                requireReason
+                title={t('packages.detail.dialogs.cancel.title')}
                 variant="danger"
             />
             <ActionDialog
