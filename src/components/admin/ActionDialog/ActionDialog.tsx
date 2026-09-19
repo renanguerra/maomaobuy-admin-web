@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { Alert } from '@/components/admin/Alert';
+import { TotpEnrollmentDialog } from '@/components/admin/TotpEnrollmentDialog';
 import { Button } from '@/components/ui/Button';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Input } from '@/components/ui/Input';
@@ -9,9 +10,21 @@ import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { useTranslation } from '@/i18n/LanguageProvider';
+import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import type { ActionDialogField, ActionDialogProps } from './ActionDialog.types';
 
 const FORM_ID = 'action-dialog-form';
+
+/**
+ * Ações com TOTP só fazem sentido com autenticador cadastrado. Enquanto o
+ * admin logado não tiver um, o diálogo da ação é substituído pelo cadastro;
+ * confirmado o primeiro código, a sessão em memória muda e a ação abre na
+ * sequência, sem o admin precisar clicar de novo.
+ */
+export function useTotpEnrollmentGate(open: boolean, requireTotp: boolean) {
+    const { admin } = useAdminAccountAuth();
+    return open && requireTotp && admin !== null && !admin.totpEnrolled;
+}
 
 /**
  * Formulário único de toda ação sensível do painel (aprovar, rejeitar,
@@ -36,7 +49,14 @@ export function ActionDialog({
 }: ActionDialogProps) {
     const { t } = useTranslation();
     const [submitting, setSubmitting] = useState(false);
+    const needsEnrollment = useTotpEnrollmentGate(open, requireTotp);
     const hasGrid = fields.length > 1;
+
+    if (needsEnrollment) {
+        // `markTotpEnrolled` dentro do diálogo vira `needsEnrollment` para
+        // false e este mesmo `open` passa a renderizar a ação.
+        return <TotpEnrollmentDialog onCancel={onCancel} onEnrolled={() => undefined} open />;
+    }
 
     return (
         <Modal

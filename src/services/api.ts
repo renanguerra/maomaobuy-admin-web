@@ -1,3 +1,4 @@
+import { notifyTotpEnrollmentRequired } from '@/services/totp-enrollment-required';
 import type { PresignedUpload } from '@/types/api';
 
 export class ApiError extends Error {
@@ -27,6 +28,9 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
             typeof body === 'object' && body !== null && 'message' in body && typeof body.message === 'string'
                 ? body.message
                 : 'Não foi possível concluir a solicitação.';
+        // Autenticador zerado no meio da sessão: a sessão em memória ainda
+        // dizia "cadastrado". O 428 é o backend corrigindo isso.
+        if (response.status === 428) notifyTotpEnrollmentRequired();
         throw new ApiError(response.status, message, body);
     }
     return body as T;

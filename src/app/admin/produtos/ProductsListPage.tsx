@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, FileX, FilterX, ImageOff, Package, Plus, Trash2, Upload, X } from 'lucide-react';
+import { CheckCircle2, FileJson, FileX, FilterX, ImageOff, Package, Plus, Trash2, Upload, X } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
 import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -287,6 +287,13 @@ export function ProductsListPage() {
                             variant="secondary"
                         >
                             {t('products.list.importButton')}
+                        </ButtonLink>
+                        <ButtonLink
+                            href="/admin/produtos/editar-em-lote"
+                            leadingIcon={<FileJson className="h-4 w-4" aria-hidden="true" />}
+                            variant="secondary"
+                        >
+                            {t('products.list.bulkEditorButton')}
                         </ButtonLink>
                         <ButtonLink
                             href="/admin/produtos/novo"

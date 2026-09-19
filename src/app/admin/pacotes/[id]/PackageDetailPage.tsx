@@ -666,20 +666,13 @@ export function PackageDetailPage() {
                         placeholder: '150',
                     },
                     {
-                        name: 'shippingCurrency',
-                        label: t('packages.detail.dialogs.shipment.currency'),
-                        kind: 'select',
-                        defaultValue: pkg.shippingCurrency ?? 'BRL',
-                        options: [
-                            { value: 'BRL', label: 'BRL' },
-                            { value: 'CNY', label: 'CNY' },
-                        ],
-                    },
-                    {
+                        // Backend fixa CNY (ver AdminPackagesService.setShipmentDetails):
+                        // não existe mais escolha de moeda aqui, só o valor.
                         name: 'freightCostAmountMinor',
                         label: t('packages.detail.dialogs.shipment.amount'),
                         hint: t('packages.detail.dialogs.shipment.amountHint'),
                         kind: 'currency',
+                        suffix: 'CNY',
                         defaultValue: pkg.freightCostAmountMinor ?? '0',
                     },
                 ]}

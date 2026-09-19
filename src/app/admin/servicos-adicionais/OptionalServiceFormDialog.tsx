@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { useTotpEnrollmentGate } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
+import { TotpEnrollmentDialog } from '@/components/admin/TotpEnrollmentDialog';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
@@ -44,6 +46,11 @@ interface OptionalServiceFormDialogProps {
 export function OptionalServiceFormDialog({ open, service, onClose, onSubmit }: OptionalServiceFormDialogProps) {
     const { t } = useTranslation();
     const [submitting, setSubmitting] = useState(false);
+    const needsEnrollment = useTotpEnrollmentGate(open, true);
+
+    if (needsEnrollment) {
+        return <TotpEnrollmentDialog onCancel={onClose} onEnrolled={() => undefined} open />;
+    }
 
     return (
         <Modal

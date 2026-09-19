@@ -34,9 +34,10 @@ export interface ActionDialogProps {
     /** Campos extras da ação, como transportadora e código de rastreio no despacho. */
     fields?: readonly ActionDialogField[];
     /**
-     * TOTP temporariamente não exigido em nenhuma rota admin (ver AGENTS.md
-     * do backend) — default `false`. Prop mantida para religar por ação
-     * específica, ou trocando o default aqui, quando a exigência voltar.
+     * Pede o código do autenticador (default `true` — é o que o backend exige
+     * em toda ação com `totpCode`). Admin sem autenticador cadastrado vê o
+     * fluxo de cadastro antes do formulário. Só desligue em ações cujo DTO
+     * não tem `totpCode` (ex.: concluir/cancelar adicional).
      */
     requireTotp?: boolean;
     /**

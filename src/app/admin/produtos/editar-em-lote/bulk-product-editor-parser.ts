@@ -8,21 +8,27 @@ import {
     toNonEmptyString,
     toOptionalAmountMinor,
     toOptionalInt,
+    type MarketplaceValue,
 } from '../product-bulk-shared';
 
-export interface BulkImportVariantInput {
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export interface BulkEditVariantInput {
     externalId: string;
-    label: string;
-    amountAdjustmentMinor: string;
-    isAvailable: boolean;
+    /** `true` remove a variação existente — os demais campos são ignorados. */
+    remove?: boolean;
+    label?: string;
+    amountAdjustmentMinor?: string;
+    isAvailable?: boolean;
 }
 
-/** Corpo aceito por `POST /products` — mesmo formato de `toProductPayload`. */
-export interface BulkImportProductBody {
+/** Corpo aceito por `PATCH /products/:id` — mesmo formato de `toProductPayload`, mais o `id` do produto a editar. */
+export interface BulkEditProductBody {
+    id: string;
     name: string;
     slug: string;
     description: string;
-    marketplace: (typeof MARKETPLACE_VALUES)[number];
+    marketplace: MarketplaceValue;
     marketplaceUrl?: string;
     sourceAmountMinor: string;
     estimatedShippingAmountMinor?: string;
@@ -31,38 +37,39 @@ export interface BulkImportProductBody {
     lengthMm?: number;
     widthMm?: number;
     heightMm?: number;
+    isPublished: boolean;
+    isPreSale: boolean;
+    releaseDate?: string;
     categoryIds?: string[];
     subcategoryIds?: string[];
-    variants?: BulkImportVariantInput[];
+    /** `undefined` = arquivo não trouxe o campo, variações existentes não são tocadas. */
+    variants?: BulkEditVariantInput[];
 }
 
-export interface BulkImportPayload {
-    product: BulkImportProductBody;
-    /** URLs https de imagem — baixadas e enviadas ao storage depois que o produto é criado (`POST /products/:id/media/from-url`). */
-    images?: string[];
-}
+export type BulkEditRowResult = { ok: true; edit: BulkEditProductBody } | { ok: false; error: string };
 
-export type BulkImportRowResult = { ok: true; payload: BulkImportPayload } | { ok: false; error: string };
-
-export interface BulkImportRow {
+export interface BulkEditRow {
     index: number;
-    /** Item original do arquivo, sem transformação — usado para reexportar os itens com falha para correção. */
+    /** Item original do arquivo — reexportado para os itens com falha corrigirem e reenviarem. */
     raw: unknown;
     label: string;
-    result: BulkImportRowResult;
+    result: BulkEditRowResult;
 }
 
-function resolveVariants(raw: unknown): BulkImportVariantInput[] | undefined {
+function resolveEditVariants(raw: unknown): BulkEditVariantInput[] | undefined {
     if (raw === undefined || raw === null) return undefined;
     if (!Array.isArray(raw)) throw new Error('Campo "variants" precisa ser uma lista.');
 
     const externalIds = new Set<string>();
-    const variants = raw.map((item, index): BulkImportVariantInput => {
+    const variants = raw.map((item, index): BulkEditVariantInput => {
         if (typeof item !== 'object' || item === null) throw new Error(`Variação #${index + 1} inválida.`);
         const record = item as Record<string, unknown>;
         const externalId = toNonEmptyString(record.externalId, `variants[${index}].externalId`, 160);
         if (externalIds.has(externalId)) throw new Error(`Identificador de variação duplicado: "${externalId}".`);
         externalIds.add(externalId);
+
+        if (record.remove === true) return { externalId, remove: true };
+
         return {
             externalId,
             label: toNonEmptyString(record.label, `variants[${index}].label`, 200),
@@ -76,25 +83,13 @@ function resolveVariants(raw: unknown): BulkImportVariantInput[] | undefined {
     return variants.length > 0 ? variants : undefined;
 }
 
-function resolveImages(raw: unknown): string[] | undefined {
-    if (raw === undefined || raw === null) return undefined;
-    if (!Array.isArray(raw)) throw new Error('Campo "images" precisa ser uma lista de URLs.');
-    if (raw.length > 10) throw new Error('No máximo 10 imagens por produto.');
-
-    const urls = raw.map((item, index) => {
-        if (typeof item !== 'string' || item.trim().length === 0)
-            throw new Error(`Campo "images[${index}]" precisa ser uma URL.`);
-        const url = item.trim();
-        if (!/^https:\/\//.test(url)) throw new Error(`Campo "images[${index}]" precisa começar com https://.`);
-        if (url.length > 2048) throw new Error(`Campo "images[${index}]" excede 2048 caracteres.`);
-        return url;
-    });
-    return urls.length > 0 ? urls : undefined;
-}
-
-function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImportPayload {
+function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): BulkEditProductBody {
     if (typeof raw !== 'object' || raw === null) throw new Error('Cada produto precisa ser um objeto JSON.');
     const record = raw as Record<string, unknown>;
+
+    if (typeof record.id !== 'string' || !UUID_PATTERN.test(record.id.trim()))
+        throw new Error('Campo "id" precisa ser o UUID do produto (veja o arquivo exportado).');
+    const id = record.id.trim();
 
     const name = toNonEmptyString(record.name, 'name', 300);
     const slugSource = typeof record.slug === 'string' && record.slug.trim() ? record.slug : name;
@@ -105,7 +100,7 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
 
     if (typeof record.marketplace !== 'string' || !MARKETPLACE_VALUES.includes(record.marketplace as never))
         throw new Error('Campo "marketplace" precisa ser TAOBAO, XIANYU, ALIBABA ou MAOMAOBUY.');
-    const marketplace = record.marketplace as (typeof MARKETPLACE_VALUES)[number];
+    const marketplace = record.marketplace as MarketplaceValue;
     const isOwnStock = marketplace === 'MAOMAOBUY';
 
     let marketplaceUrl: string | undefined;
@@ -115,37 +110,48 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
             throw new Error('Campo "marketplaceUrl" precisa começar com https:// (obrigatório fora de MAOMAOBUY).');
     }
 
+    const isPreSale = Boolean(record.isPreSale);
+    let releaseDate: string | undefined;
+    if (isPreSale) {
+        if (typeof record.releaseDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(record.releaseDate))
+            throw new Error('Campo "releaseDate" (formato YYYY-MM-DD) é obrigatório quando "isPreSale" é true.');
+        releaseDate = record.releaseDate;
+    }
+
     return {
-        product: {
-            name,
-            slug,
-            description,
-            marketplace,
-            marketplaceUrl,
-            sourceAmountMinor: toAmountMinor(record.sourceAmountMinor, 'sourceAmountMinor'),
-            estimatedShippingAmountMinor: toOptionalAmountMinor(
-                record.estimatedShippingAmountMinor,
-                'estimatedShippingAmountMinor',
-            ),
-            stock: toInt(record.stock, 'stock', 0),
-            weightGrams: toOptionalInt(record.weightGrams, 'weightGrams', 1),
-            lengthMm: toOptionalInt(record.lengthMm, 'lengthMm', 1),
-            widthMm: toOptionalInt(record.widthMm, 'widthMm', 1),
-            heightMm: toOptionalInt(record.heightMm, 'heightMm', 1),
-            ...resolveCategories(record.categories, categories),
-            variants: resolveVariants(record.variants),
-        },
-        images: resolveImages(record.images),
+        id,
+        name,
+        slug,
+        description,
+        marketplace,
+        marketplaceUrl,
+        sourceAmountMinor: toAmountMinor(record.sourceAmountMinor, 'sourceAmountMinor'),
+        estimatedShippingAmountMinor: toOptionalAmountMinor(
+            record.estimatedShippingAmountMinor,
+            'estimatedShippingAmountMinor',
+        ),
+        stock: toInt(record.stock, 'stock', 0),
+        weightGrams: toOptionalInt(record.weightGrams, 'weightGrams', 1),
+        lengthMm: toOptionalInt(record.lengthMm, 'lengthMm', 1),
+        widthMm: toOptionalInt(record.widthMm, 'widthMm', 1),
+        heightMm: toOptionalInt(record.heightMm, 'heightMm', 1),
+        isPublished: Boolean(record.isPublished),
+        isPreSale,
+        releaseDate,
+        ...resolveCategories(record.categories, categories),
+        variants: resolveEditVariants(record.variants),
     };
 }
 
 /**
- * Lê o JSON colado/enviado pelo admin e valida cada item contra as mesmas
- * regras do backend, resolvendo slugs de categoria/subcategoria para os IDs
- * que `POST /products` espera. Erros ficam por item — um produto inválido não
- * impede a importação dos demais.
+ * Lê o JSON exportado (e editado à mão) pelo admin. Cada produto precisa
+ * trazer o `id` do arquivo exportado — o resto dos campos é o mesmo corpo que
+ * `PATCH /products/:id` já aceita. Variações omitidas do arquivo não são
+ * tocadas; para remover uma existente, o item precisa vir com
+ * `{ "externalId": "...", "remove": true }`. Erros ficam por item, igual à
+ * importação: um produto inválido não impede os demais.
  */
-export function parseBulkImportDocument(text: string, categories: readonly AdminCategory[]): BulkImportRow[] {
+export function parseBulkEditDocument(text: string, categories: readonly AdminCategory[]): BulkEditRow[] {
     let data: unknown;
     try {
         data = JSON.parse(text);
@@ -154,7 +160,7 @@ export function parseBulkImportDocument(text: string, categories: readonly Admin
     }
     if (!Array.isArray(data)) throw new Error('notArray');
 
-    const seenSlugs = new Set<string>();
+    const seenIds = new Set<string>();
 
     return data.map((raw, index) => {
         const fallbackLabel = `Item ${index + 1}`;
@@ -163,11 +169,10 @@ export function parseBulkImportDocument(text: string, categories: readonly Admin
                 ? ((raw as Record<string, unknown>).name as string)
                 : undefined;
         try {
-            const payload = parseItem(raw, categories);
-            if (seenSlugs.has(payload.product.slug))
-                throw new Error(`Slug "${payload.product.slug}" repetido dentro do próprio arquivo.`);
-            seenSlugs.add(payload.product.slug);
-            return { index, raw, label: payload.product.name || fallbackLabel, result: { ok: true, payload } };
+            const edit = parseEditItem(raw, categories);
+            if (seenIds.has(edit.id)) throw new Error(`Produto "${edit.id}" repetido dentro do próprio arquivo.`);
+            seenIds.add(edit.id);
+            return { index, raw, label: edit.name || fallbackLabel, result: { ok: true, edit } };
         } catch (err) {
             return {
                 index,
