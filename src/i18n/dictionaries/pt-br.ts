@@ -675,6 +675,8 @@ export const ptBR = {
                 markInWarehouse: 'Marcar chegada no armazém',
                 openInspection: 'Abrir inspeção',
                 confirmRefund: 'Confirmar reembolso',
+                failSourcing: 'Compra falhou',
+                confirmRefundSuperadminOnly: 'Só o admin master confirma reembolso.',
                 needsCustomerApproval: 'O cliente ainda não autorizou este valor.',
             },
             fields: {
@@ -726,8 +728,14 @@ export const ptBR = {
                 confirmRefund: {
                     title: 'Confirmar reembolso',
                     description:
-                        'Use só depois de o dinheiro voltar de fato para o cliente. O pedido é marcado como reembolsado e não se move mais.',
+                        'Devolve ao saldo do cliente o que ele pagou por este pedido (descontando adicionais já estornados). O pedido é marcado como reembolsado e não se move mais.',
                     confirmLabel: 'Confirmar reembolso',
+                },
+                failSourcing: {
+                    title: 'Registrar falha na compra',
+                    description:
+                        'O vendedor cancelou, o anúncio saiu do ar ou o item não pode ser comprado. O pedido vai para reembolso e o cliente recebe o motivo; o dinheiro só volta quando o admin master confirmar.',
+                    confirmLabel: 'Enviar para reembolso',
                 },
                 requestCustomerApproval: {
                     title: 'Solicitar aprovação do cliente',
@@ -766,6 +774,7 @@ export const ptBR = {
                 markedReadyToShip: 'Pedido marcado como pronto para envio.',
                 sourcingAdvanced: 'Etapa da compra atualizada.',
                 'confirm-refund': 'Reembolso confirmado.',
+                'fail-sourcing': 'Pedido enviado para reembolso.',
             },
             summarySection: 'Resumo',
             optionalServicesSection: {

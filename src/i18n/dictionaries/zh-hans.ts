@@ -659,6 +659,8 @@ export const zhHans: Messages = {
                 markInWarehouse: '标记为已到仓',
                 openInspection: '打开验货单',
                 confirmRefund: '确认退款',
+                failSourcing: '采购失败',
+                confirmRefundSuperadminOnly: '仅超级管理员可确认退款。',
                 needsCustomerApproval: '客户尚未确认该金额。',
             },
             fields: {
@@ -708,8 +710,15 @@ export const zhHans: Messages = {
                 },
                 confirmRefund: {
                     title: '确认退款',
-                    description: '仅在款项确实退回客户后使用。订单将标记为已退款，不再变动。',
+                    description:
+                        '将客户为该订单支付的款项退回其余额（扣除已退的附加服务）。订单将标记为已退款，不再变动。',
                     confirmLabel: '确认退款',
+                },
+                failSourcing: {
+                    title: '登记采购失败',
+                    description:
+                        '卖家取消、商品下架或无法购买。订单进入退款流程并通知客户原因；款项需超级管理员确认后才退回。',
+                    confirmLabel: '提交退款',
                 },
                 requestCustomerApproval: {
                     title: '请求客户确认',
@@ -746,6 +755,7 @@ export const zhHans: Messages = {
                 markedReadyToShip: '订单已标记为可发货。',
                 sourcingAdvanced: '采购阶段已更新。',
                 'confirm-refund': '退款已确认。',
+                'fail-sourcing': '订单已提交退款。',
             },
             summarySection: '摘要',
             optionalServicesSection: {
