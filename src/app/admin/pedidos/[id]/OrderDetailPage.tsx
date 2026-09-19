@@ -15,6 +15,7 @@ import {
     Wallet,
     XCircle,
 } from 'lucide-react';
+import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import { ActionBar } from '@/components/admin/ActionBar';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
@@ -40,7 +41,7 @@ import { OrderMediaManager } from './OrderMediaManager';
 import { OrderOptionalServicesSection } from './OrderOptionalServices';
 import { OrderAmountDialog, type OrderAmountDialogValues } from './OrderAmountDialog';
 
-type ApprovalDialogKind = 'approve' | 'reject' | 'request-customer-approval' | 'confirm-refund';
+type ApprovalDialogKind = 'approve' | 'reject' | 'request-customer-approval' | 'confirm-refund' | 'fail-sourcing';
 type AmountDialogKind = 'change-price' | 'change-shipping-estimate';
 type DialogKind = ApprovalDialogKind | AmountDialogKind | 'edit-description' | null;
 
@@ -49,6 +50,7 @@ const APPROVAL_FEEDBACK_KEY: Record<ApprovalDialogKind, MessageKey> = {
     reject: 'orders.detail.feedback.reject',
     'request-customer-approval': 'orders.detail.feedback.request-customer-approval',
     'confirm-refund': 'orders.detail.feedback.confirm-refund',
+    'fail-sourcing': 'orders.detail.feedback.fail-sourcing',
 };
 
 /**
@@ -63,6 +65,7 @@ const SOURCING_NEXT_STEP: Record<string, { status: string; labelKey: MessageKey 
 
 export function OrderDetailPage() {
     const { t } = useTranslation();
+    const { admin } = useAdminAccountAuth();
     const { notify } = useToast();
     const params = useParams<{ id: string }>();
     const router = useRouter();
@@ -253,6 +256,8 @@ export function OrderDetailPage() {
         order.customerApprovedTotalMinor !== null &&
         BigInt(order.totalAmountMinor) <= BigInt(order.customerApprovedTotalMinor);
     const sourcingStep = order.fulfillmentMode === 'SOURCED' ? SOURCING_NEXT_STEP[order.status] : undefined;
+    // Só o admin master devolve dinheiro (`@Roles(SUPERADMIN)` em confirm-refund).
+    const canConfirmRefund = admin?.role === 'SUPERADMIN';
     // Itens que chegaram ao armazém e ainda não têm laudo aberto.
     const inspectedItemIds = new Set(order.inspections.map((inspection) => inspection.orderItemId));
     const itemsWithoutInspection =
@@ -411,15 +416,30 @@ export function OrderDetailPage() {
                             {t('orders.detail.actions.markReadyToShip')}
                         </Button>
                     )}
-                    {order.status === 'REFUND_REQUESTED' && (
+                    {sourcingStep && (
                         <Button
-                            leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('confirm-refund')}
+                            leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('fail-sourcing')}
                             size="small"
+                            variant="danger"
                         >
-                            {t('orders.detail.actions.confirmRefund')}
+                            {t('orders.detail.actions.failSourcing')}
                         </Button>
                     )}
+                    {order.status === 'REFUND_REQUESTED' &&
+                        (canConfirmRefund ? (
+                            <Button
+                                leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
+                                onClick={() => setDialog('confirm-refund')}
+                                size="small"
+                            >
+                                {t('orders.detail.actions.confirmRefund')}
+                            </Button>
+                        ) : (
+                            <p className="m-0 text-sm text-muted">
+                                {t('orders.detail.actions.confirmRefundSuperadminOnly')}
+                            </p>
+                        ))}
                 </ActionBar>
             )}
 
@@ -648,6 +668,16 @@ export function OrderDetailPage() {
                 onConfirm={handleApprovalConfirm}
                 open={dialog === 'request-customer-approval'}
                 title={t('orders.detail.dialogs.requestCustomerApproval.title')}
+            />
+            <ActionDialog
+                confirmLabel={t('orders.detail.dialogs.failSourcing.confirmLabel')}
+                description={t('orders.detail.dialogs.failSourcing.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleApprovalConfirm}
+                open={dialog === 'fail-sourcing'}
+                requireReason
+                title={t('orders.detail.dialogs.failSourcing.title')}
+                variant="danger"
             />
             <ActionDialog
                 confirmLabel={t('orders.detail.dialogs.confirmRefund.confirmLabel')}

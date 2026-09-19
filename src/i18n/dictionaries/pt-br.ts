@@ -675,6 +675,8 @@ export const ptBR = {
                 markInWarehouse: 'Marcar chegada no armazém',
                 openInspection: 'Abrir inspeção',
                 confirmRefund: 'Confirmar reembolso',
+                failSourcing: 'Compra falhou',
+                confirmRefundSuperadminOnly: 'Só o admin master confirma reembolso.',
                 needsCustomerApproval: 'O cliente ainda não autorizou este valor.',
             },
             fields: {
@@ -726,8 +728,14 @@ export const ptBR = {
                 confirmRefund: {
                     title: 'Confirmar reembolso',
                     description:
-                        'Use só depois de o dinheiro voltar de fato para o cliente. O pedido é marcado como reembolsado e não se move mais.',
+                        'Devolve ao saldo do cliente o que ele pagou por este pedido (descontando adicionais já estornados). O pedido é marcado como reembolsado e não se move mais.',
                     confirmLabel: 'Confirmar reembolso',
+                },
+                failSourcing: {
+                    title: 'Registrar falha na compra',
+                    description:
+                        'O vendedor cancelou, o anúncio saiu do ar ou o item não pode ser comprado. O pedido vai para reembolso e o cliente recebe o motivo; o dinheiro só volta quando o admin master confirmar.',
+                    confirmLabel: 'Enviar para reembolso',
                 },
                 requestCustomerApproval: {
                     title: 'Solicitar aprovação do cliente',
@@ -766,6 +774,7 @@ export const ptBR = {
                 markedReadyToShip: 'Pedido marcado como pronto para envio.',
                 sourcingAdvanced: 'Etapa da compra atualizada.',
                 'confirm-refund': 'Reembolso confirmado.',
+                'fail-sourcing': 'Pedido enviado para reembolso.',
             },
             summarySection: 'Resumo',
             optionalServicesSection: {
@@ -857,6 +866,7 @@ export const ptBR = {
                 quoteFreight: 'Informar peso e frete',
                 dispatch: 'Despachar',
                 correctDispatch: 'Corrigir rastreio',
+                cancel: 'Cancelar pacote',
             },
             fields: {
                 shipping: 'Frete cobrado',
@@ -904,7 +914,8 @@ export const ptBR = {
             },
             feedback: {
                 approve: 'Pacote aprovado.',
-                reject: 'Pacote rejeitado.',
+                reject: 'Pacote rejeitado e encerrado; os itens voltaram a ficar disponíveis.',
+                cancel: 'Pacote cancelado; os itens voltaram a ficar disponíveis.',
                 shipment: 'Dados de frete atualizados.',
                 dispatch: 'Pacote despachado.',
                 correctDispatch: 'Dados de rastreio corrigidos.',
@@ -920,8 +931,15 @@ export const ptBR = {
                 },
                 reject: {
                     title: 'Rejeitar pacote',
-                    description: 'Explique o motivo da rejeição — o cliente poderá visualizá-lo.',
+                    description:
+                        'Encerra o pacote e libera os itens para outro. Explique o motivo — o cliente poderá visualizá-lo.',
                     confirmLabel: 'Rejeitar',
+                },
+                cancel: {
+                    title: 'Cancelar pacote',
+                    description:
+                        'Nada foi cobrado: a cotação não é dinheiro. Encerra o pacote e libera os itens para outro. Explique o motivo — o cliente poderá visualizá-lo.',
+                    confirmLabel: 'Cancelar pacote',
                 },
                 shipment: {
                     title: 'Definir frete do pacote',
