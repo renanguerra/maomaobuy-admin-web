@@ -669,6 +669,7 @@ export const ptBR = {
                 reject: 'Rejeitar',
                 cancelOrder: 'Cancelar pedido',
                 cancelOrderRestock: 'Cancelar pedido (devolve estoque)',
+                cancelOrderRefund: 'Cancelar pedido (devolve saldo)',
                 markReadyToShip: 'Marcar pronto para envio',
                 markReadyToShipReason: 'Prazo de inspeção encerrado sem resposta do cliente.',
                 markPurchased: 'Marcar como comprado',
@@ -727,6 +728,12 @@ export const ptBR = {
                     title: 'Rejeitar pedido',
                     description: 'Explique o motivo da rejeição — o cliente poderá visualizá-lo.',
                     confirmLabel: 'Rejeitar',
+                },
+                cancelRefund: {
+                    title: 'Cancelar pedido pago',
+                    description:
+                        'O pedido é encerrado e o valor pago ({{amount}}, menos adicionais já devolvidos) volta ao saldo do cliente na hora. Explique o motivo — o cliente poderá visualizá-lo.',
+                    confirmLabel: 'Cancelar e devolver saldo',
                 },
                 confirmRefund: {
                     title: 'Confirmar reembolso',
@@ -867,6 +874,7 @@ export const ptBR = {
                 markOutForDelivery: 'Marcar saiu para entrega',
                 markDelivered: 'Marcar como entregue',
                 quoteFreight: 'Informar peso e frete',
+                requoteFreight: 'Editar frete',
                 dispatch: 'Despachar',
                 correctDispatch: 'Corrigir rastreio',
                 cancel: 'Cancelar pacote',
@@ -949,6 +957,8 @@ export const ptBR = {
                     title: 'Definir frete do pacote',
                     description:
                         'Peso, dimensões e o custo da transportadora. A margem da MaoMaoBuy é aplicada pelo sistema — não some nada aqui.',
+                    requoteDescription:
+                        'O cliente já vê um valor para pagar. Ao salvar, a cotação é refeita (frete, margem e armazenagem) e ele recebe um novo e-mail com o valor atualizado.',
                     confirmLabel: 'Salvar',
                     weight: 'Peso (g)',
                     length: 'Comprimento (mm)',
@@ -1338,7 +1348,8 @@ export const ptBR = {
             notFound: 'Cupom não encontrado.',
             summary: 'Regras',
             redemptions: 'Usos',
-            redemptionsDescription: 'Cada linha é um pagamento em que o cupom entrou. O checkout do carrinho conta como um uso só.',
+            redemptionsDescription:
+                'Cada linha é um pagamento em que o cupom entrou. O checkout do carrinho conta como um uso só.',
             noRedemptions: 'Ninguém usou este cupom ainda.',
             fields: {
                 code: 'Código',
@@ -1401,7 +1412,8 @@ export const ptBR = {
             userChange: 'Trocar',
             userRequired: 'Escolha o cliente ou deixe o cupom aberto.',
             isActive: 'Cupom ativo',
-            fixedFieldsHint: 'Código, onde vale e tipo de desconto não mudam depois de criado — para outro desconto, crie outro cupom.',
+            fixedFieldsHint:
+                'Código, onde vale e tipo de desconto não mudam depois de criado — para outro desconto, crie outro cupom.',
         },
     },
     settings: {

@@ -263,6 +263,9 @@ export function PackageDetailPage() {
     // Espelha `PackagesRepository.cancel`: tudo antes do pagamento do frete.
     const canCancel =
         canEditItems || pkg.status === 'AWAITING_FREIGHT_QUOTE' || pkg.status === 'AWAITING_FREIGHT_PAYMENT';
+    // Espelha `FREIGHT_QUOTABLE_STATUSES` do backend: com a cobrança aberta o
+    // frete ainda pode ser corrigido — o cliente só pagou depois de pagar.
+    const canRequoteFreight = pkg.status === 'AWAITING_FREIGHT_PAYMENT';
     const trackingStep = TRACKING_NEXT_STEP[pkg.status];
     // Corrigir o rastreio só faz sentido enquanto o pacote está a caminho.
     const canCorrectDispatch = pkg.shippedAt !== null && !CLOSED_STATUSES.includes(pkg.status);
@@ -347,6 +350,16 @@ export function PackageDetailPage() {
                             size="small"
                         >
                             {t('packages.detail.actions.quoteFreight')}
+                        </Button>
+                    )}
+                    {canRequoteFreight && (
+                        <Button
+                            leadingIcon={<Ruler className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('shipment')}
+                            size="small"
+                            variant="secondary"
+                        >
+                            {t('packages.detail.actions.requoteFreight')}
                         </Button>
                     )}
                     {canCancel && !isAwaitingApproval && (
@@ -651,7 +664,11 @@ export function PackageDetailPage() {
             />
             <ActionDialog
                 confirmLabel={t('packages.detail.dialogs.shipment.confirmLabel')}
-                description={t('packages.detail.dialogs.shipment.description')}
+                description={
+                    canRequoteFreight
+                        ? t('packages.detail.dialogs.shipment.requoteDescription')
+                        : t('packages.detail.dialogs.shipment.description')
+                }
                 onCancel={() => setDialog(null)}
                 onConfirm={handleActionConfirm}
                 open={dialog === 'shipment'}

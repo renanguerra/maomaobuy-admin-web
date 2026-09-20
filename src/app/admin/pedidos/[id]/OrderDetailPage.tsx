@@ -57,6 +57,16 @@ const APPROVAL_FEEDBACK_KEY: Record<ApprovalDialogKind, MessageKey> = {
  * Etapas de aquisição, na ordem. O botão mostrado é sempre o próximo passo do
  * pedido — a operação nunca escolhe para onde pular.
  */
+/** Fases pagas em que o backend ainda aceita cancelar (`REJECTABLE_STATUSES`). */
+const PAID_CANCELLABLE_STATUSES = [
+    'SUBMITTED',
+    'PURCHASED',
+    'SELLER_SHIPPED',
+    'IN_WAREHOUSE',
+    'INSPECTION_PENDING',
+    'READY_TO_SHIP',
+];
+
 const SOURCING_NEXT_STEP: Record<string, { status: string; labelKey: MessageKey }> = {
     SUBMITTED: { status: 'PURCHASED', labelKey: 'orders.detail.actions.markPurchased' },
     PURCHASED: { status: 'SELLER_SHIPPED', labelKey: 'orders.detail.actions.markSellerShipped' },
@@ -262,10 +272,14 @@ export function OrderDetailPage() {
     const inspectedItemIds = new Set(order.inspections.map((inspection) => inspection.orderItemId));
     const itemsWithoutInspection =
         order.status === 'IN_WAREHOUSE' ? order.items.filter((item) => !inspectedItemIds.has(item.id)) : [];
+    // Espelha `REJECTABLE_STATUSES` do backend: pedido pago que ainda não
+    // viajou pode ser cancelado e o pagamento volta ao saldo na hora.
+    const canCancelPaid = PAID_CANCELLABLE_STATUSES.includes(order.status);
     const hasActions =
         canEditDescriptionAndMedia ||
         canReprice ||
         Boolean(sourcingStep) ||
+        canCancelPaid ||
         order.status === 'INSPECTION_PENDING' ||
         order.status === 'REFUND_REQUESTED';
 
@@ -424,6 +438,16 @@ export function OrderDetailPage() {
                             variant="danger"
                         >
                             {t('orders.detail.actions.failSourcing')}
+                        </Button>
+                    )}
+                    {canCancelPaid && (
+                        <Button
+                            leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('reject')}
+                            size="small"
+                            variant="danger"
+                        >
+                            {t('orders.detail.actions.cancelOrderRefund')}
                         </Button>
                     )}
                     {order.status === 'REFUND_REQUESTED' &&
@@ -671,13 +695,27 @@ export function OrderDetailPage() {
                 title={t('orders.detail.dialogs.approve.title')}
             />
             <ActionDialog
-                confirmLabel={t('orders.detail.dialogs.reject.confirmLabel')}
-                description={t('orders.detail.dialogs.reject.description')}
+                confirmLabel={
+                    canCancelPaid
+                        ? t('orders.detail.dialogs.cancelRefund.confirmLabel')
+                        : t('orders.detail.dialogs.reject.confirmLabel')
+                }
+                description={
+                    canCancelPaid
+                        ? t('orders.detail.dialogs.cancelRefund.description', {
+                              amount: money(order.chargeableTotalAmountMinor, order.currency),
+                          })
+                        : t('orders.detail.dialogs.reject.description')
+                }
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}
                 open={dialog === 'reject'}
                 requireReason
-                title={t('orders.detail.dialogs.reject.title')}
+                title={
+                    canCancelPaid
+                        ? t('orders.detail.dialogs.cancelRefund.title')
+                        : t('orders.detail.dialogs.reject.title')
+                }
                 variant="danger"
             />
             <ActionDialog
