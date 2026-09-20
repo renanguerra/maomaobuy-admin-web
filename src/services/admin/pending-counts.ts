@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/services/api';
-import { refundNeedsAction } from '@/types/api';
-import type { AdminInspection, AdminOrder, AdminPackage, AdminProductRequest, AdminRefundRequest, Page } from '@/types/api';
 
 export interface PendingCounts {
     ordersAwaitingReview: number;
@@ -26,26 +24,14 @@ function publish(next: PendingCounts | undefined) {
     for (const listener of listeners) listener(next);
 }
 
-async function fetchCounts(): Promise<PendingCounts> {
-    // `limit=1` porque só interessa o `total` — o corpo da resposta é descartado.
-    const [awaitingReview, awaitingPayment, awaitingApproval, inspections, refunds, productRequests] =
-        await Promise.all([
-            api<Page<AdminOrder>>('/orders?status=AWAITING_REVIEW&limit=1'),
-            api<Page<AdminOrder>>('/orders?status=UNPAID&limit=1'),
-            api<Page<AdminPackage>>('/packages?status=AWAITING_APPROVAL&limit=1'),
-            api<AdminInspection[]>('/inspections?status=AWAITING_ADMIN'),
-            api<AdminRefundRequest[]>('/finance/refunds'),
-            api<Page<AdminProductRequest>>('/product-requests?status=NEW&limit=1'),
-        ]);
-
-    return {
-        ordersAwaitingReview: awaitingReview.total,
-        ordersAwaitingPayment: awaitingPayment.total,
-        packagesAwaitingApproval: awaitingApproval.total,
-        inspectionsAwaitingAdmin: inspections.length,
-        refundsRequested: refunds.filter((refund) => refundNeedsAction(refund.status)).length,
-        productRequestsNew: productRequests.total,
-    };
+/**
+ * Uma chamada só: o backend devolve as seis contagens numa consulta. Antes
+ * eram seis listagens `limit=1` em paralelo, cada uma pagando guard de
+ * sessão + contagem + página com JOINs — ~30 consultas e seis conexões do
+ * pool para seis números.
+ */
+function fetchCounts(): Promise<PendingCounts> {
+    return api<PendingCounts>('/dashboard/pending-counts');
 }
 
 /** Recarrega os contadores e avisa todo mundo que os exibe (sidebar, painel). */
