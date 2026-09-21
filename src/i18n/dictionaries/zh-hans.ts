@@ -653,6 +653,7 @@ export const zhHans: Messages = {
                 reject: '拒绝',
                 cancelOrder: '取消订单',
                 cancelOrderRestock: '取消订单（恢复库存）',
+                cancelOrderRefund: '取消订单（退回余额）',
                 markReadyToShip: '标记为可发货',
                 markReadyToShipReason: '验货期限已过，客户未回复。',
                 markPurchased: '标记为已购买',
@@ -710,6 +711,12 @@ export const zhHans: Messages = {
                     title: '拒绝订单',
                     description: '请说明拒绝原因 — 客户将会看到该信息。',
                     confirmLabel: '拒绝',
+                },
+                cancelRefund: {
+                    title: '取消已付款订单',
+                    description:
+                        '订单将被关闭，已付金额（{{amount}}，扣除已退回的附加服务）立即退回客户余额。请说明原因 — 客户将会看到该信息。',
+                    confirmLabel: '取消并退回余额',
                 },
                 confirmRefund: {
                     title: '确认退款',
@@ -845,6 +852,7 @@ export const zhHans: Messages = {
                 markOutForDelivery: '标记为派送中',
                 markDelivered: '标记为已签收',
                 quoteFreight: '录入重量和运费',
+                requoteFreight: '修改运费',
                 dispatch: '发货',
                 correctDispatch: '修正物流信息',
                 cancel: '取消包裹',
@@ -925,6 +933,8 @@ export const zhHans: Messages = {
                 shipment: {
                     title: '设置包裹运费',
                     description: '重量、尺寸和承运商成本。MaoMaoBuy 的加价由系统自动计算，这里不要自行相加。',
+                    requoteDescription:
+                        '客户已看到待付金额。保存后将重新报价（运费、加价和仓储费），并向客户发送新的金额邮件。',
                     confirmLabel: '保存',
                     weight: '重量（克）',
                     length: '长度（毫米）',
