@@ -409,6 +409,31 @@ html:lang(zh-Hans) {
     }
 }
 
+/*
+ * Folha de montagem (`/impressao/pacotes`): uma página A4 por pacote. As
+ * cores de fundo (caixas de conferência, miniaturas) precisam sobreviver ao
+ * "economizar tinta" padrão dos navegadores.
+ */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm 12mm;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    .mm-print-sheet {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .mm-print-sheet:last-child {
+        break-after: auto;
+    }
+}
+
 @layer base {
     /*
      * O botão de limpar nativo do WebKit apareceria ao lado do nosso — que é

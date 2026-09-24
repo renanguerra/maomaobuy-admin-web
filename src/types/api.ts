@@ -58,6 +58,8 @@ export interface AdminUserAddress {
     id: string;
     recipientFullName: string;
     phoneE164: string;
+    /** CPF em dígitos; nulo no endereço cadastrado antes do campo existir. */
+    recipientTaxId: string | null;
     countryCode: string;
     postalCode: string;
     administrativeArea: string;
@@ -583,6 +585,8 @@ export function packageStatusLabel(status: string) {
 export interface AddressSnapshot {
     recipientFullName: string;
     phoneE164: string;
+    /** CPF em dígitos; nulo nos pacotes montados antes do campo existir. */
+    recipientTaxId?: string | null;
     countryCode: string;
     postalCode: string;
     administrativeArea: string;
@@ -638,10 +642,46 @@ export interface AdminPackage {
     /** Chaves do bucket paralelas a `photoUrls` (mesmo índice) — usadas para remover uma foto. */
     photoKeys: string[];
     createdAt: string;
+    /** Última alteração; a listagem ordena por ela. */
+    updatedAt: string;
     items: AdminPackageItem[];
     userId: string;
     userEmail: string;
     userName: string;
+}
+
+// ---------------------------------------------------------------------------
+// Folha de montagem (`GET /packages/assembly-sheet?ids=…`)
+// ---------------------------------------------------------------------------
+
+export interface AdminPackageAssemblyOrder {
+    id: string;
+    status: string;
+    fulfillmentMode: 'IN_STOCK' | 'SOURCED';
+    adminDescription: string | null;
+    paidAt: string | null;
+    thumbnailUrl: string | null;
+    optionalServices: OrderOptionalService[];
+}
+
+export interface AdminPackageAssemblyInspection {
+    status: string;
+    decision: string | null;
+    decisionNote: string | null;
+    summary: string | null;
+}
+
+export interface AdminPackageAssemblyItem extends AdminPackageItem {
+    orderId: string;
+    /** Rótulo da variação do catálogo ("Azul / M"); `null` fora do catálogo. */
+    variantLabel: string | null;
+    inspection: AdminPackageAssemblyInspection | null;
+}
+
+/** Uma folha por pacote: o pacote, os itens e os pedidos de onde eles vêm. */
+export interface AdminPackageAssembly extends Omit<AdminPackage, 'items'> {
+    items: AdminPackageAssemblyItem[];
+    orders: AdminPackageAssemblyOrder[];
 }
 
 // ---------------------------------------------------------------------------
@@ -838,6 +878,16 @@ export interface AdminRefundRequest {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Soma das unidades — o que a caixa carrega, não quantas linhas a lista tem. */
+export function totalUnits(items: ReadonlyArray<{ quantity: number }>) {
+    return items.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+/** Preço unitário vezes a quantidade, em centavos/fen. */
+export function lineTotalMinor(unitAmountMinor: string, quantity: number) {
+    return (BigInt(unitAmountMinor) * BigInt(quantity)).toString();
+}
+
 export function money(minor: string | number, currency = 'BRL') {
     const locale = currency === 'CNY' ? 'zh-CN' : 'pt-BR';
     return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(Number(minor) / 100);
@@ -849,6 +899,24 @@ export function brl(minor: string | number) {
 
 export function cny(minor: string | number) {
     return money(minor, 'CNY');
+}
+
+/** Telefone em E.164 (+5511987654321) para (11) 98765-4321; estrangeiro sai como veio. */
+export function formatPhone(value: string) {
+    const digits = value.replace(/\D/g, '');
+    if (!value.startsWith('+55') || (digits.length !== 12 && digits.length !== 13)) return value;
+
+    const local = digits.slice(2);
+    const ddd = local.slice(0, 2);
+    const subscriber = local.slice(2);
+    return `(${ddd}) ${subscriber.slice(0, subscriber.length - 4)}-${subscriber.slice(-4)}`;
+}
+
+/** CPF em dígitos para `000.000.000-00`; texto vazio quando não há número. */
+export function formatCpf(value: string | null | undefined) {
+    const digits = (value ?? '').replace(/\D/g, '');
+    if (digits.length !== 11) return '';
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
 
 export function formatDate(value: string | null) {

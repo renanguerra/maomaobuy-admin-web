@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import {
     ArrowUpRight,
     CheckCircle2,
+    ClipboardList,
     Images,
     MessageSquare,
     Package as PackageIcon,
@@ -30,15 +31,27 @@ import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { packageStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { SummaryList } from '@/components/admin/SummaryList';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import type { MessageKey } from '@/i18n/translations';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
 import { api, ApiError, uploadToPresignedUrl } from '@/services/api';
-import { formatDate, money, packageStatusLabel, type AdminPackage, type PresignedUpload } from '@/types/api';
+import {
+    formatCpf,
+    formatDate,
+    lineTotalMinor,
+    money,
+    packageStatusLabel,
+    totalUnits,
+    type AdminPackage,
+    type AdminPackageItem,
+    type PresignedUpload,
+} from '@/types/api';
+import { QuantityBadge } from '@/components/admin/QuantityBadge';
 import { AddPackageItemsDialog } from './AddPackageItemsDialog';
+import { RemovePackageItemDialog } from './RemovePackageItemDialog';
 
 type DialogKind = 'approve' | 'reject' | 'cancel' | 'dispatch' | 'correct-dispatch' | 'shipment' | 'add-items' | null;
 
@@ -64,6 +77,7 @@ export function PackageDetailPage() {
     const [pkg, setPkg] = useState<AdminPackage>();
     const [error, setError] = useState<string>();
     const [dialog, setDialog] = useState<DialogKind>(null);
+    const [removingItem, setRemovingItem] = useState<AdminPackageItem>();
     const [busy, setBusy] = useState<string>();
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -154,7 +168,13 @@ export function PackageDetailPage() {
         }
     }
 
-    async function removeItem(packageItemId: string) {
+    async function removeItem(item: AdminPackageItem) {
+        // Com mais de uma unidade, o admin escolhe quantas saem.
+        if (item.quantity > 1) {
+            setRemovingItem(item);
+            return;
+        }
+        const packageItemId = item.id;
         const confirmed = await confirm({
             title: t('packages.detail.itemsSection.removeTitle'),
             description: t('packages.detail.itemsSection.removeConfirm'),
@@ -291,6 +311,18 @@ export function PackageDetailPage() {
                         · {pkg.userEmail}
                     </>
                 }
+                actions={
+                    <ButtonLink
+                        href={`/impressao/pacotes?ids=${pkg.id}`}
+                        leadingIcon={<ClipboardList className="h-4 w-4" aria-hidden="true" />}
+                        rel="noopener"
+                        size="small"
+                        target="_blank"
+                        variant="secondary"
+                    >
+                        {t('packages.detail.actions.assemblySheet')}
+                    </ButtonLink>
+                }
             />
 
             {pkg.rejectionReason && (
@@ -410,6 +442,14 @@ export function PackageDetailPage() {
                     <SectionCard
                         flush
                         title={t('packages.detail.itemsSection.title')}
+                        description={
+                            pkg.items.length > 0
+                                ? t('packages.detail.itemsSection.summary', {
+                                      products: pkg.items.length,
+                                      units: totalUnits(pkg.items),
+                                  })
+                                : undefined
+                        }
                         action={
                             canEditItems ? (
                                 <Button
@@ -430,14 +470,33 @@ export function PackageDetailPage() {
                                 {pkg.items.map((item) => (
                                     <li key={item.id}>
                                         <ListRow
-                                            title={item.orderItem.productName}
-                                            value={money(item.orderItem.unitAmountMinor, item.orderItem.currency)}
-                                            meta={t('packages.detail.itemsSection.quantity', { count: item.quantity })}
-                                            leading={
-                                                <span className="grid h-9 w-9 place-items-center rounded-lg bg-warm-200 text-muted dark:bg-night-raised dark:text-night-muted">
-                                                    <PackageIcon className="h-4 w-4" aria-hidden="true" />
-                                                </span>
+                                            title={
+                                                <>
+                                                    <span className="sr-only">{item.quantity} × </span>
+                                                    {item.orderItem.productName}
+                                                </>
                                             }
+                                            value={money(
+                                                lineTotalMinor(item.orderItem.unitAmountMinor, item.quantity),
+                                                item.orderItem.currency,
+                                            )}
+                                            meta={
+                                                <>
+                                                    {t('packages.detail.itemsSection.unitPrice', {
+                                                        count: item.quantity,
+                                                        amount: money(
+                                                            item.orderItem.unitAmountMinor,
+                                                            item.orderItem.currency,
+                                                        ),
+                                                    })}
+                                                    {item.orderItem.size
+                                                        ? t('orders.detail.itemsSection.size', {
+                                                              size: item.orderItem.size,
+                                                          })
+                                                        : ''}
+                                                </>
+                                            }
+                                            leading={<QuantityBadge quantity={item.quantity} />}
                                             actions={
                                                 canEditItems ? (
                                                     <Button
@@ -446,7 +505,7 @@ export function PackageDetailPage() {
                                                         })}
                                                         iconOnly
                                                         loading={busy === `remove-item:${item.id}`}
-                                                        onClick={() => removeItem(item.id)}
+                                                        onClick={() => removeItem(item)}
                                                         size="small"
                                                         variant="dangerGhost"
                                                     >
@@ -621,6 +680,9 @@ export function PackageDetailPage() {
                     <SectionCard dense title={t('packages.detail.fields.destination')}>
                         <address className="m-0 text-sm leading-relaxed text-ink not-italic dark:text-night-text">
                             <strong className="block">{pkg.destination.recipientFullName}</strong>
+                            {pkg.destination.recipientTaxId && (
+                                <span className="block">CPF {formatCpf(pkg.destination.recipientTaxId)}</span>
+                            )}
                             <span className="mt-1.5 block">
                                 {pkg.destination.addressLine1}
                                 {pkg.destination.addressLine2 ? `, ${pkg.destination.addressLine2}` : ''}
@@ -794,6 +856,19 @@ export function PackageDetailPage() {
                 packageId={pkg.id}
                 userId={pkg.userId}
             />
+            {removingItem && (
+                <RemovePackageItemDialog
+                    item={removingItem}
+                    key={removingItem.id}
+                    onClose={() => setRemovingItem(undefined)}
+                    onRemoved={(updated) => {
+                        setPkg(updated);
+                        setRemovingItem(undefined);
+                        notify({ tone: 'success', title: t('packages.detail.itemsSection.removedToast') });
+                    }}
+                    packageId={pkg.id}
+                />
+            )}
         </div>
     );
 }

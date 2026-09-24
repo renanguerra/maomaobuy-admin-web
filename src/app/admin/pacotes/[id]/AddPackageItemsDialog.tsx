@@ -6,11 +6,11 @@ import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { Button } from '@/components/ui/Button';
-import { Checkbox } from '@/components/ui/Checkbox';
 import { Modal } from '@/components/ui/Modal';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
-import { money, type AdminOrderItem, type AdminPackage } from '@/types/api';
+import { EligibleItemOption, EligibleSelectionSummary } from '@/components/admin/EligibleItemOption';
+import type { AdminOrderItem, AdminPackage } from '@/types/api';
 
 interface AddPackageItemsDialogProps {
     open: boolean;
@@ -146,18 +146,14 @@ function EligibleItems({
     return (
         <div className="grid gap-2">
             {items.map((item) => (
-                <Checkbox
-                    boxed
+                <EligibleItemOption
                     checked={selectedIds.includes(item.id)}
+                    item={item}
                     key={item.id}
-                    label={item.productName}
-                    onChange={() => onToggle(item.id)}
-                    description={`${t('users.createPackage.quantityLabel', { count: item.quantity })} · ${money(
-                        item.unitAmountMinor,
-                        item.currency,
-                    )}`}
+                    onToggle={() => onToggle(item.id)}
                 />
             ))}
+            <EligibleSelectionSummary items={items} selectedIds={selectedIds} />
         </div>
     );
 }

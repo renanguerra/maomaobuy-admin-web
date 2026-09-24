@@ -8,7 +8,6 @@ import {
     History,
     MessageSquare,
     PackageCheck,
-    Package as PackageIcon,
     Pencil,
     Send,
     Truck,
@@ -35,7 +34,16 @@ import { useTranslation } from '@/i18n/LanguageProvider';
 import type { MessageKey } from '@/i18n/translations';
 import { api, ApiError } from '@/services/api';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
-import { formatDate, money, orderChangeLogTypeLabel, orderStatusLabel, type AdminOrder } from '@/types/api';
+import {
+    formatDate,
+    lineTotalMinor,
+    money,
+    orderChangeLogTypeLabel,
+    orderStatusLabel,
+    totalUnits,
+    type AdminOrder,
+} from '@/types/api';
+import { QuantityBadge } from '@/components/admin/QuantityBadge';
 import { InspectionCard } from '@/components/admin/InspectionCard';
 import { OrderMediaManager } from './OrderMediaManager';
 import { OrderOptionalServicesSection } from './OrderOptionalServices';
@@ -469,24 +477,36 @@ export function OrderDetailPage() {
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
                 <div className="grid min-w-0 gap-5">
-                    <SectionCard flush title={t('orders.detail.itemsSection.title')}>
+                    <SectionCard
+                        flush
+                        title={t('orders.detail.itemsSection.title')}
+                        description={t('orders.detail.itemsSection.summary', {
+                            products: order.items.length,
+                            units: totalUnits(order.items),
+                        })}
+                    >
                         <ListRows>
                             {order.items.map((item) => (
                                 <li key={item.id}>
                                     <ListRow
-                                        leading={
-                                            <span className="grid h-9 w-9 place-items-center rounded-lg bg-warm-200 text-muted dark:bg-night-raised dark:text-night-muted">
-                                                <PackageIcon className="h-4 w-4" aria-hidden="true" />
-                                            </span>
+                                        leading={<QuantityBadge quantity={item.quantity} />}
+                                        title={
+                                            <>
+                                                <span className="sr-only">{item.quantity} × </span>
+                                                {item.productName}
+                                            </>
                                         }
-                                        title={item.productName}
-                                        value={money(item.unitAmountMinor, item.currency)}
+                                        value={money(lineTotalMinor(item.unitAmountMinor, item.quantity), item.currency)}
                                         meta={
                                             <>
                                                 {item.storeProductId
                                                     ? t('orders.detail.itemsSection.ownCatalog')
                                                     : item.marketplace}{' '}
-                                                · {t('orders.detail.itemsSection.quantity', { count: item.quantity })}
+                                                ·{' '}
+                                                {t('orders.detail.itemsSection.unitPrice', {
+                                                    count: item.quantity,
+                                                    amount: money(item.unitAmountMinor, item.currency),
+                                                })}
                                                 {item.size
                                                     ? t('orders.detail.itemsSection.size', { size: item.size })
                                                     : ''}

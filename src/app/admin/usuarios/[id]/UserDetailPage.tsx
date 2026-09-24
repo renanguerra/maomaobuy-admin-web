@@ -18,7 +18,15 @@ import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import type { AdminOrder, AdminPackage, AdminUser, AdminUserAddress, Page } from '@/types/api';
-import { formatDate, money, orderStatusLabel, packageStatusLabel, userStatusLabel } from '@/types/api';
+import {
+    formatCpf,
+    formatDate,
+    formatPhone,
+    money,
+    orderStatusLabel,
+    packageStatusLabel,
+    userStatusLabel,
+} from '@/types/api';
 import { CreatePackageDialog } from './CreatePackageDialog';
 import { UserWalletCard } from './UserWalletCard';
 
@@ -219,7 +227,10 @@ export function UserDetailPage() {
                                         {addressLabel(address)}
                                     </p>
                                     <p className="mt-1 mb-0 text-xs text-muted dark:text-night-muted">
-                                        {address.postalCode} · {address.phoneE164}
+                                        {address.postalCode} · {formatPhone(address.phoneE164)}
+                                        {address.recipientTaxId
+                                            ? ` · CPF ${formatCpf(address.recipientTaxId)}`
+                                            : ''}
                                         {address.deliveryInstructions ? ` · ${address.deliveryInstructions}` : ''}
                                     </p>
                                 </div>

@@ -16,7 +16,15 @@ import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
-import { ORDER_STATUSES, formatDate, money, orderStatusLabel, type AdminOrder, type Page } from '@/types/api';
+import {
+    ORDER_STATUSES,
+    formatDate,
+    money,
+    orderStatusLabel,
+    totalUnits,
+    type AdminOrder,
+    type Page,
+} from '@/types/api';
 
 const LIMIT = 20;
 
@@ -132,7 +140,19 @@ export function OrdersListPage() {
             header: t('orders.list.columns.items'),
             hideBelow: 'lg',
             numeric: true,
-            cell: (order) => order.items.length,
+            cell: (order) => {
+                const units = totalUnits(order.items);
+                return (
+                    <span className="inline-grid justify-items-end leading-tight">
+                        <strong className="mm-data text-sm text-ink dark:text-night-text">{units}</strong>
+                        {units !== order.items.length && (
+                            <span className="text-xs text-muted dark:text-night-muted">
+                                {t('orders.list.linesHint', { count: order.items.length })}
+                            </span>
+                        )}
+                    </span>
+                );
+            },
         },
         {
             key: 'total',
