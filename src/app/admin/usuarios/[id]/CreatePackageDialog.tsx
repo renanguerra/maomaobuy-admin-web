@@ -7,13 +7,13 @@ import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { Button } from '@/components/ui/Button';
-import { Checkbox } from '@/components/ui/Checkbox';
 import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
-import { money, type AdminOrderItem, type AdminPackage, type AdminUserAddress } from '@/types/api';
+import { EligibleItemOption, EligibleSelectionSummary } from '@/components/admin/EligibleItemOption';
+import type { AdminOrderItem, AdminPackage, AdminUserAddress } from '@/types/api';
 
 const FORM_ID = 'create-package-form';
 
@@ -109,7 +109,7 @@ function CreatePackageForm({
     function addressLabel(address: AdminUserAddress) {
         return `${address.recipientFullName} · ${address.addressLine1}, ${address.locality}/${address.administrativeArea}${
             address.isDefault ? t('users.detail.addressDefaultSuffix') : ''
-        }`;
+        }${address.recipientTaxId ? '' : t('users.createPackage.addressMissingTaxId')}`;
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -175,6 +175,12 @@ function CreatePackageForm({
                         />
                     )}
 
+                    {addresses.some((address) => !address.recipientTaxId) && (
+                        <Alert tone="warning">
+                            <p>{t('users.createPackage.addressMissingTaxIdHint')}</p>
+                        </Alert>
+                    )}
+
                     <fieldset className="m-0 grid gap-2 border-0 p-0">
                         <legend className="mb-1 text-sm font-semibold text-ink dark:text-night-text">
                             {t('users.createPackage.eligibleItemsLabel')}
@@ -187,25 +193,23 @@ function CreatePackageForm({
                                 variant="bordered"
                             />
                         ) : (
-                            items.map((item) => (
-                                <Checkbox
-                                    boxed
-                                    checked={selectedItemIds.includes(item.id)}
-                                    key={item.id}
-                                    label={item.productName}
-                                    description={`${t('users.createPackage.quantityLabel', { count: item.quantity })} · ${money(
-                                        item.unitAmountMinor,
-                                        item.currency,
-                                    )}`}
-                                    onChange={() =>
-                                        updateSelection(
-                                            selectedItemIds.includes(item.id)
-                                                ? selectedItemIds.filter((value) => value !== item.id)
-                                                : [...selectedItemIds, item.id],
-                                        )
-                                    }
-                                />
-                            ))
+                            <>
+                                {items.map((item) => (
+                                    <EligibleItemOption
+                                        checked={selectedItemIds.includes(item.id)}
+                                        item={item}
+                                        key={item.id}
+                                        onToggle={() =>
+                                            updateSelection(
+                                                selectedItemIds.includes(item.id)
+                                                    ? selectedItemIds.filter((value) => value !== item.id)
+                                                    : [...selectedItemIds, item.id],
+                                            )
+                                        }
+                                    />
+                                ))}
+                                <EligibleSelectionSummary items={items} selectedIds={selectedItemIds} />
+                            </>
                         )}
                     </fieldset>
                 </form>
