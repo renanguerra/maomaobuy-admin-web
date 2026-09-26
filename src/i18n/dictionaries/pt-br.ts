@@ -261,6 +261,7 @@ export const ptBR = {
             statusLabel: 'Status',
             statusAll: 'Todos',
             statusPreSale: 'Pré-venda',
+            statusOnDemand: 'Sob demanda',
             statusPublished: 'Publicado',
             statusDraft: 'Rascunho',
             error: 'Não foi possível carregar os produtos.',
@@ -507,6 +508,15 @@ export const ptBR = {
                 checkboxHint: 'O cliente vê um selo "Pré-venda" no card e na página do produto.',
                 releaseDate: 'Data de lançamento',
                 releaseDateHint: 'Obrigatória em pré-venda. É a data anunciada pela marca, mostrada ao cliente.',
+            },
+            onDemand: {
+                title: 'Sob demanda',
+                description:
+                    'Use quando o produto só é comprado depois do pedido do cliente. O site mostra o selo "Sob demanda" e o prazo até o armazém.',
+                checkbox: 'Este produto é sob demanda',
+                checkboxHint: 'Não combina com pré-venda — marcar um desmarca o outro.',
+                leadDays: 'Prazo até o armazém (dias)',
+                leadDaysHint: 'O cliente vê "até N dias". Padrão: 4.',
             },
             publishCheckbox: 'Publicar ao concluir',
             categoriesTitle: 'Categorias',

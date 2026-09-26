@@ -40,6 +40,9 @@ export interface BulkEditProductBody {
     isPublished: boolean;
     isPreSale: boolean;
     releaseDate?: string;
+    /** `undefined` = arquivo não trouxe o campo, o valor gravado não muda. */
+    isOnDemand?: boolean;
+    onDemandLeadDays?: number;
     categoryIds?: string[];
     subcategoryIds?: string[];
     /** `undefined` = arquivo não trouxe o campo, variações existentes não são tocadas. */
@@ -118,6 +121,13 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
         releaseDate = record.releaseDate;
     }
 
+    const isOnDemand = record.isOnDemand === undefined ? undefined : Boolean(record.isOnDemand);
+    if (isPreSale && isOnDemand)
+        throw new Error('Campos "isPreSale" e "isOnDemand" não podem ser true ao mesmo tempo.');
+    const onDemandLeadDays = isOnDemand ? toOptionalInt(record.onDemandLeadDays, 'onDemandLeadDays', 1) : undefined;
+    if (onDemandLeadDays !== undefined && onDemandLeadDays > 60)
+        throw new Error('Campo "onDemandLeadDays" precisa ficar entre 1 e 60.');
+
     return {
         id,
         name,
@@ -138,6 +148,8 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
         isPublished: Boolean(record.isPublished),
         isPreSale,
         releaseDate,
+        isOnDemand,
+        onDemandLeadDays,
         ...resolveCategories(record.categories, categories),
         variants: resolveEditVariants(record.variants),
     };
