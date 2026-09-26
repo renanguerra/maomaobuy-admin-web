@@ -828,6 +828,8 @@ export interface AdminProductRequest {
     referenceUrl: string | null;
     status: string;
     adminNote: string | null;
+    userName: string | null;
+    userEmail: string | null;
     createdAt: string;
     updatedAt: string;
 }
