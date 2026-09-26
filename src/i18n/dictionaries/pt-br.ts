@@ -1231,17 +1231,37 @@ export const ptBR = {
         referenceLink: 'Abrir link',
         noReference: '—',
         updateButton: 'Atualizar status',
+        openButton: 'Abrir',
         feedback: {
             updated: 'Status atualizado.',
         },
         actionError: 'Não foi possível concluir a ação.',
+        detail: {
+            backLink: 'Pedidos de produto',
+            loading: 'Carregando pedido de produto…',
+            titleFallback: 'Pedido de produto',
+            actionBarTitle: 'Situação: {{status}}',
+            actionBarDescription: 'Tire dúvidas pela conversa e atualize o status quando decidir.',
+            requestSection: 'O que o cliente pediu',
+            reference: 'Link de referência',
+            summarySection: 'Resumo',
+            fields: {
+                status: 'Status',
+                createdAt: 'Enviado em',
+                updatedAt: 'Atualizado em',
+                note: 'Nota da decisão',
+            },
+            messagesDescription:
+                'Pergunte cor, tamanho, versão ou faixa de preço. O cliente recebe um e-mail a cada mensagem.',
+        },
         dialog: {
             title: 'Atualizar pedido de produto',
-            description: 'A nota interna não é enviada ao cliente.',
+            description:
+                'O cliente vê a nota no pedido. Ao recusar, ela vai como motivo no e-mail. Para perguntas, use a conversa.',
             confirmLabel: 'Salvar',
             statusLabel: 'Status',
-            noteLabel: 'Nota interna (opcional)',
-            noteHint: 'Visível só no painel — ajuda quem revisar depois.',
+            noteLabel: 'Nota da decisão (opcional)',
+            noteHint: 'Visível para o cliente.',
             statusOptions: {
                 NEW: 'Novo',
                 REVIEWING: 'Em análise',

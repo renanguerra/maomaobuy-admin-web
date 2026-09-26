@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ExternalLink, Pencil, PackageSearch } from 'lucide-react';
-import { ActionDialog } from '@/components/admin/ActionDialog';
+import { ExternalLink, MessageSquare, Pencil, PackageSearch } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
 import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -12,19 +11,19 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { productRequestStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { Toolbar } from '@/components/admin/Toolbar';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
-import { api, ApiError } from '@/services/api';
+import { api } from '@/services/api';
 import {
     formatDate,
-    PRODUCT_REQUEST_STATUSES,
     productRequestStatusLabel,
     type AdminProductRequest,
     type Page,
     type ProductRequestStatus,
 } from '@/types/api';
+import { ProductRequestStatusDialog } from './ProductRequestStatusDialog';
 
 type Filter = ProductRequestStatus | 'all';
 
@@ -49,23 +48,11 @@ export function ProductRequestsPage() {
         load();
     }, [load]);
 
-    async function handleConfirm(values: Record<string, string>) {
-        if (!editing) return;
-        try {
-            const updated = await api<AdminProductRequest>(`/product-requests/${editing.id}/status`, {
-                method: 'PATCH',
-                body: JSON.stringify({
-                    status: values.status,
-                    ...(values.adminNote ? { adminNote: values.adminNote } : {}),
-                }),
-            });
-            setRequests((current) => current?.map((row) => (row.id === updated.id ? updated : row)));
-            setEditing(undefined);
-            notify({ tone: 'success', title: t('productRequests.feedback.updated') });
-            void refreshPendingCounts();
-        } catch (err) {
-            throw err instanceof ApiError ? err : new Error(t('productRequests.actionError'));
-        }
+    function handleUpdated(updated: AdminProductRequest) {
+        setRequests((current) => current?.map((row) => (row.id === updated.id ? updated : row)));
+        setEditing(undefined);
+        notify({ tone: 'success', title: t('productRequests.feedback.updated') });
+        void refreshPendingCounts();
     }
 
     const counts = useMemo(() => {
@@ -89,21 +76,32 @@ export function ProductRequestsPage() {
             key: 'description',
             header: t('productRequests.columns.description'),
             cell: (request) => (
-                <span className="block max-w-[32rem] truncate text-ink dark:text-night-text" title={request.description}>
+                <Link
+                    className="block max-w-[32rem] truncate font-semibold text-ink no-underline hover:underline dark:text-night-text"
+                    href={`/admin/pedidos-de-produto/${request.id}`}
+                    title={request.description}
+                >
                     {request.description}
-                </span>
+                </Link>
             ),
         },
         {
             key: 'user',
             header: t('productRequests.columns.user'),
             cell: (request) => (
-                <Link
-                    className="mm-data text-primary no-underline hover:underline dark:text-night-accent"
-                    href={`/admin/usuarios/${request.userId}`}
-                >
-                    {request.userId.slice(0, 8)}
-                </Link>
+                <span className="block min-w-0">
+                    <Link
+                        className="block truncate font-semibold text-ink no-underline hover:underline dark:text-night-text"
+                        href={`/admin/usuarios/${request.userId}`}
+                    >
+                        {request.userName ?? request.userId.slice(0, 8)}
+                    </Link>
+                    {request.userEmail && (
+                        <span className="block truncate text-xs text-muted dark:text-night-muted">
+                            {request.userEmail}
+                        </span>
+                    )}
+                </span>
             ),
         },
         {
@@ -139,7 +137,9 @@ export function ProductRequestsPage() {
             header: t('productRequests.columns.createdAt'),
             hideBelow: 'lg',
             numeric: true,
-            cell: (request) => <span className="text-muted dark:text-night-muted">{formatDate(request.createdAt)}</span>,
+            cell: (request) => (
+                <span className="text-muted dark:text-night-muted">{formatDate(request.createdAt)}</span>
+            ),
         },
         {
             key: 'actions',
@@ -147,14 +147,24 @@ export function ProductRequestsPage() {
             align: 'right',
             card: 'full',
             cell: (request) => (
-                <Button
-                    leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
-                    onClick={() => setEditing(request)}
-                    size="small"
-                    variant="secondary"
-                >
-                    {t('productRequests.updateButton')}
-                </Button>
+                <span className="flex flex-wrap justify-end gap-2">
+                    <ButtonLink
+                        href={`/admin/pedidos-de-produto/${request.id}`}
+                        leadingIcon={<MessageSquare className="h-4 w-4" aria-hidden="true" />}
+                        size="small"
+                        variant="ghost"
+                    >
+                        {t('productRequests.openButton')}
+                    </ButtonLink>
+                    <Button
+                        leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
+                        onClick={() => setEditing(request)}
+                        size="small"
+                        variant="secondary"
+                    >
+                        {t('productRequests.updateButton')}
+                    </Button>
+                </span>
             ),
         },
     ];
@@ -181,8 +191,16 @@ export function ProductRequestsPage() {
                         value={filter}
                         options={[
                             { value: 'NEW', label: t('productRequests.filters.new'), count: counts.NEW },
-                            { value: 'REVIEWING', label: t('productRequests.filters.reviewing'), count: counts.REVIEWING },
-                            { value: 'FULFILLED', label: t('productRequests.filters.fulfilled'), count: counts.FULFILLED },
+                            {
+                                value: 'REVIEWING',
+                                label: t('productRequests.filters.reviewing'),
+                                count: counts.REVIEWING,
+                            },
+                            {
+                                value: 'FULFILLED',
+                                label: t('productRequests.filters.fulfilled'),
+                                count: counts.FULFILLED,
+                            },
                             { value: 'DECLINED', label: t('productRequests.filters.declined'), count: counts.DECLINED },
                             { value: 'all', label: t('productRequests.filters.all'), count: requests?.length },
                         ]}
@@ -207,35 +225,10 @@ export function ProductRequestsPage() {
                 />
             </SectionCard>
 
-            <ActionDialog
-                confirmLabel={t('productRequests.dialog.confirmLabel')}
-                description={t('productRequests.dialog.description')}
-                fields={[
-                    {
-                        name: 'status',
-                        label: t('productRequests.dialog.statusLabel'),
-                        kind: 'select',
-                        defaultValue: editing?.status,
-                        options: PRODUCT_REQUEST_STATUSES.map((status) => ({
-                            value: status,
-                            label: t(`productRequests.dialog.statusOptions.${status}`),
-                        })),
-                    },
-                    {
-                        name: 'adminNote',
-                        label: t('productRequests.dialog.noteLabel'),
-                        kind: 'textarea',
-                        hint: t('productRequests.dialog.noteHint'),
-                        optional: true,
-                        defaultValue: editing?.adminNote ?? '',
-                        maxLength: 2000,
-                        wide: true,
-                    },
-                ]}
+            <ProductRequestStatusDialog
                 onCancel={() => setEditing(undefined)}
-                onConfirm={handleConfirm}
-                open={Boolean(editing)}
-                title={t('productRequests.dialog.title')}
+                onUpdated={handleUpdated}
+                request={editing}
             />
         </div>
     );
