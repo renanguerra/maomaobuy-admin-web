@@ -9,7 +9,7 @@ import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { MARKETPLACE_NAMES, type AdminCategory } from '@/types/api';
-import type { ProductForm, ProductSourceType } from './product-form';
+import { DEFAULT_ON_DEMAND_LEAD_DAYS, type ProductForm, type ProductSourceType } from './product-form';
 
 const SOURCE_OPTIONS: Array<{
     value: ProductSourceType;
@@ -220,10 +220,11 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                     // Desmarcar limpa a data no mesmo gesto: o backend a apaga
                     // de qualquer jeito, e deixá-la na tela sugere que ela
                     // continua valendo.
+                    // Pré-venda e sob demanda se excluem: marcar uma desmarca a outra.
                     onChange={(event) =>
                         patch({
                             isPreSale: event.target.checked,
-                            ...(event.target.checked ? {} : { releaseDate: '' }),
+                            ...(event.target.checked ? { isOnDemand: false } : { releaseDate: '' }),
                         })
                     }
                 />
@@ -236,6 +237,42 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                             required
                             type="date"
                             value={values.releaseDate}
+                        />
+                    </div>
+                )}
+            </SectionCard>
+
+            <SectionCard description={t('products.new.onDemand.description')} title={t('products.new.onDemand.title')}>
+                <Checkbox
+                    boxed
+                    checked={values.isOnDemand}
+                    description={t('products.new.onDemand.checkboxHint')}
+                    label={t('products.new.onDemand.checkbox')}
+                    onChange={(event) =>
+                        patch({
+                            isOnDemand: event.target.checked,
+                            ...(event.target.checked
+                                ? {
+                                      isPreSale: false,
+                                      releaseDate: '',
+                                      onDemandLeadDays: values.onDemandLeadDays || String(DEFAULT_ON_DEMAND_LEAD_DAYS),
+                                  }
+                                : {}),
+                        })
+                    }
+                />
+                {values.isOnDemand && (
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <Input
+                            hint={t('products.new.onDemand.leadDaysHint')}
+                            label={t('products.new.onDemand.leadDays')}
+                            max={60}
+                            min={1}
+                            onChange={(event) => patch({ onDemandLeadDays: event.target.value })}
+                            required
+                            step={1}
+                            type="number"
+                            value={values.onDemandLeadDays}
                         />
                     </div>
                 )}

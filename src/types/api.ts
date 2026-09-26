@@ -221,6 +221,9 @@ export interface AdminProduct {
     /** Pré-venda e o dia de lançamento anunciado (`YYYY-MM-DD`), sempre juntos. */
     isPreSale: boolean;
     releaseDate: string | null;
+    /** Sob demanda e o prazo até o armazém, em dias, sempre juntos. */
+    isOnDemand: boolean;
+    onDemandLeadDays: number | null;
     variants: AdminProductVariant[];
     media: AdminProductMedia[];
     categories: AdminProductCategoryRef[];

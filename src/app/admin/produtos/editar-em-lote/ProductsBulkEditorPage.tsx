@@ -60,6 +60,8 @@ function exportRow(product: AdminProduct) {
         isPublished: product.isPublished,
         isPreSale: product.isPreSale,
         releaseDate: product.releaseDate ?? undefined,
+        isOnDemand: product.isOnDemand,
+        onDemandLeadDays: product.onDemandLeadDays ?? undefined,
         categories,
         variants: product.variants.map((variant) => ({
             externalId: variant.externalId,
@@ -180,6 +182,8 @@ export function ProductsBulkEditorPage() {
                     isPublished: edit.isPublished,
                     isPreSale: edit.isPreSale,
                     releaseDate: edit.isPreSale ? edit.releaseDate : undefined,
+                    isOnDemand: edit.isOnDemand,
+                    onDemandLeadDays: edit.isOnDemand ? edit.onDemandLeadDays : undefined,
                     categoryIds: edit.categoryIds ?? [],
                     subcategoryIds: edit.subcategoryIds ?? [],
                 }),

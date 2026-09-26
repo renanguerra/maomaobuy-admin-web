@@ -4,6 +4,9 @@ import { useCallback, useState } from 'react';
 import { MARKETPLACE_NAMES, type AdminProduct } from '@/types/api';
 import { slugify } from '../categorias/slugify';
 
+/** Prazo sugerido ao marcar "sob demanda" — o mesmo padrão do backend. */
+export const DEFAULT_ON_DEMAND_LEAD_DAYS = 4;
+
 export type ProductSourceType = 'MARKETPLACE' | 'MAOMAOBUY';
 
 export interface ProductFormValues {
@@ -20,6 +23,9 @@ export interface ProductFormValues {
     isPreSale: boolean;
     /** `YYYY-MM-DD`, como o `<input type="date">` entrega e o backend espera. */
     releaseDate: string;
+    isOnDemand: boolean;
+    /** Dias até o armazém; string porque vem de um `<input type="number">`. */
+    onDemandLeadDays: string;
     categoryIds: string[];
     subcategoryIds: string[];
 }
@@ -37,6 +43,8 @@ const EMPTY: ProductFormValues = {
     isPublished: false,
     isPreSale: false,
     releaseDate: '',
+    isOnDemand: false,
+    onDemandLeadDays: String(DEFAULT_ON_DEMAND_LEAD_DAYS),
     categoryIds: [],
     subcategoryIds: [],
 };
@@ -58,6 +66,8 @@ function fromProduct(product: AdminProduct): ProductFormValues {
         isPublished: product.isPublished,
         isPreSale: product.isPreSale,
         releaseDate: product.releaseDate ?? '',
+        isOnDemand: product.isOnDemand,
+        onDemandLeadDays: String(product.onDemandLeadDays ?? DEFAULT_ON_DEMAND_LEAD_DAYS),
         categoryIds: product.categories.map((category) => category.id),
         subcategoryIds: product.subcategories.map((subcategory) => subcategory.id),
     };
@@ -135,6 +145,8 @@ export function toProductPayload(values: ProductFormValues) {
         // Fora da pré-venda a data não é enviada em branco: o backend recusa
         // string vazia e apaga a data sozinho quando a pré-venda cai.
         releaseDate: values.isPreSale ? values.releaseDate : undefined,
+        isOnDemand: values.isOnDemand,
+        onDemandLeadDays: values.isOnDemand ? Number(values.onDemandLeadDays) : undefined,
         categoryIds: values.categoryIds,
         subcategoryIds: values.subcategoryIds,
     };

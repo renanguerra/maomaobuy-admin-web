@@ -268,6 +268,7 @@ export function ProductsListPage() {
                         {product.isPublished ? t('products.list.statusPublished') : t('products.list.statusDraft')}
                     </StatusPill>
                     {product.isPreSale && <StatusPill tone="warning">{t('products.list.statusPreSale')}</StatusPill>}
+                    {product.isOnDemand && <StatusPill tone="warning">{t('products.list.statusOnDemand')}</StatusPill>}
                 </div>
             ),
         },
