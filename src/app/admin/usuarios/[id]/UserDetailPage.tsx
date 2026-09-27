@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { KeyRound, MapPin, Package, PackagePlus, ShieldOff, ShieldCheck, ShoppingBag } from 'lucide-react';
+import {
+    ClipboardPlus,
+    KeyRound,
+    MapPin,
+    Package,
+    PackagePlus,
+    ShieldOff,
+    ShieldCheck,
+    ShoppingBag,
+} from 'lucide-react';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
 import { DescriptionList } from '@/components/admin/DescriptionList';
@@ -13,7 +22,7 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { orderStatusTone, packageStatusTone, StatusPill, userStatusTone } from '@/components/admin/StatusPill';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
@@ -129,6 +138,15 @@ export function UserDetailPage() {
                 title={user.name}
                 actions={
                     <>
+                        {isActive && (
+                            <ButtonLink
+                                href={`/admin/pedidos/novo?usuario=${user.id}`}
+                                leadingIcon={<ClipboardPlus className="h-4 w-4" aria-hidden="true" />}
+                                variant="secondary"
+                            >
+                                {t('orders.create.fromUserButton')}
+                            </ButtonLink>
+                        )}
                         <Button
                             leadingIcon={<PackagePlus className="h-4 w-4" aria-hidden="true" />}
                             onClick={() => setDialog('create-package')}
@@ -230,9 +248,7 @@ export function UserDetailPage() {
                                     </p>
                                     <p className="mt-1 mb-0 text-xs text-muted dark:text-night-muted">
                                         {address.postalCode} · {formatPhone(address.phoneE164)}
-                                        {address.recipientTaxId
-                                            ? ` · CPF ${formatCpf(address.recipientTaxId)}`
-                                            : ''}
+                                        {address.recipientTaxId ? ` · CPF ${formatCpf(address.recipientTaxId)}` : ''}
                                         {address.deliveryInstructions ? ` · ${address.deliveryInstructions}` : ''}
                                     </p>
                                 </div>

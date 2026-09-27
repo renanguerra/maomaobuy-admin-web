@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ClipboardList, FilterX } from 'lucide-react';
+import { ClipboardList, ClipboardPlus, FilterX } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
 import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -12,7 +12,7 @@ import { Pagination } from '@/components/admin/Pagination';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { orderStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { Toolbar } from '@/components/admin/Toolbar';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
@@ -179,6 +179,14 @@ export function OrdersListPage() {
     return (
         <div className="grid gap-6">
             <PageHeader
+                actions={
+                    <ButtonLink
+                        href="/admin/pedidos/novo"
+                        leadingIcon={<ClipboardPlus className="h-4 w-4" aria-hidden="true" />}
+                    >
+                        {t('orders.create.newButton')}
+                    </ButtonLink>
+                }
                 description={t('orders.list.description')}
                 kicker={t('orders.list.kicker')}
                 title={t('orders.list.title')}
