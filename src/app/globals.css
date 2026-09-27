@@ -103,8 +103,9 @@
     --color-warning: var(--color-amber-500);
     --color-secondary: var(--color-origin-600);
     --color-highlight: var(--color-origin-400);
-    --font-sans: 'Inter Variable', Inter, system-ui, sans-serif;
-    --font-display: 'M PLUS 2 Variable', 'Noto Sans', system-ui, sans-serif;
+    /* Chinês de nome de produto aparece em qualquer idioma: cai na Noto Sans SC. */
+    --font-sans: 'Inter Variable', Inter, 'Noto Sans SC Variable', system-ui, sans-serif;
+    --font-display: 'M PLUS 2 Variable', 'Noto Sans SC Variable', 'Noto Sans', system-ui, sans-serif;
 }
 
 [data-theme='dark'] {
@@ -125,9 +126,8 @@
 }
 
 /*
- * Chinês simplificado: prioriza a Noto Sans SC antes das fontes latinas.
- * A M PLUS 2 (japonesa) e a Inter cobrem alguns Han por unificação CJK, mas
- * com formas de traço erradas para o chinês — por isso não bastam sozinhas.
+ * Chinês simplificado: prioriza a Noto Sans SC também no latim, para a
+ * interface em chinês ter um desenho só (pontuação e números inclusive).
  */
 html:lang(zh-Hans) {
     --font-sans: 'Noto Sans SC Variable', 'Inter Variable', Inter, system-ui, sans-serif;
@@ -152,14 +152,18 @@ html:lang(zh-Hans) {
         font-weight: 700;
         text-wrap: balance;
     }
+    /*
+     * `font: inherit` zera a família também, então vem antes: invertido, ele
+     * apagava a fonte de display dos botões logo abaixo.
+     */
+    button,
+    input {
+        font: inherit;
+    }
     nav a,
     button,
     [role='button'] {
         font-family: var(--font-display);
-    }
-    button,
-    input {
-        font: inherit;
     }
     button,
     [role='button'] {

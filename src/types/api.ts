@@ -471,6 +471,8 @@ export interface AdminOrder {
     createdAt: string;
     reviewedAt: string | null;
     reviewedByAdminId: string | null;
+    /** Admin que montou o pedido para o cliente; `null` quando foi o próprio cliente. */
+    createdByAdminId: string | null;
     rejectionReason: string | null;
     paidAt: string | null;
     stockReservationExpiresAt: string | null;
@@ -482,6 +484,34 @@ export interface AdminOrder {
     media: AdminOrderMedia[];
     inspections: OrderInspection[];
     changeLogs: AdminOrderChangeLog[];
+}
+
+/** Linha da prévia do pedido montado pela equipe. */
+export interface AdminOrderPreviewLine {
+    productId: string;
+    variantExternalId: string;
+    productName: string | null;
+    variantLabel: string | null;
+    quantity: number;
+    unitAmountMinor: string | null;
+    /** Por que a linha não pode entrar; `null` quando pode. */
+    problem: string | null;
+}
+
+/** Um dos pedidos que vão nascer — um por modo de atendimento. */
+export interface AdminOrderPreviewGroup {
+    fulfillmentMode: 'IN_STOCK' | 'SOURCED';
+    productAmountMinor: string;
+    serviceFeeMinor: string;
+    totalAmountMinor: string;
+    shippingEstimateAmountMinor: string | null;
+    itemCount: number;
+}
+
+export interface AdminOrderPreview {
+    user: { id: string; name: string; email: string };
+    lines: AdminOrderPreviewLine[];
+    groups: AdminOrderPreviewGroup[];
 }
 
 const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
@@ -506,6 +536,7 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         PAYMENT_DATA_SENT: 'Pedido liberado para pagamento',
         MARKED_PAID_BY_CUSTOMER: 'Cliente marcou como pago',
         PAYMENT_CONFIRMED: 'Pagamento confirmado',
+        CREATED_BY_ADMIN: 'Pedido montado pela equipe',
     },
     'zh-Hans': {
         DESCRIPTION_UPDATED: '描述已更新',
@@ -528,6 +559,7 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         PAYMENT_DATA_SENT: '订单已开放付款',
         MARKED_PAID_BY_CUSTOMER: '客户已标记为已付款',
         PAYMENT_CONFIRMED: '付款已确认',
+        CREATED_BY_ADMIN: '订单由团队代建',
     },
 };
 
