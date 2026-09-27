@@ -590,6 +590,12 @@ export const zhHans: Messages = {
             removeTitle: '移除媒体',
             removedToast: '媒体已移除。',
             uploadedToast: '已上传 {{count}} 个文件。',
+            orderHint: '第一张是商城中的封面。拖动或使用箭头调整顺序。',
+            cover: '封面',
+            makeCover: '设为封面',
+            moveBefore: '前移',
+            moveAfter: '后移',
+            reorderError: '无法保存图片顺序。',
         },
     },
     categories: {

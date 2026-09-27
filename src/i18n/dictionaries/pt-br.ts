@@ -609,6 +609,12 @@ export const ptBR = {
             removeTitle: 'Remover mídia',
             removedToast: 'Mídia removida.',
             uploadedToast: '{{count}} arquivo(s) enviado(s).',
+            orderHint: 'A primeira é a capa na loja. Arraste para mudar a ordem, ou use as setas.',
+            cover: 'Capa',
+            makeCover: 'Usar como capa',
+            moveBefore: 'Mover para antes',
+            moveAfter: 'Mover para depois',
+            reorderError: 'Não foi possível salvar a ordem das fotos.',
         },
     },
     categories: {
