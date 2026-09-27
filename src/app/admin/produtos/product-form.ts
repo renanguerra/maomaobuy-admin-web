@@ -26,6 +26,16 @@ export interface ProductFormValues {
     isOnDemand: boolean;
     /** Dias até o armazém; string porque vem de um `<input type="number">`. */
     onDemandLeadDays: string;
+    /** Coin Shop. Strings porque vêm de inputs; vazio = sem valor. */
+    coinPrice: string;
+    isCoinExclusive: boolean;
+    coinRedeemLimitPerUser: string;
+    /** `YYYY-MM-DDTHH:mm`, como o `<input type="datetime-local">` entrega. */
+    coinAvailableFrom: string;
+    coinAvailableUntil: string;
+    isCheckoutAddon: boolean;
+    /** Peso embalado em gramas — obrigatório para o produto adicional. */
+    weightGrams: string;
     categoryIds: string[];
     subcategoryIds: string[];
 }
@@ -45,6 +55,13 @@ const EMPTY: ProductFormValues = {
     releaseDate: '',
     isOnDemand: false,
     onDemandLeadDays: String(DEFAULT_ON_DEMAND_LEAD_DAYS),
+    coinPrice: '',
+    isCoinExclusive: false,
+    coinRedeemLimitPerUser: '',
+    coinAvailableFrom: '',
+    coinAvailableUntil: '',
+    isCheckoutAddon: false,
+    weightGrams: '',
     categoryIds: [],
     subcategoryIds: [],
 };
@@ -68,6 +85,13 @@ function fromProduct(product: AdminProduct): ProductFormValues {
         releaseDate: product.releaseDate ?? '',
         isOnDemand: product.isOnDemand,
         onDemandLeadDays: String(product.onDemandLeadDays ?? DEFAULT_ON_DEMAND_LEAD_DAYS),
+        coinPrice: product.coinPrice ? String(product.coinPrice) : '',
+        isCoinExclusive: product.isCoinExclusive ?? false,
+        coinRedeemLimitPerUser: product.coinRedeemLimitPerUser ? String(product.coinRedeemLimitPerUser) : '',
+        coinAvailableFrom: toLocalInput(product.coinAvailableFrom),
+        coinAvailableUntil: toLocalInput(product.coinAvailableUntil),
+        isCheckoutAddon: product.isCheckoutAddon ?? false,
+        weightGrams: product.weightGrams ? String(product.weightGrams) : '',
         categoryIds: product.categories.map((category) => category.id),
         subcategoryIds: product.subcategories.map((subcategory) => subcategory.id),
     };
@@ -147,7 +171,32 @@ export function toProductPayload(values: ProductFormValues) {
         releaseDate: values.isPreSale ? values.releaseDate : undefined,
         isOnDemand: values.isOnDemand,
         onDemandLeadDays: values.isOnDemand ? Number(values.onDemandLeadDays) : undefined,
+        // Coin Shop só vale para estoque próprio; `null` limpa o que havia.
+        coinPrice: isOwnStock && values.coinPrice ? Number(values.coinPrice) : null,
+        isCoinExclusive: isOwnStock && values.coinPrice !== '' && values.isCoinExclusive,
+        coinRedeemLimitPerUser:
+            isOwnStock && values.coinPrice && values.coinRedeemLimitPerUser
+                ? Number(values.coinRedeemLimitPerUser)
+                : null,
+        coinAvailableFrom: isOwnStock && values.coinPrice ? fromLocalInput(values.coinAvailableFrom) : null,
+        coinAvailableUntil: isOwnStock && values.coinPrice ? fromLocalInput(values.coinAvailableUntil) : null,
+        isCheckoutAddon: isOwnStock && values.isCheckoutAddon,
+        // Vazio não apaga um peso que veio da importação em lote.
+        weightGrams: values.weightGrams ? Number(values.weightGrams) : undefined,
         categoryIds: values.categoryIds,
         subcategoryIds: values.subcategoryIds,
     };
+}
+
+/** ISO do backend → valor de `<input type="datetime-local">`, no fuso do navegador. */
+function toLocalInput(value: string | null | undefined): string {
+    if (!value) return '';
+    const date = new Date(value);
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+    return local.toISOString().slice(0, 16);
+}
+
+/** Valor do `datetime-local` (hora local) → ISO com fuso; vazio vira `null`. */
+function fromLocalInput(value: string): string | null {
+    return value ? new Date(value).toISOString() : null;
 }

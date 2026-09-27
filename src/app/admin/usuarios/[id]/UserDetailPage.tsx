@@ -28,6 +28,7 @@ import {
     userStatusLabel,
 } from '@/types/api';
 import { CreatePackageDialog } from './CreatePackageDialog';
+import { UserCoinsCard } from './UserCoinsCard';
 import { UserWalletCard } from './UserWalletCard';
 
 type DialogKind = 'suspend' | 'reactivate' | 'request-password-reset' | 'create-package' | null;
@@ -204,6 +205,7 @@ export function UserDetailPage() {
             </SectionCard>
 
             <UserWalletCard userId={user.id} />
+            <UserCoinsCard userId={user.id} />
 
             <LazySection<AdminUserAddress[]>
                 description={t('users.detail.addressesSection.description')}
