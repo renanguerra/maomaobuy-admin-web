@@ -166,7 +166,7 @@ export function CreateOrderPage() {
                 title={t('orders.create.title')}
             />
 
-            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="grid min-w-0 gap-6">
                     <SectionCard title={t('orders.create.customerTitle')}>
                         {customerError && (
@@ -224,7 +224,7 @@ export function CreateOrderPage() {
                     </SectionCard>
                 </div>
 
-                <aside className="grid gap-4 lg:sticky lg:top-6">
+                <aside className="grid gap-4 xl:sticky xl:top-6">
                     <SectionCard title={t('orders.create.summaryTitle')}>
                         <PreviewSummary
                             error={current?.error}
@@ -421,7 +421,7 @@ function ProductResult({
             : t('orders.create.stock', { count: String(product.stock) });
 
     return (
-        <li className="flex flex-wrap items-center gap-3 py-2.5">
+        <li className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
             {thumbnail ? (
                 // eslint-disable-next-line @next/next/no-img-element -- URL assinada do bucket, sem otimização
                 <img
@@ -435,34 +435,36 @@ function ProductResult({
                     className="h-11 w-11 shrink-0 rounded-md border border-line bg-warm-100 dark:border-night-line dark:bg-night-raised"
                 />
             )}
-            <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-ink dark:text-night-text">
-                    {product.name}
-                </span>
+            <span className="min-w-48 flex-1">
+                <span className="line-clamp-2 text-sm font-semibold text-ink dark:text-night-text">{product.name}</span>
                 <span className="mm-data block text-xs text-muted dark:text-night-muted">
                     {cny(product.sourceAmountMinor)} · {availability}
                     {product.isPreSale && ` · ${t('orders.create.preSale')}`}
                 </span>
             </span>
-            {variants.length > 0 && (
-                <Select
-                    fieldClassName="w-40"
-                    hideLabel
-                    label={t('orders.create.variantLabel', { name: product.name })}
-                    onChange={(event) => setVariantExternalId(event.target.value)}
-                    options={variants.map((variant) => ({ value: variant.externalId, label: variant.label }))}
-                    value={variantExternalId}
-                />
-            )}
-            <Button
-                disabled={blocked}
-                onClick={() => onAdd(product, variantExternalId)}
-                size="small"
-                type="button"
-                variant="secondary"
-            >
-                {t('orders.create.add')}
-            </Button>
+            {/* Variação e botão andam juntos: numa coluna estreita os dois
+                descem para a linha de baixo, nunca só o botão. */}
+            <div className="ml-auto flex items-center gap-2">
+                {variants.length > 0 && (
+                    <Select
+                        fieldClassName="w-40"
+                        hideLabel
+                        label={t('orders.create.variantLabel', { name: product.name })}
+                        onChange={(event) => setVariantExternalId(event.target.value)}
+                        options={variants.map((variant) => ({ value: variant.externalId, label: variant.label }))}
+                        value={variantExternalId}
+                    />
+                )}
+                <Button
+                    disabled={blocked}
+                    onClick={() => onAdd(product, variantExternalId)}
+                    size="small"
+                    type="button"
+                    variant="secondary"
+                >
+                    {t('orders.create.add')}
+                </Button>
+            </div>
         </li>
     );
 }
