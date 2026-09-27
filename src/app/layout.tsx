@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
-import '@fontsource-variable/inter';
-import '@fontsource-variable/m-plus-2';
 import '@fontsource-variable/noto-sans-sc';
+import './fonts.css';
 import './globals.css';
 import { ToastProvider } from '@/components/ui/Toast';
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, type Locale } from '@/i18n/locale';
