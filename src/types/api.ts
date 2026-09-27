@@ -224,6 +224,14 @@ export interface AdminProduct {
     /** Sob demanda e o prazo até o armazém, em dias, sempre juntos. */
     isOnDemand: boolean;
     onDemandLeadDays: number | null;
+    /** Coin Shop: preço em MaoMaoCoins; `null` = não é recompensa. */
+    coinPrice: number | null;
+    isCoinExclusive: boolean;
+    coinRedeemLimitPerUser: number | null;
+    coinAvailableFrom: string | null;
+    coinAvailableUntil: string | null;
+    /** Produto adicional do checkout ("Leve junto"). */
+    isCheckoutAddon: boolean;
     variants: AdminProductVariant[];
     media: AdminProductMedia[];
     categories: AdminProductCategoryRef[];
@@ -1007,4 +1015,22 @@ export interface AdminPendingInspectionItem {
     orderId: string;
     userId: string;
     productName: string;
+}
+
+export interface AdminCoinTransaction {
+    id: string;
+    type: 'PURCHASE' | 'REFERRAL' | 'ADMIN_ADJUSTMENT' | 'REDEEM' | 'REDEEM_REFUND' | 'REVERSAL';
+    status: 'PENDING' | 'AVAILABLE' | 'REVERSED';
+    amount: number;
+    description: string;
+    orderId: string | null;
+    createdAt: string;
+    confirmedAt: string | null;
+    reason: string | null;
+    createdByAdminId: string | null;
+}
+
+export interface AdminCoinSummary {
+    wallet: { available: number; pending: number; lifetimeEarned: number; lifetimeSpent: number };
+    transactions: AdminCoinTransaction[];
 }

@@ -269,6 +269,19 @@ export function ProductsListPage() {
                     </StatusPill>
                     {product.isPreSale && <StatusPill tone="warning">{t('products.list.statusPreSale')}</StatusPill>}
                     {product.isOnDemand && <StatusPill tone="warning">{t('products.list.statusOnDemand')}</StatusPill>}
+                    {product.coinPrice !== null && product.coinPrice !== undefined && (
+                        <StatusPill tone="info">
+                            {t(
+                                product.isCoinExclusive
+                                    ? 'products.list.statusCoinExclusive'
+                                    : 'products.list.statusCoinShop',
+                                { coins: product.coinPrice },
+                            )}
+                        </StatusPill>
+                    )}
+                    {product.isCheckoutAddon && (
+                        <StatusPill tone="info">{t('products.list.statusCheckoutAddon')}</StatusPill>
+                    )}
                 </div>
             ),
         },

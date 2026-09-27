@@ -278,6 +278,90 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                 )}
             </SectionCard>
 
+            {values.sourceType === 'MAOMAOBUY' && (
+                <SectionCard description={t('products.new.coins.description')} title={t('products.new.coins.title')}>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Input
+                            hint={t('products.new.coins.priceHint')}
+                            label={t('products.new.coins.price')}
+                            min={1}
+                            onChange={(event) =>
+                                patch({
+                                    coinPrice: event.target.value,
+                                    ...(event.target.value ? {} : { isCoinExclusive: false }),
+                                })
+                            }
+                            step={1}
+                            type="number"
+                            value={values.coinPrice}
+                        />
+                        <Input
+                            hint={t('products.new.coins.weightHint')}
+                            label={t('products.new.coins.weight')}
+                            min={1}
+                            onChange={(event) => patch({ weightGrams: event.target.value })}
+                            required={values.isCheckoutAddon}
+                            step={1}
+                            type="number"
+                            value={values.weightGrams}
+                        />
+                    </div>
+                    {values.coinPrice && (
+                        <>
+                            <Checkbox
+                                boxed
+                                checked={values.isCoinExclusive}
+                                className="mt-4"
+                                description={t('products.new.coins.exclusiveHint')}
+                                label={t('products.new.coins.exclusive')}
+                                onChange={(event) =>
+                                    patch({
+                                        isCoinExclusive: event.target.checked,
+                                        ...(event.target.checked ? { isCheckoutAddon: false } : {}),
+                                    })
+                                }
+                            />
+                            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                                <Input
+                                    hint={t('products.new.coins.limitHint')}
+                                    label={t('products.new.coins.limit')}
+                                    min={1}
+                                    onChange={(event) => patch({ coinRedeemLimitPerUser: event.target.value })}
+                                    step={1}
+                                    type="number"
+                                    value={values.coinRedeemLimitPerUser}
+                                />
+                                <Input
+                                    label={t('products.new.coins.from')}
+                                    onChange={(event) => patch({ coinAvailableFrom: event.target.value })}
+                                    type="datetime-local"
+                                    value={values.coinAvailableFrom}
+                                />
+                                <Input
+                                    label={t('products.new.coins.until')}
+                                    onChange={(event) => patch({ coinAvailableUntil: event.target.value })}
+                                    type="datetime-local"
+                                    value={values.coinAvailableUntil}
+                                />
+                            </div>
+                        </>
+                    )}
+                    <Checkbox
+                        boxed
+                        checked={values.isCheckoutAddon}
+                        className="mt-4"
+                        description={t('products.new.coins.addonHint')}
+                        label={t('products.new.coins.addon')}
+                        onChange={(event) =>
+                            patch({
+                                isCheckoutAddon: event.target.checked,
+                                ...(event.target.checked ? { isCoinExclusive: false } : {}),
+                            })
+                        }
+                    />
+                </SectionCard>
+            )}
+
             {categories.length > 0 && (
                 <SectionCard
                     description={t('products.new.categoriesDescription')}
