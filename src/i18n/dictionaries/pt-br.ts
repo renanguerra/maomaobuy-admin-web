@@ -1371,13 +1371,30 @@ export const ptBR = {
                 updatedAt: 'Atualizado em',
                 note: 'Nota da decisão',
             },
+            createOrder: 'Montar pedido para este cliente',
             messagesDescription:
                 'Pergunte cor, tamanho, versão ou faixa de preço. O cliente recebe um e-mail a cada mensagem.',
+        },
+        product: {
+            title: 'Produto da loja',
+            description:
+                'O produto publicado que atende a encomenda. Ao confirmar, o pedido fica disponibilizado e o cliente recebe o e-mail com o link dele.',
+            searchLabel: 'Buscar produto publicado',
+            searchPlaceholder: 'Nome ou slug do produto',
+            searching: 'Buscando…',
+            none: 'Nenhum produto publicado encontrado.',
+            select: 'Escolher',
+            selected: 'Escolhido',
+            confirmHint: 'Marcar como disponibilizado com “{{name}}” e avisar o cliente por e-mail.',
+            confirm: 'Disponibilizar e avisar o cliente',
+            change: 'Trocar produto',
+            unpublished: 'despublicado',
+            updated: 'Encomenda disponibilizada.',
         },
         dialog: {
             title: 'Atualizar pedido de produto',
             description:
-                'O cliente vê a nota no pedido. Ao recusar, ela vai como motivo no e-mail. Para perguntas, use a conversa.',
+                'O cliente vê a nota no pedido. Ao recusar, ela vai como motivo no e-mail. Para marcar como disponibilizado, escolha o produto em "Produto da loja", no detalhe. Para perguntas, use a conversa.',
             confirmLabel: 'Salvar',
             statusLabel: 'Status',
             noteLabel: 'Nota da decisão (opcional)',
