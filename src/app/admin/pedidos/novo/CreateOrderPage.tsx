@@ -509,6 +509,12 @@ function SelectedLine({
                     type="number"
                     value={line.quantity}
                 />
+                <span
+                    aria-label={t('orders.create.lineTotalLabel', { name })}
+                    className="mm-data w-28 text-right text-sm font-semibold text-ink dark:text-night-text"
+                >
+                    {cny((unitMinor * BigInt(line.quantity)).toString())}
+                </span>
                 <Button
                     aria-label={t('orders.create.remove', { name })}
                     iconOnly
@@ -576,6 +582,22 @@ function PreviewSummary({
                     />
                 </div>
             ))}
+            {preview.groups.length > 1 && (
+                <SummaryList
+                    className="border-t-2 border-ink pt-1 dark:border-night-text"
+                    rows={[
+                        {
+                            label: t('orders.create.grandTotal'),
+                            value: cny(
+                                preview.groups
+                                    .reduce((sum, group) => sum + BigInt(group.totalAmountMinor), BigInt(0))
+                                    .toString(),
+                            ),
+                            emphasis: true,
+                        },
+                    ]}
+                />
+            )}
             {preview.groups.length > 1 && (
                 <p className="m-0 text-xs leading-relaxed text-muted dark:text-night-muted">
                     {t('orders.create.splitHint')}
