@@ -1,5 +1,7 @@
 import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {/* config options here */};
+// standalone: o build gera um server.js enxuto, usado pela imagem Docker do
+// painel na rede local (maomaobuy-backend/deploy/admin-lan).
+const nextConfig: NextConfig = { output: 'standalone' };
 
 export default nextConfig;
