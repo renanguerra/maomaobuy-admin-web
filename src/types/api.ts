@@ -871,6 +871,8 @@ export interface AdminProductRequest {
     referenceUrl: string | null;
     status: string;
     adminNote: string | null;
+    /** Produto da loja que atendeu a encomenda; obrigatório para marcar como disponibilizada. */
+    fulfilledProduct: { id: string; slug: string; name: string; isPublished: boolean } | null;
     userName: string | null;
     userEmail: string | null;
     createdAt: string;

@@ -5,7 +5,13 @@ import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import { PRODUCT_REQUEST_STATUSES, type AdminProductRequest } from '@/types/api';
 
-/** Status e nota da decisão — o mesmo diálogo na lista e no detalhe. */
+/**
+ * Status e nota da decisão — o mesmo diálogo na lista e no detalhe.
+ *
+ * "Disponibilizado" exige o produto da loja, que se escolhe na seção
+ * "Produto da loja" do detalhe; aqui a opção só aparece para quem já está
+ * disponibilizado (para editar a nota), reenviando o mesmo produto.
+ */
 export function ProductRequestStatusDialog({
     request,
     onCancel,
@@ -25,6 +31,9 @@ export function ProductRequestStatusDialog({
                 body: JSON.stringify({
                     status: values.status,
                     ...(values.adminNote ? { adminNote: values.adminNote } : {}),
+                    ...(values.status === 'FULFILLED' && request.fulfilledProduct
+                        ? { productId: request.fulfilledProduct.id }
+                        : {}),
                 }),
             });
             onUpdated(updated);
@@ -43,7 +52,9 @@ export function ProductRequestStatusDialog({
                     label: t('productRequests.dialog.statusLabel'),
                     kind: 'select',
                     defaultValue: request?.status,
-                    options: PRODUCT_REQUEST_STATUSES.map((status) => ({
+                    options: PRODUCT_REQUEST_STATUSES.filter(
+                        (status) => status !== 'FULFILLED' || Boolean(request?.fulfilledProduct),
+                    ).map((status) => ({
                         value: status,
                         label: t(`productRequests.dialog.statusOptions.${status}`),
                     })),

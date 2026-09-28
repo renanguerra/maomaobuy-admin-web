@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ExternalLink, MessageSquare, Pencil } from 'lucide-react';
+import { ExternalLink, MessageSquare, Pencil, ShoppingBag } from 'lucide-react';
 import { ActionBar } from '@/components/admin/ActionBar';
 import { Alert } from '@/components/admin/Alert';
 import { MessageThread } from '@/components/admin/MessageThread';
@@ -12,13 +12,14 @@ import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { productRequestStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { SummaryList } from '@/components/admin/SummaryList';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
 import { api } from '@/services/api';
 import { formatDate, productRequestStatusLabel, type AdminProductRequest } from '@/types/api';
 import { ProductRequestStatusDialog } from '../ProductRequestStatusDialog';
+import { FulfilledProductSection } from './FulfilledProductSection';
 
 /**
  * Um "traga esse produto" com a conversa ao lado. É aqui que a equipe
@@ -108,6 +109,15 @@ export function ProductRequestDetailPage() {
                 >
                     {t('productRequests.updateButton')}
                 </Button>
+                {/* Com o produto na loja, a equipe pode montar o pedido para o cliente só aceitar e pagar. */}
+                <ButtonLink
+                    href={`/admin/pedidos/novo?usuario=${request.userId}`}
+                    leadingIcon={<ShoppingBag className="h-4 w-4" aria-hidden="true" />}
+                    size="small"
+                    variant="secondary"
+                >
+                    {t('productRequests.detail.createOrder')}
+                </ButtonLink>
             </ActionBar>
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
@@ -128,6 +138,15 @@ export function ProductRequestDetailPage() {
                             </a>
                         )}
                     </SectionCard>
+
+                    <FulfilledProductSection
+                        onUpdated={(updated) => {
+                            setRequest(updated);
+                            notify({ tone: 'success', title: t('productRequests.product.updated') });
+                            void refreshPendingCounts();
+                        }}
+                        request={request}
+                    />
 
                     <SectionCard
                         description={t('productRequests.detail.messagesDescription')}
