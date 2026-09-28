@@ -59,7 +59,11 @@ export async function POST(request: NextRequest) {
     const store = await cookies();
     store.set(ADMIN_SESSION_COOKIE, sessionToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        // ADMIN_COOKIE_SECURE=false só para o painel servido em HTTP na rede
+        // local: o navegador descarta cookie Secure fora de HTTPS/localhost.
+        secure: process.env.ADMIN_COOKIE_SECURE
+            ? process.env.ADMIN_COOKIE_SECURE === 'true'
+            : process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
         maxAge: 60 * 60 * 12,

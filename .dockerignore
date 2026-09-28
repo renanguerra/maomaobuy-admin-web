@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+.claude
+.env*
+*.tsbuildinfo
+Dockerfile
+.dockerignore
