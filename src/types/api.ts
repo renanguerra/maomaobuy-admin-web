@@ -1068,3 +1068,40 @@ export interface AdminCoinSummary {
     wallet: { available: number; pending: number; lifetimeEarned: number; lifetimeSpent: number };
     transactions: AdminCoinTransaction[];
 }
+
+/** Aviso que o site abre num modal na entrada da loja (`/admin/avisos`). */
+export interface SiteNotice {
+    id: string;
+    title: string;
+    body: string;
+    /** Rótulo e destino do botão vêm juntos ou nenhum dos dois. */
+    ctaLabel: string | null;
+    ctaUrl: string | null;
+    displayFrequency: SiteNoticeFrequency;
+    revision: string;
+    isActive: boolean;
+    startsAt: string | null;
+    endsAt: string | null;
+    /** É este o aviso que o site mostra agora. */
+    isCurrent: boolean;
+    createdBy: { id: string; name: string } | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export type SiteNoticeFrequency = 'ONCE' | 'EVERY_VISIT';
+
+/**
+ * `LIVE` é o que o site mostra agora. `OVERRIDDEN` está ativo e dentro da
+ * janela, mas outro aviso mais recente ocupa o lugar — o site mostra um
+ * por vez.
+ */
+export type SiteNoticeStatus = 'LIVE' | 'OVERRIDDEN' | 'SCHEDULED' | 'ENDED' | 'INACTIVE';
+
+export function siteNoticeStatus(notice: SiteNotice, now = new Date()): SiteNoticeStatus {
+    if (notice.isCurrent) return 'LIVE';
+    if (!notice.isActive) return 'INACTIVE';
+    if (notice.endsAt && new Date(notice.endsAt) <= now) return 'ENDED';
+    if (notice.startsAt && new Date(notice.startsAt) > now) return 'SCHEDULED';
+    return 'OVERRIDDEN';
+}
