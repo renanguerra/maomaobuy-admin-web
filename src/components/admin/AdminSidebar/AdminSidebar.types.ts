@@ -19,6 +19,7 @@ export type MenuItemKey =
     | 'optionalServices'
     | 'coupons'
     | 'productRequests'
+    | 'siteNotices'
     | 'settings';
 
 /** Sufixos válidos em `sidebar.groups.*`. */

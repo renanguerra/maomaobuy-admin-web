@@ -4,6 +4,7 @@ import {
     ClipboardList,
     LayoutDashboard,
     Mail,
+    Megaphone,
     Package,
     PackageSearch,
     Settings,
@@ -46,7 +47,10 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
     },
     {
         key: 'operations',
-        items: [{ key: 'users', href: '/admin/usuarios', icon: Users }],
+        items: [
+            { key: 'users', href: '/admin/usuarios', icon: Users },
+            { key: 'siteNotices', href: '/admin/avisos', icon: Megaphone },
+        ],
     },
     {
         key: 'catalog',
