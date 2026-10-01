@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { LockOpen, Wallet } from 'lucide-react';
+import { LockOpen, Plus, Wallet } from 'lucide-react';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
 import { DescriptionList } from '@/components/admin/DescriptionList';
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
+import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import { cny, formatDate, type AdminWallet } from '@/types/api';
 
 /**
@@ -20,6 +21,9 @@ import { cny, formatDate, type AdminWallet } from '@/types/api';
  * saldo, e sem esta tela ninguém no painel conseguia nem ver que isso
  * aconteceu — muito menos destravar. O saldo é em fen porque é em yuan que o
  * cliente compra.
+ *
+ * Também é por aqui que o financeiro credita quem pagou por fora da
+ * plataforma: vira uma recarga confirmada no backend, com recibo e extrato.
  */
 export function UserWalletCard({ userId }: { userId: string }) {
     const { t } = useTranslation();
@@ -27,6 +31,11 @@ export function UserWalletCard({ userId }: { userId: string }) {
     const [wallet, setWallet] = useState<AdminWallet>();
     const [error, setError] = useState(false);
     const [unlocking, setUnlocking] = useState(false);
+    // Uma chave por abertura do diálogo: o clique duplo e a nova tentativa
+    // depois de um TOTP errado reusam a mesma, e o backend não credita duas vezes.
+    const [creditKey, setCreditKey] = useState<string>();
+    const { admin } = useAdminAccountAuth();
+    const canCredit = admin?.role === 'FINANCE' || admin?.role === 'SUPERADMIN';
 
     const load = useCallback(() => {
         api<AdminWallet>(`/finance/users/${userId}/wallet`)
@@ -50,6 +59,26 @@ export function UserWalletCard({ userId }: { userId: string }) {
             setUnlocking(false);
             notify({ tone: 'success', title: t('users.detail.walletSection.unlocked') });
             load();
+        } catch (err) {
+            throw err instanceof ApiError ? err : new Error(t('common.errors.generic'));
+        }
+    }
+
+    async function credit(values: { totpCode: string; reason: string } & Record<string, string>) {
+        try {
+            const updated = await api<AdminWallet>(`/finance/users/${userId}/wallet/external-top-ups`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    totpCode: values.totpCode,
+                    reason: values.reason,
+                    creditAmountMinor: values.creditAmountMinor,
+                    chargeAmountMinor: values.chargeAmountMinor,
+                    idempotencyKey: creditKey,
+                }),
+            });
+            setWallet(updated);
+            setCreditKey(undefined);
+            notify({ tone: 'success', title: t('users.detail.walletSection.credited') });
         } catch (err) {
             throw err instanceof ApiError ? err : new Error(t('common.errors.generic'));
         }
@@ -85,7 +114,19 @@ export function UserWalletCard({ userId }: { userId: string }) {
                             {t('users.detail.walletSection.unlockButton')}
                         </Button>
                     ) : (
-                        <StatusPill tone="success">{t('users.detail.walletSection.active')}</StatusPill>
+                        <span className="flex items-center gap-2">
+                            <StatusPill tone="success">{t('users.detail.walletSection.active')}</StatusPill>
+                            {canCredit && (
+                                <Button
+                                    leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
+                                    onClick={() => setCreditKey(crypto.randomUUID())}
+                                    size="small"
+                                    variant="secondary"
+                                >
+                                    {t('users.detail.walletSection.creditButton')}
+                                </Button>
+                            )}
+                        </span>
                     )
                 }
             >
@@ -127,6 +168,32 @@ export function UserWalletCard({ userId }: { userId: string }) {
                     ]}
                 />
             </SectionCard>
+
+            <ActionDialog
+                confirmLabel={t('users.detail.dialogs.creditExternal.confirmLabel')}
+                description={t('users.detail.dialogs.creditExternal.description')}
+                fields={[
+                    {
+                        name: 'creditAmountMinor',
+                        kind: 'currency',
+                        suffix: 'CNY',
+                        label: t('users.detail.dialogs.creditExternal.credit'),
+                        hint: t('users.detail.dialogs.creditExternal.creditHint'),
+                    },
+                    {
+                        name: 'chargeAmountMinor',
+                        kind: 'currency',
+                        suffix: 'BRL',
+                        label: t('users.detail.dialogs.creditExternal.charge'),
+                        hint: t('users.detail.dialogs.creditExternal.chargeHint'),
+                    },
+                ]}
+                onCancel={() => setCreditKey(undefined)}
+                onConfirm={credit}
+                open={creditKey !== undefined}
+                requireReason
+                title={t('users.detail.dialogs.creditExternal.title')}
+            />
 
             <ActionDialog
                 confirmLabel={t('users.detail.dialogs.unlockWallet.confirmLabel')}

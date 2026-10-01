@@ -213,6 +213,8 @@ export const ptBR = {
                 lockedAt: 'Bloqueada em {{date}}.',
                 unlockButton: 'Desbloquear',
                 unlocked: 'Carteira desbloqueada.',
+                creditButton: 'Creditar pagamento',
+                credited: 'Saldo creditado. O cliente recebe o recibo por e-mail.',
             },
             addressDefaultSuffix: ' (padrão)',
             dialogs: {
@@ -223,6 +225,16 @@ export const ptBR = {
                     confirmLabel: 'Ajustar',
                     amount: 'Moedas',
                     amountHint: 'Ex.: 50 ou -30.',
+                },
+                creditExternal: {
+                    title: 'Creditar pagamento feito por fora',
+                    description:
+                        'Para quem pagou fora da plataforma (Pix na conta da empresa, transferência). Vira uma recarga confirmada, entra no extrato do cliente e ele recebe o recibo por e-mail. Não dá para desfazer pelo painel.',
+                    confirmLabel: 'Creditar saldo',
+                    credit: 'Crédito na carteira',
+                    creditHint: 'O que entra no saldo, em yuan.',
+                    charge: 'Valor recebido',
+                    chargeHint: 'O que o cliente pagou, em reais. Vai no recibo.',
                 },
                 unlockWallet: {
                     title: 'Desbloquear carteira',
