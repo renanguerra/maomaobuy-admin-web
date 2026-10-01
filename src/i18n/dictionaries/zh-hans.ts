@@ -210,6 +210,8 @@ export const zhHans: Messages = {
                 lockedAt: '锁定于 {{date}}。',
                 unlockButton: '解锁',
                 unlocked: '钱包已解锁。',
+                creditButton: '入账付款',
+                credited: '余额已入账，客户会收到邮件收据。',
             },
             addressDefaultSuffix: '（默认）',
             dialogs: {
@@ -219,6 +221,16 @@ export const zhHans: Messages = {
                     confirmLabel: '调整',
                     amount: '积分',
                     amountHint: '例如：50 或 -30。',
+                },
+                creditExternal: {
+                    title: '入账平台外付款',
+                    description:
+                        '用于在平台外付款的客户（转账到公司账户等）。会生成一笔已确认的充值，记入客户流水，并通过邮件发送收据。面板中无法撤销。',
+                    confirmLabel: '入账余额',
+                    credit: '钱包入账金额',
+                    creditHint: '记入余额的人民币金额。',
+                    charge: '实收金额',
+                    chargeHint: '客户支付的雷亚尔金额，会显示在收据上。',
                 },
                 unlockWallet: {
                     title: '解锁钱包',
