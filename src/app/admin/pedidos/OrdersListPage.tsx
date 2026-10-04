@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ClipboardList, ClipboardPlus, FilterX } from 'lucide-react';
@@ -11,11 +11,16 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { Pagination } from '@/components/admin/Pagination';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { orderStatusTone, StatusPill } from '@/components/admin/StatusPill';
+import { AgeBadge } from '@/components/admin/AgeBadge';
+import { FilterTabs } from '@/components/admin/FilterTabs';
 import { Toolbar } from '@/components/admin/Toolbar';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { Select } from '@/components/ui/Select';
 import { useTranslation } from '@/i18n/LanguageProvider';
+import { queueStage, usePendingCounts } from '@/services/admin/pending-counts';
+import { ORDER_QUEUE_TABS, isQueueTab, type OrderQueueTab } from '@/services/admin/work-queues';
 import { api } from '@/services/api';
 import {
     ORDER_STATUSES,
@@ -25,6 +30,7 @@ import {
     totalUnits,
     type AdminOrder,
     type Page,
+    type WorkQueueStageKey,
 } from '@/types/api';
 
 const LIMIT = 20;
@@ -56,27 +62,39 @@ export function OrdersListPage() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
+    // Tudo que filtra vive na URL: o cartão do painel já chega filtrado e o
+    // admin pode mandar a mesma visão para um colega.
+    const fila = searchParams.get('fila');
+    const tab: OrderQueueTab = isQueueTab(ORDER_QUEUE_TABS, fila) ? fila : 'all';
+    // `status` aceita vários, separados por vírgula ("Ver fila" do painel).
     const status = searchParams.get('status') ?? '';
+    const search = searchParams.get('busca') ?? '';
     // Cancelados ficam de fora por padrão; um filtro de status manda mais.
     const showCancelled = searchParams.get('cancelados') === '1';
-    const filtered = status !== '' || showCancelled;
+    const statuses = status ? status.split(',') : [...ORDER_QUEUE_TABS[tab].statuses];
+    // Fila de trabalho lista o mais parado primeiro; "Todos" é arquivo.
+    const sort = tab !== 'all' || status.includes(',') ? 'oldest' : 'newest';
+    const filtered = tab !== 'all' || status !== '' || search !== '' || showCancelled;
     const [pageNumber, setPageNumber] = useState(1);
     const [loaded, setLoaded] = useState<LoadedPage>();
     const [failure, setFailure] = useState<Failure>();
+    const { queue } = usePendingCounts();
 
-    // A consulta em andamento é identificada por página + status: enquanto o que
+    // A consulta em andamento é identificada pelos filtros: enquanto o que
     // está em tela não corresponder a ela, a lista está carregando.
-    const queryKey = `${pageNumber}|${status}|${showCancelled}`;
+    const statusParam = statuses.join(',');
+    const queryKey = `${pageNumber}|${statusParam}|${search}|${sort}|${showCancelled}`;
     const result = loaded?.key === queryKey ? loaded.page : undefined;
     const error = failure?.key === queryKey ? failure.message : undefined;
     const loading = !result && !error;
 
     useEffect(() => {
         let active = true;
-        const key = `${pageNumber}|${status}|${showCancelled}`;
-        const query = new URLSearchParams({ page: String(pageNumber), limit: String(LIMIT) });
-        if (status) query.set('status', status);
+        const key = queryKey;
+        const query = new URLSearchParams({ page: String(pageNumber), limit: String(LIMIT), sort });
+        if (statusParam) query.set('status', statusParam);
         else if (!showCancelled) query.set('hideCancelled', 'true');
+        if (search.length >= 2) query.set('search', search);
 
         api<Page<AdminOrder>>(`/orders?${query.toString()}`)
             .then((page) => {
@@ -89,23 +107,32 @@ export function OrdersListPage() {
         return () => {
             active = false;
         };
-    }, [pageNumber, status, showCancelled, t]);
+    }, [queryKey, pageNumber, statusParam, search, sort, showCancelled, t]);
 
-    // O filtro vive na URL: o link do painel inicial já chega filtrado e o
-    // admin pode compartilhar a mesma visão com um colega.
-    const applyFilters = useCallback(
-        (next: { status: string; showCancelled: boolean }) => {
-            setPageNumber(1);
-            const query = new URLSearchParams();
-            if (next.status) query.set('status', next.status);
-            if (next.showCancelled) query.set('cancelados', '1');
-            const search = query.toString();
-            router.replace(search ? `${pathname}?${search}` : pathname, { scroll: false });
-        },
-        [pathname, router],
-    );
+    function applyFilters(next: { tab?: OrderQueueTab; status?: string; search?: string; showCancelled?: boolean }) {
+        setPageNumber(1);
+        const query = new URLSearchParams();
+        if (next.tab && next.tab !== 'all') query.set('fila', next.tab);
+        if (next.status) query.set('status', next.status);
+        if (next.search) query.set('busca', next.search);
+        if (next.showCancelled) query.set('cancelados', '1');
+        const queryString = query.toString();
+        router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+    }
 
-    const clearFilters = useCallback(() => applyFilters({ status: '', showCancelled: false }), [applyFilters]);
+    const clearFilters = () => applyFilters({});
+
+    const tabOptions = (Object.keys(ORDER_QUEUE_TABS) as OrderQueueTab[]).map((value) => {
+        const tabDef: { statuses: readonly string[]; counts?: readonly WorkQueueStageKey[] } = ORDER_QUEUE_TABS[value];
+        return {
+            value,
+            label: t(`orders.list.tabs.${value}`),
+            count:
+                queue && tabDef.counts
+                    ? tabDef.counts.reduce((sum, key) => sum + queueStage(queue, key).count, 0)
+                    : undefined,
+        };
+    });
 
     const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 1;
 
@@ -179,6 +206,11 @@ export function OrdersListPage() {
             ),
         },
         {
+            key: 'stage',
+            header: t('orders.list.stageColumn'),
+            cell: (order) => <AgeBadge deadlineAt={order.stageDeadlineAt} since={order.stageSince} />,
+        },
+        {
             key: 'createdAt',
             header: t('orders.list.columns.createdAt'),
             hideBelow: 'md',
@@ -224,21 +256,41 @@ export function OrdersListPage() {
                         ) : undefined
                     }
                 >
-                    <Select
-                        fieldClassName="w-full max-w-xs"
-                        label={t('orders.list.statusLabel')}
-                        onChange={(event) => applyFilters({ status: event.target.value, showCancelled })}
-                        placeholderOption={t('orders.list.statusAll')}
-                        value={status}
-                        options={ORDER_STATUSES.map((value) => ({ value, label: orderStatusLabel(value) }))}
-                    />
-                    <Checkbox
-                        checked={showCancelled || status === 'CANCELLED'}
-                        className="pb-2.5"
-                        disabled={status !== ''}
-                        label={t('orders.list.showCancelled')}
-                        onChange={(event) => applyFilters({ status, showCancelled: event.target.checked })}
-                    />
+                    <div className="grid w-full gap-3">
+                        <FilterTabs
+                            label={t('orders.list.tabsLabel')}
+                            onChange={(value) => applyFilters({ tab: value, search })}
+                            options={tabOptions}
+                            value={status ? ('custom' as OrderQueueTab) : tab}
+                        />
+                        <div className="flex flex-wrap items-end gap-3">
+                            <SearchInput
+                                className="w-full max-w-sm"
+                                clearLabel={t('common.actions.clearSearch')}
+                                label={t('orders.list.searchLabel')}
+                                onChange={(value) => applyFilters({ tab, status, search: value, showCancelled })}
+                                placeholder={t('orders.list.searchPlaceholder')}
+                                value={search}
+                            />
+                            <Select
+                                fieldClassName="w-full max-w-60"
+                                label={t('orders.list.statusLabel')}
+                                onChange={(event) =>
+                                    applyFilters({ status: event.target.value, search, showCancelled })
+                                }
+                                placeholderOption={t('orders.list.statusAll')}
+                                value={status.includes(',') ? '' : status}
+                                options={ORDER_STATUSES.map((value) => ({ value, label: orderStatusLabel(value) }))}
+                            />
+                            <Checkbox
+                                checked={showCancelled || status === 'CANCELLED'}
+                                className="pb-2.5"
+                                disabled={statuses.length > 0}
+                                label={t('orders.list.showCancelled')}
+                                onChange={(event) => applyFilters({ tab, search, showCancelled: event.target.checked })}
+                            />
+                        </div>
+                    </div>
                 </Toolbar>
 
                 <DataTable

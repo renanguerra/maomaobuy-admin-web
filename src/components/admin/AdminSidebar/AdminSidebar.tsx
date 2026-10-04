@@ -84,7 +84,8 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
                             {group.items.map((item) => (
                                 <MenuLink
                                     active={isMenuItemActive(item.href, pathname)}
-                                    count={item.badge ? (counts?.[item.badge] ?? 0) : 0}
+                                    count={item.badge ? (counts?.[item.badge].count ?? 0) : 0}
+                                    overdue={item.badge ? (counts?.[item.badge].overdue ?? 0) : 0}
                                     item={item}
                                     key={item.href}
                                     label={t(`sidebar.items.${item.key}`)}
@@ -140,6 +141,7 @@ function MenuLink({
     label,
     active,
     count,
+    overdue,
     pendingLabel,
     onNavigate,
 }: {
@@ -147,6 +149,8 @@ function MenuLink({
     label: string;
     active: boolean;
     count: number;
+    /** Parte de `count` que passou do prazo — o selo fica vermelho. */
+    overdue: number;
     pendingLabel: string;
     onNavigate?: () => void;
 }) {
@@ -165,7 +169,11 @@ function MenuLink({
                 <Icon className="h-4.5 w-4.5 shrink-0" aria-hidden={true} />
                 <span className="flex-1 truncate">{label}</span>
                 {count > 0 && (
-                    <span className="mm-data grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-amber-300 px-1.5 text-[0.65rem] leading-none font-bold text-amber-950">
+                    <span
+                        className={`mm-data grid h-5 min-w-5 shrink-0 place-items-center rounded-full px-1.5 text-[0.65rem] leading-none font-bold ${
+                            overdue > 0 ? 'bg-origin-500 text-white' : 'bg-amber-300 text-amber-950'
+                        }`}
+                    >
                         {count}
                         <span className="sr-only"> {pendingLabel}</span>
                     </span>

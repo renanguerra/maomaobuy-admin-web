@@ -334,6 +334,9 @@ export function PackageDetailPage() {
     const isDraft = pkg.status === 'DRAFT';
     const isAwaitingApproval = pkg.status === 'AWAITING_APPROVAL';
     const canEditItems = isDraft || isAwaitingApproval;
+    // Espelha `lockMutable` do backend: o admin ainda troca itens depois de
+    // aprovado, até cotar o frete — o pacote que ele cria já nasce aí.
+    const canEditContents = canEditItems || pkg.status === 'AWAITING_FREIGHT_QUOTE';
     // Espelha `PackagesRepository.cancel`: tudo antes do pagamento do frete.
     const canCancel =
         canEditItems || pkg.status === 'AWAITING_FREIGHT_QUOTE' || pkg.status === 'AWAITING_FREIGHT_PAYMENT';
@@ -522,7 +525,7 @@ export function PackageDetailPage() {
                                 : undefined
                         }
                         action={
-                            canEditItems ? (
+                            canEditContents ? (
                                 <Button
                                     leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
                                     onClick={() => setDialog('add-items')}
@@ -569,7 +572,7 @@ export function PackageDetailPage() {
                                             }
                                             leading={<QuantityBadge quantity={item.quantity} />}
                                             actions={
-                                                canEditItems ? (
+                                                canEditContents ? (
                                                     <Button
                                                         aria-label={t('packages.detail.itemsSection.removeAria', {
                                                             name: item.orderItem.productName,
