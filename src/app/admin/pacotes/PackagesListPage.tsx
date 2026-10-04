@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Boxes, ClipboardList, FilterX, X } from 'lucide-react';
@@ -11,11 +11,16 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { Pagination } from '@/components/admin/Pagination';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { packageStatusTone, StatusPill } from '@/components/admin/StatusPill';
+import { AgeBadge } from '@/components/admin/AgeBadge';
+import { FilterTabs } from '@/components/admin/FilterTabs';
 import { Toolbar } from '@/components/admin/Toolbar';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { SearchInput } from '@/components/ui/SearchInput';
 import { Select } from '@/components/ui/Select';
 import { useTranslation } from '@/i18n/LanguageProvider';
+import { queueStage, usePendingCounts } from '@/services/admin/pending-counts';
+import { PACKAGE_QUEUE_TABS, isQueueTab, type PackageQueueTab } from '@/services/admin/work-queues';
 import { api } from '@/services/api';
 import {
     PACKAGE_STATUSES,
@@ -24,6 +29,7 @@ import {
     totalUnits,
     type AdminPackage,
     type Page,
+    type WorkQueueStageKey,
 } from '@/types/api';
 
 const LIMIT = 20;
@@ -45,20 +51,31 @@ export function PackagesListPage() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
+    // Tudo que filtra vive na URL: o cartão do painel já chega filtrado e o
+    // admin pode mandar a mesma visão para um colega.
+    const fila = searchParams.get('fila');
+    const tab: PackageQueueTab = isQueueTab(PACKAGE_QUEUE_TABS, fila) ? fila : 'all';
+    // `status` aceita vários, separados por vírgula ("Ver fila" do painel).
     const status = searchParams.get('status') ?? '';
+    const search = searchParams.get('busca') ?? '';
     // Cancelados ficam de fora por padrão; um filtro de status manda mais.
     const showCancelled = searchParams.get('cancelados') === '1';
-    const filtered = status !== '' || showCancelled;
+    const statuses = status ? status.split(',') : [...PACKAGE_QUEUE_TABS[tab].statuses];
+    // Fila de trabalho lista o mais parado primeiro; "Todos" é arquivo.
+    const sort = tab !== 'all' || status.includes(',') ? 'oldest' : 'newest';
+    const filtered = tab !== 'all' || status !== '' || search !== '' || showCancelled;
     const [pageNumber, setPageNumber] = useState(1);
     const [loaded, setLoaded] = useState<LoadedPage>();
     const [failure, setFailure] = useState<Failure>();
+    const { queue } = usePendingCounts();
     // Seleção para a folha de montagem. Sobrevive à troca de página e de
     // filtro de propósito: quem monta o turno marca pacotes de várias telas.
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-    // A consulta em andamento é identificada por página + filtros: enquanto o
-    // que está em tela não corresponder a ela, a lista está carregando.
-    const queryKey = `${pageNumber}|${status}|${showCancelled}`;
+    // A consulta em andamento é identificada pelos filtros: enquanto o que
+    // está em tela não corresponder a ela, a lista está carregando.
+    const statusParam = statuses.join(',');
+    const queryKey = `${pageNumber}|${statusParam}|${search}|${sort}|${showCancelled}`;
     const result = loaded?.key === queryKey ? loaded.page : undefined;
     const error = failure?.key === queryKey ? failure.message : undefined;
     const loading = !result && !error;
@@ -66,10 +83,11 @@ export function PackagesListPage() {
 
     useEffect(() => {
         let active = true;
-        const key = `${pageNumber}|${status}|${showCancelled}`;
-        const query = new URLSearchParams({ page: String(pageNumber), limit: String(LIMIT) });
-        if (status) query.set('status', status);
+        const key = queryKey;
+        const query = new URLSearchParams({ page: String(pageNumber), limit: String(LIMIT), sort });
+        if (statusParam) query.set('status', statusParam);
         else if (!showCancelled) query.set('hideCancelled', 'true');
+        if (search.length >= 2) query.set('search', search);
 
         api<Page<AdminPackage>>(`/packages?${query.toString()}`)
             .then((page) => {
@@ -82,36 +100,48 @@ export function PackagesListPage() {
         return () => {
             active = false;
         };
-    }, [pageNumber, status, showCancelled, t]);
+    }, [queryKey, pageNumber, statusParam, search, sort, showCancelled, t]);
 
-    const applyFilters = useCallback(
-        (next: { status: string; showCancelled: boolean }) => {
-            setPageNumber(1);
-            const query = new URLSearchParams();
-            if (next.status) query.set('status', next.status);
-            if (next.showCancelled) query.set('cancelados', '1');
-            const search = query.toString();
-            router.replace(search ? `${pathname}?${search}` : pathname, { scroll: false });
-        },
-        [pathname, router],
-    );
+    function applyFilters(next: { tab?: PackageQueueTab; status?: string; search?: string; showCancelled?: boolean }) {
+        setPageNumber(1);
+        const query = new URLSearchParams();
+        if (next.tab && next.tab !== 'all') query.set('fila', next.tab);
+        if (next.status) query.set('status', next.status);
+        if (next.search) query.set('busca', next.search);
+        if (next.showCancelled) query.set('cancelados', '1');
+        const queryString = query.toString();
+        router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+    }
 
-    const clearFilters = useCallback(() => applyFilters({ status: '', showCancelled: false }), [applyFilters]);
+    const clearFilters = () => applyFilters({});
+
+    const tabOptions = (Object.keys(PACKAGE_QUEUE_TABS) as PackageQueueTab[]).map((value) => {
+        const tabDef: { statuses: readonly string[]; counts?: readonly WorkQueueStageKey[] } =
+            PACKAGE_QUEUE_TABS[value];
+        return {
+            value,
+            label: t(`packages.list.tabs.${value}`),
+            count:
+                queue && tabDef.counts
+                    ? tabDef.counts.reduce((sum, key) => sum + queueStage(queue, key).count, 0)
+                    : undefined,
+        };
+    });
 
     const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 1;
 
     const allOnPageSelected = rows.length > 0 && rows.every((pkg) => selectedIds.has(pkg.id));
 
-    const toggleSelected = useCallback((id: string) => {
+    const toggleSelected = (id: string) => {
         setSelectedIds((current) => {
             const next = new Set(current);
             if (next.has(id)) next.delete(id);
             else next.add(id);
             return next;
         });
-    }, []);
+    };
 
-    const toggleSelectAllOnPage = useCallback(() => {
+    const toggleSelectAllOnPage = () => {
         setSelectedIds((current) => {
             const next = new Set(current);
             if (rows.length > 0 && rows.every((pkg) => current.has(pkg.id))) {
@@ -121,7 +151,7 @@ export function PackagesListPage() {
             }
             return next;
         });
-    }, [rows]);
+    };
 
     const assemblySheetHref = `/impressao/pacotes?ids=${Array.from(selectedIds).join(',')}`;
 
@@ -218,6 +248,11 @@ export function PackagesListPage() {
             cell: (pkg) => <span className="text-ink dark:text-night-text">{formatDate(pkg.updatedAt)}</span>,
         },
         {
+            key: 'stage',
+            header: t('packages.list.stageColumn'),
+            cell: (pkg) => <AgeBadge deadlineAt={pkg.stageDeadlineAt} since={pkg.stageSince} />,
+        },
+        {
             key: 'createdAt',
             header: t('packages.list.columns.createdAt'),
             hideBelow: 'md',
@@ -255,21 +290,41 @@ export function PackagesListPage() {
                         ) : undefined
                     }
                 >
-                    <Select
-                        fieldClassName="w-full max-w-xs"
-                        label={t('packages.list.statusLabel')}
-                        onChange={(event) => applyFilters({ status: event.target.value, showCancelled })}
-                        placeholderOption={t('packages.list.statusAll')}
-                        value={status}
-                        options={PACKAGE_STATUSES.map((value) => ({ value, label: packageStatusLabel(value) }))}
-                    />
-                    <Checkbox
-                        checked={showCancelled || status === 'CANCELLED'}
-                        className="pb-2.5"
-                        disabled={status !== ''}
-                        label={t('packages.list.showCancelled')}
-                        onChange={(event) => applyFilters({ status, showCancelled: event.target.checked })}
-                    />
+                    <div className="grid w-full gap-3">
+                        <FilterTabs
+                            label={t('packages.list.tabsLabel')}
+                            onChange={(value) => applyFilters({ tab: value, search })}
+                            options={tabOptions}
+                            value={status ? ('custom' as PackageQueueTab) : tab}
+                        />
+                        <div className="flex flex-wrap items-end gap-3">
+                            <SearchInput
+                                className="w-full max-w-sm"
+                                clearLabel={t('common.actions.clearSearch')}
+                                label={t('packages.list.searchLabel')}
+                                onChange={(value) => applyFilters({ tab, status, search: value, showCancelled })}
+                                placeholder={t('packages.list.searchPlaceholder')}
+                                value={search}
+                            />
+                            <Select
+                                fieldClassName="w-full max-w-60"
+                                label={t('packages.list.statusLabel')}
+                                onChange={(event) =>
+                                    applyFilters({ status: event.target.value, search, showCancelled })
+                                }
+                                placeholderOption={t('packages.list.statusAll')}
+                                value={status.includes(',') ? '' : status}
+                                options={PACKAGE_STATUSES.map((value) => ({ value, label: packageStatusLabel(value) }))}
+                            />
+                            <Checkbox
+                                checked={showCancelled || status === 'CANCELLED'}
+                                className="pb-2.5"
+                                disabled={statuses.length > 0}
+                                label={t('packages.list.showCancelled')}
+                                onChange={(event) => applyFilters({ tab, search, showCancelled: event.target.checked })}
+                            />
+                        </div>
+                    </div>
                 </Toolbar>
 
                 {selectedIds.size > 0 && (

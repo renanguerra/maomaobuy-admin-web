@@ -1,1 +1,10 @@
-export { UserDetailPage as default } from './UserDetailPage';
+import { Suspense } from 'react';
+import { UserDetailPage } from './UserDetailPage';
+
+export default function Page() {
+    return (
+        <Suspense>
+            <UserDetailPage />
+        </Suspense>
+    );
+}

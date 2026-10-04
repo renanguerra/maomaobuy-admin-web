@@ -469,6 +469,10 @@ export interface AdminOrder {
     customerApprovedTotalMinor: string | null;
     shippingEstimateAmountMinor: string | null;
     createdAt: string;
+    /** Desde quando o pedido está no status atual. */
+    stageSince: string;
+    /** Quando a etapa atual passa do prazo; `null` = etapa sem prazo (vez do cliente). */
+    stageDeadlineAt: string | null;
     reviewedAt: string | null;
     reviewedByAdminId: string | null;
     /** Admin que montou o pedido para o cliente; `null` quando foi o próprio cliente. */
@@ -687,6 +691,10 @@ export interface AdminPackage {
     createdAt: string;
     /** Última alteração; a listagem ordena por ela. */
     updatedAt: string;
+    /** Desde quando o pacote está no status atual. */
+    stageSince: string;
+    /** Quando a etapa atual passa do prazo; `null` = etapa sem prazo (vez do cliente). */
+    stageDeadlineAt: string | null;
     items: AdminPackageItem[];
     userId: string;
     userEmail: string;
@@ -1104,4 +1112,69 @@ export function siteNoticeStatus(notice: SiteNotice, now = new Date()): SiteNoti
     if (notice.endsAt && new Date(notice.endsAt) <= now) return 'ENDED';
     if (notice.startsAt && new Date(notice.startsAt) > now) return 'SCHEDULED';
     return 'OVERRIDDEN';
+}
+
+// ---------------------------------------------------------------------------
+// Filas de trabalho (`GET /dashboard/work-queue`) e armazém sem pacote
+// ---------------------------------------------------------------------------
+
+/** De quem é a vez: nossa, do cliente, ou de um terceiro (vendedor, transporte). */
+export type WorkQueueOwner = 'TEAM' | 'CUSTOMER' | 'EXTERNAL';
+
+export type WorkQueueStageKey =
+    | 'ordersToReview'
+    | 'ordersToPurchase'
+    | 'ordersToInspect'
+    | 'inspectionsAwaitingAdmin'
+    | 'ordersRefundToConfirm'
+    | 'packagesDraft'
+    | 'packagesToReview'
+    | 'packagesToQuote'
+    | 'packagesToDispatch'
+    | 'packagesException'
+    | 'productRequestsNew'
+    | 'refundRequests'
+    | 'ordersWithSeller'
+    | 'ordersInboundToWarehouse'
+    | 'packagesInTransit'
+    | 'ordersAwaitingCustomerApproval'
+    | 'ordersAwaitingPayment'
+    | 'inspectionsAwaitingCustomer'
+    | 'ordersUnpacked'
+    | 'packagesAwaitingFreightPayment';
+
+export interface WorkQueueStage {
+    key: WorkQueueStageKey;
+    owner: WorkQueueOwner;
+    count: number;
+    /** Registros que passaram do prazo da etapa. */
+    overdue: number;
+    /** Início da etapa do registro mais antigo; `null` com a fila vazia. */
+    oldestSince: string | null;
+    deadlineHours: number | null;
+}
+
+export interface WorkQueue {
+    generatedAt: string;
+    stages: WorkQueueStage[];
+}
+
+export interface AdminUnpackedItem {
+    orderId: string;
+    orderItemId: string;
+    orderStatus: string;
+    productName: string;
+    /** Unidades que ainda cabem num pacote novo. */
+    quantity: number;
+    arrivedAt: string | null;
+}
+
+export interface AdminUnpackedCustomer {
+    userId: string;
+    userName: string;
+    userEmail: string;
+    oldestArrivedAt: string | null;
+    /** Fim da armazenagem grátis do item mais antigo. */
+    freeStorageUntil: string | null;
+    items: AdminUnpackedItem[];
 }

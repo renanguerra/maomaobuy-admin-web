@@ -6,6 +6,7 @@ import {
     Mail,
     Megaphone,
     Package,
+    PackageOpen,
     PackageSearch,
     Settings,
     ShieldCheck,
@@ -29,19 +30,20 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
     {
         key: 'logistics',
         items: [
-            { key: 'orders', href: '/admin/pedidos', icon: ClipboardList, badge: 'ordersAwaitingReview' },
+            { key: 'orders', href: '/admin/pedidos', icon: ClipboardList, badge: 'orders' },
             {
                 key: 'inspections',
                 href: '/admin/inspecoes',
                 icon: ClipboardCheck,
-                badge: 'inspectionsAwaitingAdmin',
+                badge: 'inspections',
             },
-            { key: 'packages', href: '/admin/pacotes', icon: Boxes, badge: 'packagesAwaitingApproval' },
+            { key: 'packages', href: '/admin/pacotes', icon: Boxes, badge: 'packages' },
+            { key: 'unpacked', href: '/admin/sem-pacote', icon: PackageOpen },
             {
                 key: 'productRequests',
                 href: '/admin/pedidos-de-produto',
                 icon: PackageSearch,
-                badge: 'productRequestsNew',
+                badge: 'productRequests',
             },
         ],
     },
@@ -63,7 +65,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
     {
         key: 'finance',
         items: [
-            { key: 'finance', href: '/admin/financeiro', icon: Wallet, badge: 'refundsRequested' },
+            { key: 'finance', href: '/admin/financeiro', icon: Wallet, badge: 'finance' },
             { key: 'coupons', href: '/admin/cupons', icon: TicketPercent },
         ],
     },

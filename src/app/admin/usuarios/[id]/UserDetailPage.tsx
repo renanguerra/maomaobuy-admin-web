@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import {
     ClipboardPlus,
     KeyRound,
@@ -48,7 +48,9 @@ export function UserDetailPage() {
     const params = useParams<{ id: string }>();
     const [user, setUser] = useState<AdminUser>();
     const [error, setError] = useState<string>();
-    const [dialog, setDialog] = useState<DialogKind>(null);
+    // `?acao=pacote` chega da tela "Sem pacote": abre direto o "Montar pacote".
+    const searchParams = useSearchParams();
+    const [dialog, setDialog] = useState<DialogKind>(searchParams.get('acao') === 'pacote' ? 'create-package' : null);
 
     useEffect(() => {
         let active = true;

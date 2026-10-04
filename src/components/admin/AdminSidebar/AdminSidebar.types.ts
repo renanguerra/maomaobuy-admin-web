@@ -10,6 +10,7 @@ export type MenuItemKey =
     | 'orders'
     | 'inspections'
     | 'packages'
+    | 'unpacked'
     | 'users'
     | 'products'
     | 'categories'
