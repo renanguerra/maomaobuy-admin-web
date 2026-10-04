@@ -8,6 +8,7 @@ import {
     CheckCircle2,
     ClipboardList,
     Images,
+    ListRestart,
     MessageSquare,
     Package as PackageIcon,
     Pencil,
@@ -41,6 +42,7 @@ import { api, ApiError, uploadToPresignedUrl } from '@/services/api';
 import {
     formatCpf,
     formatDate,
+    formatPhone,
     lineTotalMinor,
     money,
     packageStatusLabel,
@@ -53,10 +55,47 @@ import { QuantityBadge } from '@/components/admin/QuantityBadge';
 import { AddPackageItemsDialog } from './AddPackageItemsDialog';
 import { RemovePackageItemDialog } from './RemovePackageItemDialog';
 
-type DialogKind = 'approve' | 'reject' | 'cancel' | 'dispatch' | 'correct-dispatch' | 'shipment' | 'add-items' | null;
+type DialogKind =
+    | 'approve'
+    | 'reject'
+    | 'cancel'
+    | 'dispatch'
+    | 'correct-dispatch'
+    | 'shipment'
+    | 'add-items'
+    | 'override-status'
+    | null;
 
 /** Situações finais do pacote — nada mais é anexado depois delas. */
 const CLOSED_STATUSES = ['DELIVERED', 'RETURNED', 'CANCELLED'];
+
+/**
+ * Destinos do ajuste manual (`POST /packages/:id/status`), na ordem do fluxo.
+ * Espelha as travas do backend: pago não volta antes do pagamento, despachado
+ * não volta ao armazém e sem cotação não há o que pagar.
+ */
+const OVERRIDE_TARGETS = [
+    'AWAITING_FREIGHT_QUOTE',
+    'AWAITING_FREIGHT_PAYMENT',
+    'READY_FOR_DISPATCH',
+    'SHIPPED',
+    'IN_TRANSIT',
+    'CUSTOMS',
+    'OUT_FOR_DELIVERY',
+    'DELIVERED',
+];
+const BEFORE_PAYMENT = ['AWAITING_FREIGHT_QUOTE', 'AWAITING_FREIGHT_PAYMENT'];
+const BEFORE_DISPATCH = [...BEFORE_PAYMENT, 'READY_FOR_DISPATCH'];
+
+function overrideTargets(pkg: AdminPackage): string[] {
+    return OVERRIDE_TARGETS.filter(
+        (status) =>
+            status !== pkg.status &&
+            !(pkg.shippedAt && BEFORE_DISPATCH.includes(status)) &&
+            !(pkg.paidAt && BEFORE_PAYMENT.includes(status)) &&
+            !(status === 'AWAITING_FREIGHT_PAYMENT' && !pkg.shippingAmountMinor),
+    );
+}
 
 /**
  * Rastreio anda para frente, um evento por vez. O botão mostra sempre o próximo
@@ -113,6 +152,21 @@ export function PackageDetailPage() {
     async function handleActionConfirm(values: { totpCode: string; reason: string } & Record<string, string>) {
         const action = dialog;
         if (!action || action === 'add-items') return;
+        if (action === 'override-status') {
+            const updated = await api<AdminPackage>(`/packages/${params.id}/status`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    totpCode: values.totpCode,
+                    reason: values.reason,
+                    status: values.status,
+                    notifyCustomer: values.notifyCustomer === 'yes',
+                    carrier: values.carrier || undefined,
+                    trackingCode: values.trackingCode || undefined,
+                }),
+            });
+            applyUpdate(updated, t('packages.detail.feedback.statusOverridden'));
+            return;
+        }
 
         // Corrigir o despacho é a mesma rota, só que PATCH: cria vs. ajusta.
         const correcting = action === 'correct-dispatch';
@@ -289,8 +343,15 @@ export function PackageDetailPage() {
     const trackingStep = TRACKING_NEXT_STEP[pkg.status];
     // Corrigir o rastreio só faz sentido enquanto o pacote está a caminho.
     const canCorrectDispatch = pkg.shippedAt !== null && !CLOSED_STATUSES.includes(pkg.status);
+    const statusTargets = isDraft || CLOSED_STATUSES.includes(pkg.status) ? [] : overrideTargets(pkg);
+    const canOverrideStatus = statusTargets.length > 0;
     const hasActions =
-        canEditItems || canCancel || pkg.status === 'READY_FOR_DISPATCH' || canCorrectDispatch || Boolean(trackingStep);
+        canEditItems ||
+        canCancel ||
+        pkg.status === 'READY_FOR_DISPATCH' ||
+        canCorrectDispatch ||
+        Boolean(trackingStep) ||
+        canOverrideStatus;
 
     return (
         <div className="grid gap-6">
@@ -432,6 +493,16 @@ export function PackageDetailPage() {
                             variant="ghost"
                         >
                             {t('packages.detail.actions.correctDispatch')}
+                        </Button>
+                    )}
+                    {canOverrideStatus && (
+                        <Button
+                            leadingIcon={<ListRestart className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('override-status')}
+                            size="small"
+                            variant="ghost"
+                        >
+                            {t('packages.detail.actions.overrideStatus')}
                         </Button>
                     )}
                 </ActionBar>
@@ -680,12 +751,14 @@ export function PackageDetailPage() {
                     <SectionCard dense title={t('packages.detail.fields.destination')}>
                         <address className="m-0 text-sm leading-relaxed text-ink not-italic dark:text-night-text">
                             <strong className="block">{pkg.destination.recipientFullName}</strong>
+                            <span className="block">{formatPhone(pkg.destination.phoneE164)}</span>
                             {pkg.destination.recipientTaxId && (
                                 <span className="block">CPF {formatCpf(pkg.destination.recipientTaxId)}</span>
                             )}
                             <span className="mt-1.5 block">
                                 {pkg.destination.addressLine1}
                                 {pkg.destination.addressLine2 ? `, ${pkg.destination.addressLine2}` : ''}
+                                {pkg.destination.district ? ` — ${pkg.destination.district}` : ''}
                             </span>
                             <span className="block">
                                 {pkg.destination.locality}/{pkg.destination.administrativeArea} ·{' '}
@@ -844,6 +917,53 @@ export function PackageDetailPage() {
                         optional: true,
                         maxLength: 120,
                     },
+                ]}
+            />
+            <ActionDialog
+                confirmLabel={t('packages.detail.dialogs.overrideStatus.confirmLabel')}
+                description={t('packages.detail.dialogs.overrideStatus.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleActionConfirm}
+                open={dialog === 'override-status'}
+                requireReason
+                title={t('packages.detail.dialogs.overrideStatus.title')}
+                fields={[
+                    {
+                        name: 'status',
+                        kind: 'select',
+                        label: t('packages.detail.dialogs.overrideStatus.statusLabel'),
+                        defaultValue: statusTargets[statusTargets.length - 1],
+                        options: statusTargets.map((status) => ({ value: status, label: packageStatusLabel(status) })),
+                    },
+                    {
+                        name: 'notifyCustomer',
+                        kind: 'select',
+                        label: t('packages.detail.dialogs.overrideStatus.notifyLabel'),
+                        hint: t('packages.detail.dialogs.overrideStatus.notifyHint'),
+                        defaultValue: 'no',
+                        options: [
+                            { value: 'no', label: t('packages.detail.dialogs.overrideStatus.notifyNo') },
+                            { value: 'yes', label: t('packages.detail.dialogs.overrideStatus.notifyYes') },
+                        ],
+                    },
+                    ...(pkg.shippedAt
+                        ? []
+                        : [
+                              {
+                                  name: 'carrier',
+                                  label: t('packages.detail.dialogs.dispatch.carrier'),
+                                  hint: t('packages.detail.dialogs.overrideStatus.carrierHint'),
+                                  optional: true,
+                                  maxLength: 120,
+                              },
+                              {
+                                  name: 'trackingCode',
+                                  label: t('packages.detail.dialogs.dispatch.trackingCode'),
+                                  hint: t('packages.detail.dialogs.overrideStatus.carrierHint'),
+                                  optional: true,
+                                  maxLength: 100,
+                              },
+                          ]),
                 ]}
             />
             <AddPackageItemsDialog

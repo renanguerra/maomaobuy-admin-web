@@ -23,6 +23,11 @@ interface CreatePackageDialogProps {
     onClose: () => void;
 }
 
+/** Só a alfândega brasileira exige o CPF de quem recebe para montar o pacote. */
+function isMissingTaxId(address: AdminUserAddress) {
+    return address.countryCode === 'BR' && !address.recipientTaxId;
+}
+
 /**
  * Monta um pacote a partir dos itens já elegíveis do usuário. Os dados são
  * carregados só quando o diálogo abre — a tela de detalhe do usuário não
@@ -107,9 +112,11 @@ function CreatePackageForm({
     }
 
     function addressLabel(address: AdminUserAddress) {
-        return `${address.recipientFullName} · ${address.addressLine1}, ${address.locality}/${address.administrativeArea}${
-            address.isDefault ? t('users.detail.addressDefaultSuffix') : ''
-        }${address.recipientTaxId ? '' : t('users.createPackage.addressMissingTaxId')}`;
+        return `${address.recipientFullName} · ${address.addressLine1}, ${address.locality}/${address.administrativeArea} · ${
+            address.countryCode
+        }${address.isDefault ? t('users.detail.addressDefaultSuffix') : ''}${
+            isMissingTaxId(address) ? t('users.createPackage.addressMissingTaxId') : ''
+        }`;
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -175,7 +182,7 @@ function CreatePackageForm({
                         />
                     )}
 
-                    {addresses.some((address) => !address.recipientTaxId) && (
+                    {addresses.some(isMissingTaxId) && (
                         <Alert tone="warning">
                             <p>{t('users.createPackage.addressMissingTaxIdHint')}</p>
                         </Alert>

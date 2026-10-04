@@ -696,6 +696,7 @@ export const zhHans: Messages = {
             description: '报价及链接购买订单的审核队列 — 批准、拒绝、确认人工付款并放行发货。',
             statusLabel: '状态',
             statusAll: '全部',
+            showCancelled: '显示已取消',
             error: '无法加载订单列表。',
             loading: '正在加载订单…',
             columns: {
@@ -793,6 +794,7 @@ export const zhHans: Messages = {
                 openInspection: '打开验货单',
                 confirmRefund: '确认退款',
                 failSourcing: '采购失败',
+                overrideStatus: '修改状态',
                 confirmRefundSuperadminOnly: '仅超级管理员可确认退款。',
                 needsCustomerApproval: '客户尚未确认该金额。',
             },
@@ -857,6 +859,17 @@ export const zhHans: Messages = {
                         '将客户为该订单支付的款项退回其余额（扣除已退的附加服务）。订单将标记为已退款，不再变动。',
                     confirmLabel: '确认退款',
                 },
+                overrideStatus: {
+                    title: '修改订单状态',
+                    description:
+                        '直接将订单改为所选状态，跳过中间步骤——用于补更新已购买或已收货但未及时更新的订单。不涉及资金。原因会显示在客户可见的订单记录中。',
+                    confirmLabel: '修改状态',
+                    statusLabel: '新状态',
+                    notifyLabel: '通知客户',
+                    notifyNo: '不发送邮件',
+                    notifyYes: '发送一封关于新状态的邮件',
+                    notifyHint: '跳过的步骤不会发送任何邮件。',
+                },
                 failSourcing: {
                     title: '登记采购失败',
                     description:
@@ -897,6 +910,7 @@ export const zhHans: Messages = {
                 shippingEstimateChanged: '预估运费已修改。',
                 markedReadyToShip: '订单已标记为可发货。',
                 sourcingAdvanced: '采购阶段已更新。',
+                statusOverridden: '订单状态已修改。',
                 'confirm-refund': '退款已确认。',
                 'fail-sourcing': '订单已提交退款。',
             },
@@ -1079,6 +1093,7 @@ export const zhHans: Messages = {
                 requoteFreight: '修改运费',
                 dispatch: '发货',
                 correctDispatch: '修正物流信息',
+                overrideStatus: '修改状态',
                 cancel: '取消包裹',
             },
             fields: {
@@ -1145,6 +1160,7 @@ export const zhHans: Messages = {
                 shipment: '运费信息已更新。',
                 dispatch: '包裹已发货。',
                 correctDispatch: '物流信息已修正。',
+                statusOverridden: '包裹状态已修改。',
                 trackingAdvanced: '物流状态已更新。',
                 submitted: '包裹已提交审批。',
                 photoUploaded: '照片上传成功。',
@@ -1179,6 +1195,18 @@ export const zhHans: Messages = {
                     currency: '货币（BRL 或 CNY）',
                     amount: '承运商成本',
                     amountHint: '表价成本，不含加价。客户支付该成本加上配置的加价。',
+                },
+                overrideStatus: {
+                    title: '修改包裹状态',
+                    description:
+                        '直接将包裹改为所选状态，跳过中间步骤——用于线下已付运费或已发出但未登记的包裹。跳过付款会将运费标记为已付，不扣客户余额。在此标记发货或签收也会同步更新包裹内的订单。',
+                    confirmLabel: '修改状态',
+                    statusLabel: '新状态',
+                    notifyLabel: '通知客户',
+                    notifyNo: '不发送邮件',
+                    notifyYes: '发送一封关于新状态的邮件',
+                    notifyHint: '跳过的步骤不会发送邮件。“待发货”状态没有邮件。',
+                    carrierHint: '可选。包裹尚未登记发货时使用。',
                 },
                 correctDispatch: {
                     title: '修正物流信息',
