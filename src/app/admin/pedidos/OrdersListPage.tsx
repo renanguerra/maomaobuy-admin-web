@@ -13,6 +13,7 @@ import { SectionCard } from '@/components/admin/SectionCard';
 import { orderStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { Toolbar } from '@/components/admin/Toolbar';
 import { Button, ButtonLink } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { Select } from '@/components/ui/Select';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
@@ -56,22 +57,26 @@ export function OrdersListPage() {
     const searchParams = useSearchParams();
 
     const status = searchParams.get('status') ?? '';
+    // Cancelados ficam de fora por padrão; um filtro de status manda mais.
+    const showCancelled = searchParams.get('cancelados') === '1';
+    const filtered = status !== '' || showCancelled;
     const [pageNumber, setPageNumber] = useState(1);
     const [loaded, setLoaded] = useState<LoadedPage>();
     const [failure, setFailure] = useState<Failure>();
 
     // A consulta em andamento é identificada por página + status: enquanto o que
     // está em tela não corresponder a ela, a lista está carregando.
-    const queryKey = `${pageNumber}|${status}`;
+    const queryKey = `${pageNumber}|${status}|${showCancelled}`;
     const result = loaded?.key === queryKey ? loaded.page : undefined;
     const error = failure?.key === queryKey ? failure.message : undefined;
     const loading = !result && !error;
 
     useEffect(() => {
         let active = true;
-        const key = `${pageNumber}|${status}`;
+        const key = `${pageNumber}|${status}|${showCancelled}`;
         const query = new URLSearchParams({ page: String(pageNumber), limit: String(LIMIT) });
         if (status) query.set('status', status);
+        else if (!showCancelled) query.set('hideCancelled', 'true');
 
         api<Page<AdminOrder>>(`/orders?${query.toString()}`)
             .then((page) => {
@@ -84,17 +89,23 @@ export function OrdersListPage() {
         return () => {
             active = false;
         };
-    }, [pageNumber, status, t]);
+    }, [pageNumber, status, showCancelled, t]);
 
     // O filtro vive na URL: o link do painel inicial já chega filtrado e o
     // admin pode compartilhar a mesma visão com um colega.
-    const applyStatus = useCallback(
-        (next: string) => {
+    const applyFilters = useCallback(
+        (next: { status: string; showCancelled: boolean }) => {
             setPageNumber(1);
-            router.replace(next ? `${pathname}?status=${next}` : pathname, { scroll: false });
+            const query = new URLSearchParams();
+            if (next.status) query.set('status', next.status);
+            if (next.showCancelled) query.set('cancelados', '1');
+            const search = query.toString();
+            router.replace(search ? `${pathname}?${search}` : pathname, { scroll: false });
         },
         [pathname, router],
     );
+
+    const clearFilters = useCallback(() => applyFilters({ status: '', showCancelled: false }), [applyFilters]);
 
     const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 1;
 
@@ -201,10 +212,10 @@ export function OrdersListPage() {
             <SectionCard flush>
                 <Toolbar
                     actions={
-                        status ? (
+                        filtered ? (
                             <Button
                                 leadingIcon={<FilterX className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => applyStatus('')}
+                                onClick={clearFilters}
                                 size="small"
                                 variant="ghost"
                             >
@@ -216,10 +227,17 @@ export function OrdersListPage() {
                     <Select
                         fieldClassName="w-full max-w-xs"
                         label={t('orders.list.statusLabel')}
-                        onChange={(event) => applyStatus(event.target.value)}
+                        onChange={(event) => applyFilters({ status: event.target.value, showCancelled })}
                         placeholderOption={t('orders.list.statusAll')}
                         value={status}
                         options={ORDER_STATUSES.map((value) => ({ value, label: orderStatusLabel(value) }))}
+                    />
+                    <Checkbox
+                        checked={showCancelled || status === 'CANCELLED'}
+                        className="pb-2.5"
+                        disabled={status !== ''}
+                        label={t('orders.list.showCancelled')}
+                        onChange={(event) => applyFilters({ status, showCancelled: event.target.checked })}
                     />
                 </Toolbar>
 
@@ -233,12 +251,12 @@ export function OrdersListPage() {
                     rows={result?.data ?? []}
                     empty={
                         <EmptyState
-                            description={status ? t('orders.list.emptyFilteredDescription') : undefined}
+                            description={filtered ? t('orders.list.emptyFilteredDescription') : undefined}
                             icon={ClipboardList}
-                            title={status ? t('orders.list.emptyFiltered') : t('orders.list.empty')}
+                            title={filtered ? t('orders.list.emptyFiltered') : t('orders.list.empty')}
                             action={
-                                status ? (
-                                    <Button onClick={() => applyStatus('')} size="small" variant="secondary">
+                                filtered ? (
+                                    <Button onClick={clearFilters} size="small" variant="secondary">
                                         {t('common.actions.clearFilters')}
                                     </Button>
                                 ) : undefined

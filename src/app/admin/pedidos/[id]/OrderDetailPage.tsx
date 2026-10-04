@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
     CheckCircle2,
     History,
+    ListRestart,
     MessageSquare,
     PackageCheck,
     Pencil,
@@ -51,7 +52,7 @@ import { OrderAmountDialog, type OrderAmountDialogValues } from './OrderAmountDi
 
 type ApprovalDialogKind = 'approve' | 'reject' | 'request-customer-approval' | 'confirm-refund' | 'fail-sourcing';
 type AmountDialogKind = 'change-price' | 'change-shipping-estimate';
-type DialogKind = ApprovalDialogKind | AmountDialogKind | 'edit-description' | null;
+type DialogKind = ApprovalDialogKind | AmountDialogKind | 'edit-description' | 'override-status' | null;
 
 const APPROVAL_FEEDBACK_KEY: Record<ApprovalDialogKind, MessageKey> = {
     approve: 'orders.detail.feedback.approve',
@@ -74,6 +75,21 @@ const PAID_CANCELLABLE_STATUSES = [
     'INSPECTION_PENDING',
     'READY_TO_SHIP',
 ];
+
+/**
+ * Ajuste manual de status (`POST /orders/:id/status`): origens e destinos que
+ * o backend aceita. Fora daqui o pedido ainda não foi pago, já viajou ou foi
+ * encerrado, e cada caso tem a própria ação.
+ */
+const OVERRIDABLE_FROM_STATUSES = [
+    'SUBMITTED',
+    'PURCHASED',
+    'SELLER_SHIPPED',
+    'IN_WAREHOUSE',
+    'INSPECTION_PENDING',
+    'READY_TO_SHIP',
+];
+const OVERRIDE_TARGET_STATUSES = ['PURCHASED', 'SELLER_SHIPPED', 'IN_WAREHOUSE', 'READY_TO_SHIP'];
 
 const SOURCING_NEXT_STEP: Record<string, { status: string; labelKey: MessageKey }> = {
     SUBMITTED: { status: 'PURCHASED', labelKey: 'orders.detail.actions.markPurchased' },
@@ -175,6 +191,18 @@ export function OrderDetailPage() {
         } finally {
             setBusy(undefined);
         }
+    }
+
+    async function handleOverrideStatusConfirm(values: { reason: string } & Record<string, string>) {
+        const updated = await api<AdminOrder>(`/orders/${params.id}/status`, {
+            method: 'POST',
+            body: JSON.stringify({
+                status: values.status,
+                reason: values.reason,
+                notifyCustomer: values.notifyCustomer === 'yes',
+            }),
+        });
+        applyUpdate(updated, t('orders.detail.feedback.statusOverridden'));
     }
 
     /** Abre o laudo de um item que chegou ao armazém. */
@@ -283,10 +311,12 @@ export function OrderDetailPage() {
     // Espelha `REJECTABLE_STATUSES` do backend: pedido pago que ainda não
     // viajou pode ser cancelado e o pagamento volta ao saldo na hora.
     const canCancelPaid = PAID_CANCELLABLE_STATUSES.includes(order.status);
+    const canOverrideStatus = order.fulfillmentMode === 'SOURCED' && OVERRIDABLE_FROM_STATUSES.includes(order.status);
     const hasActions =
         canEditDescriptionAndMedia ||
         canReprice ||
         Boolean(sourcingStep) ||
+        canOverrideStatus ||
         canCancelPaid ||
         order.status === 'INSPECTION_PENDING' ||
         order.status === 'REFUND_REQUESTED';
@@ -438,6 +468,16 @@ export function OrderDetailPage() {
                             {t('orders.detail.actions.markReadyToShip')}
                         </Button>
                     )}
+                    {canOverrideStatus && (
+                        <Button
+                            leadingIcon={<ListRestart className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('override-status')}
+                            size="small"
+                            variant="ghost"
+                        >
+                            {t('orders.detail.actions.overrideStatus')}
+                        </Button>
+                    )}
                     {sourcingStep && (
                         <Button
                             leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
@@ -496,7 +536,10 @@ export function OrderDetailPage() {
                                                 {item.productName}
                                             </>
                                         }
-                                        value={money(lineTotalMinor(item.unitAmountMinor, item.quantity), item.currency)}
+                                        value={money(
+                                            lineTotalMinor(item.unitAmountMinor, item.quantity),
+                                            item.currency,
+                                        )}
                                         meta={
                                             <>
                                                 {item.storeProductId
@@ -745,6 +788,39 @@ export function OrderDetailPage() {
                 onConfirm={handleApprovalConfirm}
                 open={dialog === 'request-customer-approval'}
                 title={t('orders.detail.dialogs.requestCustomerApproval.title')}
+            />
+            <ActionDialog
+                confirmLabel={t('orders.detail.dialogs.overrideStatus.confirmLabel')}
+                description={t('orders.detail.dialogs.overrideStatus.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleOverrideStatusConfirm}
+                open={dialog === 'override-status'}
+                requireReason
+                requireTotp={false}
+                title={t('orders.detail.dialogs.overrideStatus.title')}
+                fields={[
+                    {
+                        name: 'status',
+                        kind: 'select',
+                        label: t('orders.detail.dialogs.overrideStatus.statusLabel'),
+                        defaultValue: order.status === 'READY_TO_SHIP' ? 'IN_WAREHOUSE' : 'READY_TO_SHIP',
+                        options: OVERRIDE_TARGET_STATUSES.filter((status) => status !== order.status).map((status) => ({
+                            value: status,
+                            label: orderStatusLabel(status),
+                        })),
+                    },
+                    {
+                        name: 'notifyCustomer',
+                        kind: 'select',
+                        label: t('orders.detail.dialogs.overrideStatus.notifyLabel'),
+                        hint: t('orders.detail.dialogs.overrideStatus.notifyHint'),
+                        defaultValue: 'no',
+                        options: [
+                            { value: 'no', label: t('orders.detail.dialogs.overrideStatus.notifyNo') },
+                            { value: 'yes', label: t('orders.detail.dialogs.overrideStatus.notifyYes') },
+                        ],
+                    },
+                ]}
             />
             <ActionDialog
                 confirmLabel={t('orders.detail.dialogs.failSourcing.confirmLabel')}

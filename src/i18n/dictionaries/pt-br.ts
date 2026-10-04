@@ -717,6 +717,7 @@ export const ptBR = {
                 'Fila de análise de pedidos de cotação e compra por link — aprove, rejeite, confirme pagamento manual e libere para envio.',
             statusLabel: 'Status',
             statusAll: 'Todos',
+            showCancelled: 'Exibir cancelados',
             error: 'Não foi possível carregar os pedidos.',
             loading: 'Carregando pedidos…',
             columns: {
@@ -817,6 +818,7 @@ export const ptBR = {
                 openInspection: 'Abrir inspeção',
                 confirmRefund: 'Confirmar reembolso',
                 failSourcing: 'Compra falhou',
+                overrideStatus: 'Alterar status',
                 confirmRefundSuperadminOnly: 'Só o admin master confirma reembolso.',
                 needsCustomerApproval: 'O cliente ainda não autorizou este valor.',
             },
@@ -882,6 +884,17 @@ export const ptBR = {
                         'Devolve ao saldo do cliente o que ele pagou por este pedido (descontando adicionais já estornados). O pedido é marcado como reembolsado e não se move mais.',
                     confirmLabel: 'Confirmar reembolso',
                 },
+                overrideStatus: {
+                    title: 'Alterar status do pedido',
+                    description:
+                        'Leva o pedido direto ao status escolhido, sem passar pelas etapas do meio — para pôr em dia pedido já comprado ou recebido que ficou parado. Não mexe em dinheiro. O motivo aparece no histórico que o cliente vê.',
+                    confirmLabel: 'Alterar status',
+                    statusLabel: 'Novo status',
+                    notifyLabel: 'Aviso ao cliente',
+                    notifyNo: 'Não enviar e-mail',
+                    notifyYes: 'Enviar um e-mail sobre o novo status',
+                    notifyHint: 'As etapas puladas nunca geram e-mail.',
+                },
                 failSourcing: {
                     title: 'Registrar falha na compra',
                     description:
@@ -924,6 +937,7 @@ export const ptBR = {
                 shippingEstimateChanged: 'Frete estimado alterado.',
                 markedReadyToShip: 'Pedido marcado como pronto para envio.',
                 sourcingAdvanced: 'Etapa da compra atualizada.',
+                statusOverridden: 'Status do pedido alterado.',
                 'confirm-refund': 'Reembolso confirmado.',
                 'fail-sourcing': 'Pedido enviado para reembolso.',
             },
@@ -1109,6 +1123,7 @@ export const ptBR = {
                 requoteFreight: 'Editar frete',
                 dispatch: 'Despachar',
                 correctDispatch: 'Corrigir rastreio',
+                overrideStatus: 'Alterar status',
                 cancel: 'Cancelar pacote',
             },
             fields: {
@@ -1176,6 +1191,7 @@ export const ptBR = {
                 shipment: 'Dados de frete atualizados.',
                 dispatch: 'Pacote despachado.',
                 correctDispatch: 'Dados de rastreio corrigidos.',
+                statusOverridden: 'Status do pacote alterado.',
                 trackingAdvanced: 'Rastreio atualizado.',
                 submitted: 'Pacote enviado para aprovação.',
                 photoUploaded: 'Foto enviada com sucesso.',
@@ -1212,6 +1228,18 @@ export const ptBR = {
                     currency: 'Moeda',
                     amount: 'Custo da transportadora',
                     amountHint: 'Valor de tabela, sem margem. O cliente paga este custo mais a margem configurada.',
+                },
+                overrideStatus: {
+                    title: 'Alterar status do pacote',
+                    description:
+                        'Leva o pacote direto ao status escolhido, sem passar pelas etapas do meio — para frete pago por fora ou pacote que já viajou sem registro. Pular o pagamento marca o frete como pago sem cobrar o saldo do cliente. Despachar ou entregar por aqui também atualiza os pedidos do pacote.',
+                    confirmLabel: 'Alterar status',
+                    statusLabel: 'Novo status',
+                    notifyLabel: 'Aviso ao cliente',
+                    notifyNo: 'Não enviar e-mail',
+                    notifyYes: 'Enviar um e-mail sobre o novo status',
+                    notifyHint: 'As etapas puladas nunca geram e-mail. "Pronto para despacho" não tem e-mail.',
+                    carrierHint: 'Opcional. Usado se o pacote ainda não tinha despacho registrado.',
                 },
                 correctDispatch: {
                     title: 'Corrigir rastreio',
