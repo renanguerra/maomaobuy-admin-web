@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { Skeleton } from '@/components/admin/Skeleton';
 import { orderStatusTone, packageStatusTone, StatusPill } from '@/components/admin/StatusPill';
-import { ButtonLink } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { queueStage, usePendingCounts } from '@/services/admin/pending-counts';
 import { STAGE_LINKS, TEAM_ORDER_STATUSES, TEAM_PACKAGE_STATUSES } from '@/services/admin/work-queues';
@@ -68,7 +68,7 @@ interface Previews {
  */
 export function AdminDashboardPage() {
     const { t } = useTranslation();
-    const { queue } = usePendingCounts();
+    const { queue, error: queueError, loading: queueLoading, refresh } = usePendingCounts();
     const [previews, setPreviews] = useState<Previews>();
     const [error, setError] = useState<string>();
 
@@ -112,7 +112,7 @@ export function AdminDashboardPage() {
                 description={t('dashboard.description')}
                 kicker={t('dashboard.kicker')}
                 title={t('dashboard.title')}
-                actions={queue && <OverdueSummary count={overdueTotal} />}
+                actions={queue && !queueError && <OverdueSummary count={overdueTotal} />}
             />
 
             {error && (
@@ -121,19 +121,36 @@ export function AdminDashboardPage() {
                 </Alert>
             )}
 
-            <Lane hint={t('dashboard.lanes.teamHint')} title={t('dashboard.lanes.team')}>
-                {TEAM_STAGES.map((key) => {
-                    const stage = queueStage(queue, key);
-                    if (queue && HIDDEN_WHEN_EMPTY.has(key) && stage.count === 0) return null;
-                    return <QueueTile key={key} loading={!queue} stage={stage} />;
-                })}
-            </Lane>
+            {queueError && (
+                <Alert
+                    tone="danger"
+                    title={t('dashboard.queueErrorTitle')}
+                    action={
+                        <Button size="small" variant="secondary" onClick={() => void refresh()} disabled={queueLoading}>
+                            {t('common.actions.retry')}
+                        </Button>
+                    }
+                >
+                    <p>{t(queue ? 'dashboard.queueStale' : 'dashboard.queueError')}</p>
+                </Alert>
+            )}
+            {(queue || !queueError) && (
+                <>
+                    <Lane hint={t('dashboard.lanes.teamHint')} title={t('dashboard.lanes.team')}>
+                        {TEAM_STAGES.map((key) => {
+                            const stage = queueStage(queue, key);
+                            if (queue && HIDDEN_WHEN_EMPTY.has(key) && stage.count === 0) return null;
+                            return <QueueTile key={key} loading={!queue} stage={stage} />;
+                        })}
+                    </Lane>
 
-            <Lane hint={t('dashboard.lanes.waitingHint')} title={t('dashboard.lanes.waiting')} muted>
-                {CUSTOMER_STAGES.map((key) => (
-                    <QueueTile key={key} loading={!queue} stage={queueStage(queue, key)} />
-                ))}
-            </Lane>
+                    <Lane hint={t('dashboard.lanes.waitingHint')} title={t('dashboard.lanes.waiting')} muted>
+                        {CUSTOMER_STAGES.map((key) => (
+                            <QueueTile key={key} loading={!queue} stage={queueStage(queue, key)} />
+                        ))}
+                    </Lane>
+                </>
+            )}
 
             <div className="grid gap-5 xl:grid-cols-2">
                 <SectionCard

@@ -3,6 +3,7 @@ import type { Messages } from './pt-br';
 export const zhHans: Messages = {
     common: {
         actions: {
+            retry: '重试',
             save: '保存',
             cancel: '取消',
             delete: '删除',
@@ -99,6 +100,9 @@ export const zhHans: Messages = {
         pendingAria: '项待处理',
     },
     dashboard: {
+        queueErrorTitle: '无法加载工作队列',
+        queueError: '请重试以查看待办事项。',
+        queueStale: '显示的是上次查询的数据，可能已过期。',
         kicker: '管理后台',
         title: '待办',
         error: '无法加载面板数据。',
