@@ -309,8 +309,11 @@ export function OrderDetailPage() {
     const itemsWithoutInspection =
         order.status === 'IN_WAREHOUSE' ? order.items.filter((item) => !inspectedItemIds.has(item.id)) : [];
     // Espelha `REJECTABLE_STATUSES` do backend: pedido pago que ainda não
-    // viajou pode ser cancelado e o pagamento volta ao saldo na hora.
-    const canCancelPaid = PAID_CANCELLABLE_STATUSES.includes(order.status);
+    // viajou pode ser cancelado e o pagamento volta ao saldo na hora. Como
+    // devolve dinheiro, é do Financeiro (o backend responde 403 aos outros).
+    const canCancelPaid =
+        PAID_CANCELLABLE_STATUSES.includes(order.status) &&
+        (admin?.role === 'FINANCE' || admin?.role === 'SUPERADMIN');
     const canOverrideStatus = order.fulfillmentMode === 'SOURCED' && OVERRIDABLE_FROM_STATUSES.includes(order.status);
     const hasActions =
         canEditDescriptionAndMedia ||
