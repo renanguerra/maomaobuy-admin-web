@@ -24,8 +24,10 @@ export function proxy() {
     response.headers.set('X-Frame-Options', 'DENY');
     response.headers.set('X-Content-Type-Options', 'nosniff');
     // Os endereços do painel carregam ids de cliente e de pedido; nada disso
-    // precisa sair para outro site.
-    response.headers.set('Referrer-Policy', 'no-referrer');
+    // precisa sair para outro site. `same-origin`, e não `no-referrer`: o
+    // proxy `/api` confere a origem pelo `Referer` nos GET (que não levam
+    // `Origin`), e sem ele recusava até o `/admin-auth/me` do login.
+    response.headers.set('Referrer-Policy', 'same-origin');
     response.headers.set('Permissions-Policy', PERMISSIONS_POLICY);
 
     return response;
