@@ -7,14 +7,14 @@ import { Alert } from '@/components/admin/Alert';
 import { SummaryList } from '@/components/admin/SummaryList';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
-import { cny, money, packageStatusLabel, type CostEntry, type CostPreset, type PackageCostSheet } from '@/types/api';
+import { cny, packageStatusLabel, type CostEntry, type PackageCostSheet } from '@/types/api';
 import { CostEntriesTable } from './CostEntriesTable';
 import { CostEntryDialog } from './CostEntryDialog';
-import { canWriteCosts, todayIso } from './cost-utils';
+import { canWriteCosts } from './cost-utils';
+import { PresetQuickAdd } from './PresetQuickAdd';
 import { useCostPresets } from './use-cost-presets';
 
 interface PackageCostSheetDialogProps {
@@ -31,12 +31,10 @@ interface PackageCostSheetDialogProps {
 export function PackageCostSheetDialog({ packageId, onClose, onChanged }: PackageCostSheetDialogProps) {
     const { t } = useTranslation();
     const { admin } = useAdminAccountAuth();
-    const { notify } = useToast();
     const [sheet, setSheet] = useState<PackageCostSheet>();
     const [error, setError] = useState<string>();
     const [version, setVersion] = useState(0);
     const [editing, setEditing] = useState<{ entry?: CostEntry } | null>(null);
-    const [adding, setAdding] = useState<string>();
     const presets = useCostPresets(packageId !== null);
     const canWrite = canWriteCosts(admin?.role);
 
@@ -64,33 +62,6 @@ export function PackageCostSheetDialog({ packageId, onClose, onChanged }: Packag
         setVersion((value) => value + 1);
         onChanged?.();
     }
-
-    async function quickAdd(preset: CostPreset) {
-        if (!packageId) return;
-        setAdding(preset.id);
-        try {
-            await api('/costs/entries', {
-                method: 'POST',
-                body: JSON.stringify({
-                    category: preset.category,
-                    description: preset.name,
-                    quantity: 1,
-                    unitAmountMinor: preset.unitAmountMinor,
-                    currency: preset.currency,
-                    incurredOn: todayIso(),
-                    packageId,
-                }),
-            });
-            notify({ tone: 'success', title: t('profit.sheet.presetAdded', { name: preset.name }) });
-            refresh();
-        } catch (err) {
-            notify({ tone: 'danger', title: err instanceof ApiError ? err.message : t('common.errors.generic') });
-        } finally {
-            setAdding(undefined);
-        }
-    }
-
-    const activePresets = presets.filter((preset) => preset.isActive);
 
     return (
         <>
@@ -193,21 +164,8 @@ export function PackageCostSheetDialog({ packageId, onClose, onChanged }: Packag
                                     </Button>
                                 )}
                             </div>
-                            {canWrite && activePresets.length > 0 && (
-                                <div className="mb-3 flex flex-wrap gap-2">
-                                    {activePresets.map((preset) => (
-                                        <Button
-                                            key={preset.id}
-                                            loading={adding === preset.id}
-                                            disabled={adding !== undefined}
-                                            onClick={() => void quickAdd(preset)}
-                                            size="small"
-                                            variant="ghost"
-                                        >
-                                            + {preset.name} · {money(preset.unitAmountMinor, preset.currency)}
-                                        </Button>
-                                    ))}
-                                </div>
+                            {canWrite && packageId && (
+                                <PresetQuickAdd onAdded={refresh} presets={presets} target={{ packageId }} />
                             )}
                             <CostEntriesTable
                                 canWrite={canWrite}

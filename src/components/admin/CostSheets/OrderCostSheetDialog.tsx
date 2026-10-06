@@ -16,6 +16,7 @@ import { cny, orderStatusLabel, type CostEntry, type OrderCostItem, type OrderCo
 import { CostEntriesTable } from './CostEntriesTable';
 import { CostEntryDialog } from './CostEntryDialog';
 import { canWriteCosts, canWriteItemCosts } from './cost-utils';
+import { PresetQuickAdd } from './PresetQuickAdd';
 import { useCostPresets } from './use-cost-presets';
 
 interface OrderCostSheetDialogProps {
@@ -191,6 +192,13 @@ export function OrderCostSheetDialog({ orderId, onClose, onChanged }: OrderCostS
                                     </Button>
                                 )}
                             </div>
+                            {canWrite && (
+                                <PresetQuickAdd
+                                    onAdded={() => refresh()}
+                                    presets={presets}
+                                    target={{ orderId: current.orderId }}
+                                />
+                            )}
                             <CostEntriesTable
                                 canWrite={canWrite}
                                 entries={current.entries}

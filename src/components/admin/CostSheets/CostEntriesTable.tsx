@@ -66,7 +66,7 @@ export function CostEntriesTable({ entries, canWrite, onEdit, onDeleted, showTar
                                 showTarget && entry.orderId
                                     ? t('profit.entries.order', { id: entry.orderId.slice(0, 8) })
                                     : null,
-                                entry.createdBy?.name,
+                                entry.automatic ? t('profit.entries.automatic') : entry.createdBy?.name,
                             ]
                                 .filter(Boolean)
                                 .join(' · ')}

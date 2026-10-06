@@ -10,7 +10,13 @@ import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
-import { COST_CATEGORIES, type CostCategory, type CostCurrency, type CostPreset } from '@/types/api';
+import {
+    COST_CATEGORIES,
+    type CostAutoApply,
+    type CostCategory,
+    type CostCurrency,
+    type CostPreset,
+} from '@/types/api';
 
 const FORM_ID = 'cost-preset-form';
 
@@ -64,6 +70,8 @@ function PresetForm({
     const [category, setCategory] = useState<CostCategory>(preset?.category ?? 'PACKAGING');
     const [unitAmountMinor, setUnitAmountMinor] = useState(preset?.unitAmountMinor ?? '0');
     const [currency, setCurrency] = useState<CostCurrency>(preset?.currency ?? 'CNY');
+    const [autoApply, setAutoApply] = useState<CostAutoApply | ''>(preset?.autoApply ?? '');
+    const [autoQuantity, setAutoQuantity] = useState(String(preset?.autoQuantity ?? 1));
     const [isActive, setIsActive] = useState(preset?.isActive ?? true);
     const [error, setError] = useState<string>();
 
@@ -78,7 +86,15 @@ function PresetForm({
         try {
             await api(preset ? `/costs/presets/${preset.id}` : '/costs/presets', {
                 method: preset ? 'PATCH' : 'POST',
-                body: JSON.stringify({ name: name.trim(), category, unitAmountMinor, currency, isActive }),
+                body: JSON.stringify({
+                    name: name.trim(),
+                    category,
+                    unitAmountMinor,
+                    currency,
+                    autoApply: autoApply || null,
+                    autoQuantity: Number(autoQuantity) || 1,
+                    isActive,
+                }),
             });
             onSaved();
         } catch (err) {
@@ -126,6 +142,31 @@ function PresetForm({
                     ]}
                     value={currency}
                 />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-[1fr_8rem]">
+                <Select
+                    hint={t('profit.presets.autoApplyHint')}
+                    label={t('profit.presets.autoApply')}
+                    onChange={(event) => setAutoApply(event.target.value as CostAutoApply | '')}
+                    options={[
+                        { value: '', label: t('profit.presets.autoApplyOptions.none') },
+                        { value: 'ORDER', label: t('profit.presets.autoApplyOptions.ORDER') },
+                        { value: 'PACKAGE', label: t('profit.presets.autoApplyOptions.PACKAGE') },
+                    ]}
+                    value={autoApply}
+                />
+                {autoApply && (
+                    <Input
+                        label={t('profit.presets.autoQuantity')}
+                        max={1000}
+                        min={1}
+                        onChange={(event) => setAutoQuantity(event.target.value)}
+                        required
+                        step={1}
+                        type="number"
+                        value={autoQuantity}
+                    />
+                )}
             </div>
             <Checkbox
                 checked={isActive}

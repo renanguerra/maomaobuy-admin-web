@@ -1187,6 +1187,7 @@ export interface AdminUnpackedCustomer {
 
 export const COST_CATEGORIES = [
     'PACKAGING',
+    'GIFTS',
     'DOMESTIC_FREIGHT',
     'INTERNATIONAL_FREIGHT',
     'PRODUCT',
@@ -1198,6 +1199,7 @@ export const COST_CATEGORIES = [
 ] as const;
 export type CostCategory = (typeof COST_CATEGORIES)[number];
 export type CostCurrency = 'CNY' | 'BRL';
+export type CostAutoApply = 'ORDER' | 'PACKAGE';
 
 export interface CostEntry {
     id: string;
@@ -1214,6 +1216,8 @@ export interface CostEntry {
     packageId: string | null;
     packageCode: string | null;
     createdBy: { id: string; name: string } | null;
+    /** Lançado sozinho no pagamento (embalagem/brinde automático). */
+    automatic: boolean;
     createdAt: string;
 }
 
@@ -1227,6 +1231,9 @@ export interface CostPreset {
     category: CostCategory;
     unitAmountMinor: string;
     currency: CostCurrency;
+    /** Entra sozinho em todo pedido pago ou toda caixa paga; nulo = só manual. */
+    autoApply: CostAutoApply | null;
+    autoQuantity: number;
     isActive: boolean;
 }
 

@@ -904,7 +904,13 @@ function PresetsTab({
                     ) : undefined
                 }
             >
-                <p className="m-0 text-xs text-muted dark:text-night-muted">{t('profit.presets.hint')}</p>
+                <div className="grid gap-1">
+                    <p className="m-0 text-xs text-muted dark:text-night-muted">{t('profit.presets.hint')}</p>
+                    <p className="m-0 text-xs font-semibold text-ink dark:text-night-text">
+                        {t('profit.presets.perOrderTotal', { total: automaticTotal(presets, 'ORDER') })} ·{' '}
+                        {t('profit.presets.perPackageTotal', { total: automaticTotal(presets, 'PACKAGE') })}
+                    </p>
+                </div>
             </Toolbar>
             <ul className="m-0 grid list-none gap-0 px-4 pb-3 sm:px-5">
                 {presets.length === 0 && <li className="py-6 text-sm text-muted">{t('profit.presets.empty')}</li>}
@@ -916,7 +922,12 @@ function PresetsTab({
                         <span className="min-w-0">
                             <span className="block truncate text-sm font-semibold">{preset.name}</span>
                             <span className="block text-xs text-muted dark:text-night-muted">
-                                {t(`profit.categories.${preset.category}`)}
+                                {t(`profit.categories.${preset.category}`)} ·{' '}
+                                {preset.autoApply === 'ORDER'
+                                    ? t('profit.presets.ruleOrder', { quantity: preset.autoQuantity })
+                                    : preset.autoApply === 'PACKAGE'
+                                      ? t('profit.presets.rulePackage', { quantity: preset.autoQuantity })
+                                      : t('profit.presets.ruleManual')}
                             </span>
                         </span>
                         <span className="flex items-center gap-2">
@@ -944,4 +955,15 @@ function PresetsTab({
             />
         </>
     );
+}
+
+/** Quanto cada pedido/caixa pago leva de custo automático, somado por moeda. */
+function automaticTotal(presets: readonly CostPreset[], target: 'ORDER' | 'PACKAGE'): string {
+    const totals = { CNY: 0, BRL: 0 };
+    for (const preset of presets)
+        if (preset.isActive && preset.autoApply === target)
+            totals[preset.currency] += Number(preset.unitAmountMinor) * preset.autoQuantity;
+    const parts = [cny(totals.CNY)];
+    if (totals.BRL > 0) parts.push(brl(totals.BRL));
+    return parts.join(' + ');
 }
