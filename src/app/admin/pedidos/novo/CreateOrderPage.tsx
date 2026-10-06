@@ -84,7 +84,15 @@ export function CreateOrderPage({ editOrderId }: { editOrderId?: string } = {}) 
             const productIds = [
                 ...new Set(order.items.flatMap((item) => (item.storeProductId ? [item.storeProductId] : []))),
             ];
-            const products = await Promise.all(productIds.map((id) => api<AdminProduct>(`/products/${id}`)));
+            // Todos os produtos numa requisição (filtro `ids`), não um GET por item.
+            const products =
+                productIds.length > 0
+                    ? (
+                          await api<Page<AdminProduct>>(
+                              `/products?${new URLSearchParams({ ids: productIds.join(','), limit: '100' }).toString()}`,
+                          )
+                      ).data
+                    : [];
             const byId = new Map(products.map((product) => [product.id, product]));
             if (!active) return;
             setEditOrder(order);
