@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { api } from '@/services/api';
 import type { WorkQueue, WorkQueueStage, WorkQueueStageKey } from '@/types/api';
 
@@ -53,19 +53,33 @@ function badgesOf(queue: WorkQueue): PendingCounts {
     return Object.fromEntries(entries) as PendingCounts;
 }
 
-type Listener = (queue: WorkQueue | undefined) => void;
+type QueueState = { queue: WorkQueue | undefined; status: 'idle' | 'loading' | 'ready' | 'error' };
+type Listener = () => void;
 
 /** Idade máxima do cache antes de uma tela nova (ou a volta à aba) buscar de novo. */
 const STALE_AFTER_MS = 60_000;
 
 let cache: WorkQueue | undefined;
+const initialState: QueueState = { queue: undefined, status: 'idle' };
+let state = initialState;
+let generation = 0;
 let fetchedAt = 0;
 let inFlight: Promise<WorkQueue> | undefined;
 const listeners = new Set<Listener>();
 
-function publish(next: WorkQueue | undefined) {
+function subscribe(listener: Listener) {
+    listeners.add(listener);
+    return () => {
+        listeners.delete(listener);
+    };
+}
+const getSnapshot = () => state;
+const getServerSnapshot = () => initialState;
+
+function publish(next: WorkQueue | undefined, status: QueueState['status']) {
     cache = next;
-    for (const listener of listeners) listener(next);
+    state = { queue: next, status };
+    for (const listener of listeners) listener();
 }
 
 /**
@@ -73,31 +87,38 @@ function publish(next: WorkQueue | undefined) {
  * contagem, atrasados e o mais antigo de cada uma.
  */
 function fetchQueue(): Promise<WorkQueue> {
-    return api<WorkQueue>('/dashboard/work-queue');
+    return api<WorkQueue>('/dashboard/work-queue', { signal: AbortSignal.timeout(15_000) });
 }
 
 /** Recarrega as filas e avisa todo mundo que as exibe (sidebar, painel, abas). */
 export async function refreshPendingCounts(): Promise<WorkQueue | undefined> {
-    inFlight ??= fetchQueue()
+    if (inFlight) return inFlight.catch(() => undefined);
+    const currentGeneration = generation;
+    publish(cache, 'loading');
+    const request = fetchQueue()
         .then((queue) => {
-            fetchedAt = Date.now();
-            publish(queue);
+            if (generation === currentGeneration) {
+                fetchedAt = Date.now();
+                publish(queue, 'ready');
+            }
             return queue;
         })
+        .catch((error: unknown) => {
+            if (generation === currentGeneration) publish(cache, 'error');
+            throw error;
+        })
         .finally(() => {
-            inFlight = undefined;
+            if (inFlight === request) inFlight = undefined;
         });
-
-    try {
-        return await inFlight;
-    } catch {
-        return undefined;
-    }
+    inFlight = request;
+    return request.catch(() => undefined);
 }
 
 export function clearPendingCounts() {
+    generation += 1;
     fetchedAt = 0;
-    publish(undefined);
+    inFlight = undefined;
+    publish(undefined, 'idle');
 }
 
 function refreshIfStale() {
@@ -110,20 +131,25 @@ function refreshIfStale() {
  * não dispare a mesma consulta; voltar à aba depois de um minuto atualiza.
  */
 export function usePendingCounts() {
-    const [queue, setQueue] = useState<WorkQueue | undefined>(cache);
+    const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+    const { queue, status } = snapshot;
 
     useEffect(() => {
-        listeners.add(setQueue);
         refreshIfStale();
         const onVisible = () => {
             if (document.visibilityState === 'visible') refreshIfStale();
         };
         document.addEventListener('visibilitychange', onVisible);
         return () => {
-            listeners.delete(setQueue);
             document.removeEventListener('visibilitychange', onVisible);
         };
     }, []);
 
-    return { queue, counts: queue ? badgesOf(queue) : undefined, refresh: refreshPendingCounts };
+    return {
+        queue,
+        error: status === 'error',
+        loading: status === 'idle' || status === 'loading',
+        counts: queue ? badgesOf(queue) : undefined,
+        refresh: refreshPendingCounts,
+    };
 }

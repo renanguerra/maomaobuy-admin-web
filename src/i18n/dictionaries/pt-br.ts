@@ -5,6 +5,7 @@
 export const ptBR = {
     common: {
         actions: {
+            retry: 'Tentar novamente',
             save: 'Salvar',
             cancel: 'Cancelar',
             delete: 'Excluir',
@@ -101,6 +102,9 @@ export const ptBR = {
         pendingAria: 'pendências',
     },
     dashboard: {
+        queueErrorTitle: 'Não foi possível carregar as filas',
+        queueError: 'Tente novamente para consultar as pendências.',
+        queueStale: 'Os números exibidos são da última consulta e podem estar desatualizados.',
         kicker: 'Painel administrativo',
         title: 'Pendências',
         error: 'Não foi possível carregar o painel.',
