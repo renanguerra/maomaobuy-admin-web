@@ -800,6 +800,27 @@ export const ptBR = {
             emptyFiltered: 'Nenhum pedido nesse filtro',
             emptyFilteredDescription: 'Nenhum pedido está nessa situação no momento.',
         },
+        editItems: {
+            kicker: 'Pedido montado pela equipe',
+            title: 'Editar itens do pedido #{{id}}',
+            description:
+                'Inclua, remova ou mude a quantidade enquanto o cliente não aceitou. Total, taxa e frete estimado são recalculados.',
+            loading: 'Carregando o pedido…',
+            loadError: 'Não foi possível carregar o pedido.',
+            notEditable:
+                'Só dá para editar itens de um pedido montado pela equipe que ainda espera o aceite do cliente.',
+            modeMismatch:
+                'Este pedido é {{mode}}: produtos do outro tipo não entram nele. Remova-os ou monte outro pedido.',
+            modeInStock: 'de estoque próprio',
+            modeSourced: 'sob encomenda',
+            submit: 'Salvar itens',
+            confirmTitle: 'Salvar os itens do pedido #{{id}}',
+            confirmDescription:
+                'O cliente vê os itens e o total novos no pedido, com a mudança no histórico. Nenhum e-mail novo é enviado.',
+            confirmButton: 'Salvar itens',
+            savedToast: 'Itens do pedido atualizados.',
+            customer: 'Cliente',
+        },
         create: {
             kicker: 'Pedidos',
             title: 'Novo pedido para cliente',
@@ -868,6 +889,7 @@ export const ptBR = {
             actions: {
                 editDescription: 'Editar descrição',
                 changePrice: 'Alterar valor',
+                editItems: 'Editar itens',
                 changeShippingEstimate: 'Alterar frete estimado',
                 requestCustomerApproval: 'Solicitar aprovação do cliente',
                 approve: 'Aprovar',

@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
     CheckCircle2,
     History,
+    ListPlus,
     ListRestart,
     MessageSquare,
     PackageCheck,
@@ -30,7 +31,7 @@ import { orderStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { SummaryList } from '@/components/admin/SummaryList';
 import { Timeline } from '@/components/admin/Timeline';
 import { MediaGrid, MediaTile } from '@/components/admin/MediaGrid';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import type { MessageKey } from '@/i18n/translations';
@@ -316,7 +317,10 @@ export function OrderDetailPage() {
     const canCancelPaid =
         PAID_CANCELLABLE_STATUSES.includes(order.status) && (admin?.role === 'FINANCE' || admin?.role === 'SUPERADMIN');
     const canOverrideStatus = order.fulfillmentMode === 'SOURCED' && OVERRIDABLE_FROM_STATUSES.includes(order.status);
+    // Pedido montado pela equipe troca os itens até o cliente aceitar.
+    const canEditItems = order.createdByAdminId !== null && order.status === 'AWAITING_CUSTOMER_APPROVAL';
     const hasActions =
+        canEditItems ||
         canEditDescriptionAndMedia ||
         canReprice ||
         Boolean(sourcingStep) ||
@@ -376,6 +380,16 @@ export function OrderDetailPage() {
                         >
                             {t('orders.detail.actions.editDescription')}
                         </Button>
+                    )}
+                    {canEditItems && (
+                        <ButtonLink
+                            href={`/admin/pedidos/${order.id}/itens`}
+                            leadingIcon={<ListPlus className="h-4 w-4" aria-hidden="true" />}
+                            size="small"
+                            variant="ghost"
+                        >
+                            {t('orders.detail.actions.editItems')}
+                        </ButtonLink>
                     )}
                     {canReprice && (
                         <>
