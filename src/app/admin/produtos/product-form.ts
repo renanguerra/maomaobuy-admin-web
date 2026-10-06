@@ -18,6 +18,8 @@ export interface ProductFormValues {
     marketplaceUrl: string;
     sourceAmountMinor: string;
     estimatedShippingAmountMinor: string;
+    /** Custo unitário em fen; "0" = ainda não cadastrado. */
+    costAmountMinor: string;
     stock: string;
     isPublished: boolean;
     isPreSale: boolean;
@@ -49,6 +51,7 @@ const EMPTY: ProductFormValues = {
     marketplaceUrl: '',
     sourceAmountMinor: '0',
     estimatedShippingAmountMinor: '0',
+    costAmountMinor: '0',
     stock: '0',
     isPublished: false,
     isPreSale: false,
@@ -79,6 +82,7 @@ function fromProduct(product: AdminProduct): ProductFormValues {
         marketplaceUrl: product.marketplaceUrl ?? '',
         sourceAmountMinor: product.sourceAmountMinor,
         estimatedShippingAmountMinor: product.estimatedShippingAmountMinor ?? '0',
+        costAmountMinor: product.costAmountMinor ?? '0',
         stock: String(product.stock),
         isPublished: product.isPublished,
         isPreSale: product.isPreSale,
@@ -163,6 +167,9 @@ export function toProductPayload(values: ProductFormValues) {
         marketplaceUrl: isOwnStock ? undefined : values.marketplaceUrl,
         sourceAmountMinor: values.sourceAmountMinor,
         estimatedShippingAmountMinor: values.estimatedShippingAmountMinor,
+        // O campo de valor não fica vazio; zero quer dizer "ainda não sei" e
+        // vai como `null`, para o relatório de lucro avisar em vez de somar zero.
+        costAmountMinor: values.costAmountMinor !== '0' ? values.costAmountMinor : null,
         stock: Number(values.stock),
         isPublished: values.isPublished,
         isPreSale: values.isPreSale,

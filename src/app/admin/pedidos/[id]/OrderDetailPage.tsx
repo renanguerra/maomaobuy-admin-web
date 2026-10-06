@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import { ActionBar } from '@/components/admin/ActionBar';
+import { OrderCostSheetDialog } from '@/components/admin/CostSheets';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -107,6 +108,7 @@ export function OrderDetailPage() {
     const [error, setError] = useState<string>();
     const [dialog, setDialog] = useState<DialogKind>(null);
     const [busy, setBusy] = useState<string>();
+    const [costSheetOpen, setCostSheetOpen] = useState(false);
 
     const load = useCallback(() => {
         api<AdminOrder>(`/orders/${params.id}`)
@@ -312,8 +314,7 @@ export function OrderDetailPage() {
     // viajou pode ser cancelado e o pagamento volta ao saldo na hora. Como
     // devolve dinheiro, é do Financeiro (o backend responde 403 aos outros).
     const canCancelPaid =
-        PAID_CANCELLABLE_STATUSES.includes(order.status) &&
-        (admin?.role === 'FINANCE' || admin?.role === 'SUPERADMIN');
+        PAID_CANCELLABLE_STATUSES.includes(order.status) && (admin?.role === 'FINANCE' || admin?.role === 'SUPERADMIN');
     const canOverrideStatus = order.fulfillmentMode === 'SOURCED' && OVERRIDABLE_FROM_STATUSES.includes(order.status);
     const hasActions =
         canEditDescriptionAndMedia ||
@@ -347,7 +348,13 @@ export function OrderDetailPage() {
                         · {order.userEmail}
                     </>
                 }
+                actions={
+                    <Button onClick={() => setCostSheetOpen(true)} size="small" variant="secondary">
+                        {t('profit.actions.costSheet')}
+                    </Button>
+                }
             />
+            <OrderCostSheetDialog onClose={() => setCostSheetOpen(false)} orderId={costSheetOpen ? order.id : null} />
 
             {order.rejectionReason && (
                 <Alert tone="danger" title={t('orders.detail.fields.rejectionReason')}>

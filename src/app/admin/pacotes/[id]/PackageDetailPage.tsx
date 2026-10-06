@@ -21,6 +21,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import { ActionBar } from '@/components/admin/ActionBar';
+import { PackageCostSheetDialog } from '@/components/admin/CostSheets';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -116,6 +117,7 @@ export function PackageDetailPage() {
     const [pkg, setPkg] = useState<AdminPackage>();
     const [error, setError] = useState<string>();
     const [dialog, setDialog] = useState<DialogKind>(null);
+    const [costSheetOpen, setCostSheetOpen] = useState(false);
     const [removingItem, setRemovingItem] = useState<AdminPackageItem>();
     const [busy, setBusy] = useState<string>();
     const [uploading, setUploading] = useState(false);
@@ -376,18 +378,24 @@ export function PackageDetailPage() {
                     </>
                 }
                 actions={
-                    <ButtonLink
-                        href={`/impressao/pacotes?ids=${pkg.id}`}
-                        leadingIcon={<ClipboardList className="h-4 w-4" aria-hidden="true" />}
-                        rel="noopener"
-                        size="small"
-                        target="_blank"
-                        variant="secondary"
-                    >
-                        {t('packages.detail.actions.assemblySheet')}
-                    </ButtonLink>
+                    <>
+                        <Button onClick={() => setCostSheetOpen(true)} size="small" variant="secondary">
+                            {t('profit.actions.costSheet')}
+                        </Button>
+                        <ButtonLink
+                            href={`/impressao/pacotes?ids=${pkg.id}`}
+                            leadingIcon={<ClipboardList className="h-4 w-4" aria-hidden="true" />}
+                            rel="noopener"
+                            size="small"
+                            target="_blank"
+                            variant="secondary"
+                        >
+                            {t('packages.detail.actions.assemblySheet')}
+                        </ButtonLink>
+                    </>
                 }
             />
+            <PackageCostSheetDialog onClose={() => setCostSheetOpen(false)} packageId={costSheetOpen ? pkg.id : null} />
 
             {pkg.rejectionReason && (
                 <Alert tone="danger" title={t('packages.detail.fields.rejectionReason')}>
