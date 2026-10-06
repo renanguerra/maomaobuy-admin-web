@@ -158,7 +158,11 @@ export function OrderOptionalServicesSection({ order, onChanged }: { order: Admi
                     try {
                         await confirm(values);
                     } catch (err) {
-                        setError(err instanceof ApiError ? err.message : t('orders.detail.optionalServicesSection.actionError'));
+                        setError(
+                            err instanceof ApiError
+                                ? err.message
+                                : t('orders.detail.optionalServicesSection.actionError'),
+                        );
                         throw err;
                     }
                 }}

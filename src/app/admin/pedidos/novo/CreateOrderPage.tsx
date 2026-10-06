@@ -49,8 +49,13 @@ const isForSale = (product: AdminProduct) => !product.isCoinExclusive && !produc
  *
  * `?usuario=<id>` já abre com o cliente escolhido — é o link do detalhe do
  * usuário.
+ *
+ * Com `editOrderId` a mesma tela edita os itens de um pedido montado pela
+ * equipe que ainda espera o aceite do cliente (`PUT /orders/:id/items`): o
+ * cliente fica fixo, o recado não aparece (é a descrição do pedido, editada
+ * no detalhe) e o modo do pedido não pode mudar.
  */
-export function CreateOrderPage() {
+export function CreateOrderPage({ editOrderId }: { editOrderId?: string } = {}) {
     const { t } = useTranslation();
     const { notify } = useToast();
     const router = useRouter();
@@ -66,6 +71,55 @@ export function CreateOrderPage() {
     // Uma chave por formulário aberto: um segundo clique (ou a rede repetindo
     // o envio) devolve o mesmo pedido em vez de criar outro.
     const [idempotencyKey] = useState(() => crypto.randomUUID());
+    const editing = Boolean(editOrderId);
+    const [editOrder, setEditOrder] = useState<AdminOrder>();
+    const [editError, setEditError] = useState<string>();
+
+    // Edição: carrega o pedido e os produtos dos itens para montar as linhas.
+    useEffect(() => {
+        if (!editOrderId) return;
+        let active = true;
+        (async () => {
+            const order = await api<AdminOrder>(`/orders/${editOrderId}`);
+            const productIds = [
+                ...new Set(order.items.flatMap((item) => (item.storeProductId ? [item.storeProductId] : []))),
+            ];
+            // Todos os produtos numa requisição (filtro `ids`), não um GET por item.
+            const products =
+                productIds.length > 0
+                    ? (
+                          await api<Page<AdminProduct>>(
+                              `/products?${new URLSearchParams({ ids: productIds.join(','), limit: '100' }).toString()}`,
+                          )
+                      ).data
+                    : [];
+            const byId = new Map(products.map((product) => [product.id, product]));
+            if (!active) return;
+            setEditOrder(order);
+            setCustomer({ id: order.userId, name: order.userName, email: order.userEmail });
+            setLines(
+                order.items.flatMap((item) => {
+                    const product = item.storeProductId ? byId.get(item.storeProductId) : undefined;
+                    return product
+                        ? [
+                              {
+                                  product,
+                                  variantExternalId: item.storeProductVariantExternalId ?? '',
+                                  quantity: item.quantity,
+                              },
+                          ]
+                        : [];
+                }),
+            );
+        })().catch(() => {
+            if (active) setEditError(t('orders.editItems.loadError'));
+        });
+        return () => {
+            active = false;
+        };
+    }, [editOrderId, t]);
+    const editable =
+        !editing || (editOrder?.createdByAdminId != null && editOrder.status === 'AWAITING_CUSTOMER_APPROVAL');
 
     useEffect(() => {
         if (!presetUserId) return;
@@ -119,7 +173,12 @@ export function CreateOrderPage() {
             .filter((line) => line.problem)
             .map((line) => [lineKey(line.productId, line.variantExternalId), line.problem as string]),
     );
-    const canSubmit = Boolean(current?.data) && problems.size === 0 && lines.length > 0;
+    // Na edição o pedido não troca de modo: a prévia não pode abrir outro grupo.
+    const modeMismatch =
+        editing &&
+        Boolean(editOrder) &&
+        (current?.data?.groups ?? []).some((group) => group.fulfillmentMode !== editOrder?.fulfillmentMode);
+    const canSubmit = Boolean(current?.data) && problems.size === 0 && lines.length > 0 && editable && !modeMismatch;
 
     function addLine(product: AdminProduct, variantExternalId: string) {
         setLines((existing) => {
@@ -131,6 +190,16 @@ export function CreateOrderPage() {
                 );
             return [...existing, { product, variantExternalId, quantity: 1 }];
         });
+    }
+
+    async function save({ totpCode, reason }: { totpCode: string; reason: string }) {
+        if (!editOrderId) return;
+        await api<AdminOrder>(`/orders/${editOrderId}/items`, {
+            method: 'PUT',
+            body: JSON.stringify({ items, totpCode, reason: reason.trim() || undefined }),
+        });
+        notify({ tone: 'success', title: t('orders.editItems.savedToast') });
+        router.push(`/admin/pedidos/${editOrderId}`);
     }
 
     async function create({ totpCode, reason }: { totpCode: string; reason: string }) {
@@ -158,24 +227,55 @@ export function CreateOrderPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader
-                backHref="/admin/pedidos"
-                backLabel={t('orders.detail.backLink')}
-                description={t('orders.create.description')}
-                kicker={t('orders.create.kicker')}
-                title={t('orders.create.title')}
-            />
+            {editing ? (
+                <PageHeader
+                    backHref={`/admin/pedidos/${editOrderId}`}
+                    backLabel={t('orders.detail.backLink')}
+                    description={t('orders.editItems.description')}
+                    kicker={t('orders.editItems.kicker')}
+                    title={t('orders.editItems.title', { id: editOrderId?.slice(0, 8) ?? '' })}
+                />
+            ) : (
+                <PageHeader
+                    backHref="/admin/pedidos"
+                    backLabel={t('orders.detail.backLink')}
+                    description={t('orders.create.description')}
+                    kicker={t('orders.create.kicker')}
+                    title={t('orders.create.title')}
+                />
+            )}
+
+            {editError && (
+                <Alert tone="danger">
+                    <p>{editError}</p>
+                </Alert>
+            )}
+            {editing && editOrder && !editable && (
+                <Alert tone="warning">
+                    <p>{t('orders.editItems.notEditable')}</p>
+                </Alert>
+            )}
+            {editing && !editOrder && !editError && (
+                <p className="m-0 text-sm text-muted dark:text-night-muted">{t('orders.editItems.loading')}</p>
+            )}
 
             <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="grid min-w-0 gap-6">
-                    <SectionCard title={t('orders.create.customerTitle')}>
-                        {customerError && (
-                            <Alert className="mb-3" tone="danger">
-                                <p>{customerError}</p>
-                            </Alert>
-                        )}
-                        <CustomerPicker onChange={setCustomer} value={customer} />
-                    </SectionCard>
+                    {editing ? (
+                        <SectionCard title={t('orders.editItems.customer')}>
+                            <span className="block font-semibold text-ink dark:text-night-text">{customer?.name}</span>
+                            <span className="block text-sm text-muted dark:text-night-muted">{customer?.email}</span>
+                        </SectionCard>
+                    ) : (
+                        <SectionCard title={t('orders.create.customerTitle')}>
+                            {customerError && (
+                                <Alert className="mb-3" tone="danger">
+                                    <p>{customerError}</p>
+                                </Alert>
+                            )}
+                            <CustomerPicker onChange={setCustomer} value={customer} />
+                        </SectionCard>
+                    )}
 
                     <SectionCard title={t('orders.create.productsTitle')}>
                         <ProductPicker onAdd={addLine} />
@@ -213,15 +313,17 @@ export function CreateOrderPage() {
                         </div>
                     </SectionCard>
 
-                    <SectionCard title={t('orders.create.noteTitle')}>
-                        <Textarea
-                            hint={t('orders.create.noteHint')}
-                            label={t('orders.create.noteLabel')}
-                            maxLength={2000}
-                            onChange={(event) => setNote(event.target.value)}
-                            value={note}
-                        />
-                    </SectionCard>
+                    {!editing && (
+                        <SectionCard title={t('orders.create.noteTitle')}>
+                            <Textarea
+                                hint={t('orders.create.noteHint')}
+                                label={t('orders.create.noteLabel')}
+                                maxLength={2000}
+                                onChange={(event) => setNote(event.target.value)}
+                                value={note}
+                            />
+                        </SectionCard>
+                    )}
                 </div>
 
                 <aside className="grid gap-4 xl:sticky xl:top-6">
@@ -236,21 +338,44 @@ export function CreateOrderPage() {
                                 <p>{t('orders.create.fixProblems')}</p>
                             </Alert>
                         )}
+                        {modeMismatch && (
+                            <Alert className="mt-4" tone="warning">
+                                <p>
+                                    {t('orders.editItems.modeMismatch', {
+                                        mode:
+                                            editOrder?.fulfillmentMode === 'IN_STOCK'
+                                                ? t('orders.editItems.modeInStock')
+                                                : t('orders.editItems.modeSourced'),
+                                    })}
+                                </p>
+                            </Alert>
+                        )}
                         <Button className="mt-5" disabled={!canSubmit} fullWidth onClick={() => setConfirming(true)}>
-                            {t('orders.create.submit')}
+                            {editing ? t('orders.editItems.submit') : t('orders.create.submit')}
                         </Button>
                     </SectionCard>
                 </aside>
             </div>
 
-            <ActionDialog
-                confirmLabel={t('orders.create.confirmButton')}
-                description={t('orders.create.confirmDescription')}
-                onCancel={() => setConfirming(false)}
-                onConfirm={create}
-                open={confirming && Boolean(customer)}
-                title={t('orders.create.confirmTitle', { name: customer?.name ?? '' })}
-            />
+            {editing ? (
+                <ActionDialog
+                    confirmLabel={t('orders.editItems.confirmButton')}
+                    description={t('orders.editItems.confirmDescription')}
+                    onCancel={() => setConfirming(false)}
+                    onConfirm={save}
+                    open={confirming}
+                    title={t('orders.editItems.confirmTitle', { id: editOrderId?.slice(0, 8) ?? '' })}
+                />
+            ) : (
+                <ActionDialog
+                    confirmLabel={t('orders.create.confirmButton')}
+                    description={t('orders.create.confirmDescription')}
+                    onCancel={() => setConfirming(false)}
+                    onConfirm={create}
+                    open={confirming && Boolean(customer)}
+                    title={t('orders.create.confirmTitle', { name: customer?.name ?? '' })}
+                />
+            )}
         </div>
     );
 }

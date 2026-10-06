@@ -7,6 +7,7 @@ import {
     toInt,
     toNonEmptyString,
     toOptionalAmountMinor,
+    toNullableAmountMinor,
     toOptionalInt,
 } from '../product-bulk-shared';
 
@@ -26,6 +27,8 @@ export interface BulkImportProductBody {
     marketplaceUrl?: string;
     sourceAmountMinor: string;
     estimatedShippingAmountMinor?: string;
+    /** Custo unitário em fen, só no painel. */
+    costAmountMinor?: string | null;
     stock: number;
     weightGrams?: number;
     lengthMm?: number;
@@ -127,6 +130,7 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
                 record.estimatedShippingAmountMinor,
                 'estimatedShippingAmountMinor',
             ),
+            costAmountMinor: toNullableAmountMinor(record.costAmountMinor, 'costAmountMinor'),
             stock: toInt(record.stock, 'stock', 0),
             weightGrams: toOptionalInt(record.weightGrams, 'weightGrams', 1),
             lengthMm: toOptionalInt(record.lengthMm, 'lengthMm', 1),

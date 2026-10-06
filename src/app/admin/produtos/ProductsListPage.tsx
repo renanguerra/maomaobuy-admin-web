@@ -19,7 +19,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import type { AdminCategory, AdminProduct, BulkResult, Page } from '@/types/api';
-import { money, productSourceLabel } from '@/types/api';
+import { cny, money, productSourceLabel } from '@/types/api';
 
 type BulkAction = 'publish' | 'draft' | 'delete';
 
@@ -29,9 +29,11 @@ interface Filters {
     category: string;
     subcategory: string;
     status: string;
+    /** `missing` = só produtos sem custo cadastrado. */
+    cost: string;
 }
 
-const NO_FILTERS: Filters = { category: '', subcategory: '', status: '' };
+const NO_FILTERS: Filters = { category: '', subcategory: '', status: '', cost: '' };
 
 interface LoadedPage {
     /** Identifica a consulta que produziu estes dados (filtros + página). */
@@ -45,7 +47,7 @@ interface Failure {
 }
 
 function filtersKey(filters: Filters, pageNumber: number) {
-    return `${pageNumber}|${filters.category}|${filters.subcategory}|${filters.status}`;
+    return `${pageNumber}|${filters.category}|${filters.subcategory}|${filters.status}|${filters.cost}`;
 }
 
 export function ProductsListPage() {
@@ -82,6 +84,7 @@ export function ProductsListPage() {
         if (filters.status) query.set('status', filters.status);
         if (filters.category) query.set('categoryId', filters.category);
         if (filters.subcategory) query.set('subcategoryId', filters.subcategory);
+        if (filters.cost === 'missing') query.set('missingCost', 'true');
 
         api<Page<AdminProduct>>(`/products?${query.toString()}`)
             .then((page) => {
@@ -113,7 +116,8 @@ export function ProductsListPage() {
         [categories, filters.category],
     );
 
-    const hasFilters = filters.category !== '' || filters.subcategory !== '' || filters.status !== '';
+    const hasFilters =
+        filters.category !== '' || filters.subcategory !== '' || filters.status !== '' || filters.cost !== '';
     const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 1;
 
     const allOnPageSelected = rows.length > 0 && rows.every((product) => selectedIds.has(product.id));
@@ -249,7 +253,14 @@ export function ProductsListPage() {
             header: t('products.list.columns.basePrice'),
             numeric: true,
             cell: (product) => (
-                <span className="font-semibold">{money(product.sourceAmountMinor, product.sourceCurrency)}</span>
+                <span className="block">
+                    <span className="font-semibold">{money(product.sourceAmountMinor, product.sourceCurrency)}</span>
+                    <span className="mt-0.5 block text-[11px] text-muted dark:text-night-muted">
+                        {product.costAmountMinor !== null
+                            ? t('products.list.costValue', { value: cny(product.costAmountMinor) })
+                            : t('products.list.noCost')}
+                    </span>
+                </span>
             ),
         },
         {
@@ -374,6 +385,14 @@ export function ProductsListPage() {
                             { value: 'published', label: t('products.list.statusPublished') },
                             { value: 'draft', label: t('products.list.statusDraft') },
                         ]}
+                    />
+                    <Select
+                        fieldClassName="w-full max-w-40"
+                        label={t('products.list.costLabel')}
+                        onChange={(event) => updateFilters({ cost: event.target.value })}
+                        placeholderOption={t('products.list.costAll')}
+                        value={filters.cost}
+                        options={[{ value: 'missing', label: t('products.list.costMissing') }]}
                     />
                 </Toolbar>
 

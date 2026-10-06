@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { useTranslation } from '@/i18n/LanguageProvider';
-import { MARKETPLACE_NAMES, type AdminCategory } from '@/types/api';
+import { cny, MARKETPLACE_NAMES, type AdminCategory } from '@/types/api';
 import { DEFAULT_ON_DEMAND_LEAD_DAYS, type ProductForm, type ProductSourceType } from './product-form';
 
 const SOURCE_OPTIONS: Array<{
@@ -175,7 +175,17 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                             onMinorChange={(minor) => patch({ sourceAmountMinor: minor })}
                             required
                         />
+                        <CurrencyInput
+                            currency="CNY"
+                            hint={t('products.new.originPrice.costHint')}
+                            label={t('products.new.originPrice.cost')}
+                            minor={values.costAmountMinor}
+                            onMinorChange={(minor) => patch({ costAmountMinor: minor })}
+                        />
                     </div>
+                    <p className="mt-2 text-xs text-muted dark:text-night-muted">
+                        {unitMarginLabel(values.sourceAmountMinor, values.costAmountMinor, t)}
+                    </p>
                 </div>
             </SectionCard>
 
@@ -398,4 +408,13 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
             )}
         </>
     );
+}
+
+/** "Sobra ¥45,00 por unidade (34,6% do preço)" — ou o aviso de custo pendente. */
+function unitMarginLabel(priceMinor: string, costMinor: string, t: ReturnType<typeof useTranslation>['t']): string {
+    if (costMinor === '0') return t('products.new.originPrice.marginMissing');
+    const price = Number(priceMinor);
+    const profit = price - Number(costMinor);
+    const percent = price > 0 ? ((profit / price) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : '0';
+    return t('products.new.originPrice.margin', { profit: cny(profit), percent: `${percent}%` });
 }

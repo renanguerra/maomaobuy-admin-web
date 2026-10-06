@@ -24,6 +24,16 @@ export function toOptionalAmountMinor(value: unknown, field: string): string | u
     return toAmountMinor(value, field);
 }
 
+/**
+ * Custo do produto nos arquivos em lote: ausente não mexe, `null` apaga,
+ * valor em fen grava.
+ */
+export function toNullableAmountMinor(value: unknown, field: string): string | null | undefined {
+    if (value === undefined || value === '') return undefined;
+    if (value === null) return null;
+    return toAmountMinor(value, field);
+}
+
 export function toInt(value: unknown, field: string, min: number): number {
     const num = typeof value === 'string' ? Number(value) : value;
     if (typeof num !== 'number' || !Number.isInteger(num) || num < min)

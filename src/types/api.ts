@@ -211,6 +211,8 @@ export interface AdminProduct {
     sourceCurrency: string;
     sourceAmountMinor: string;
     estimatedShippingAmountMinor: string | null;
+    /** Custo unitário em fen — só o painel recebe. Nulo = não cadastrado. */
+    costAmountMinor: string | null;
     stock: number;
     /** Peso e medidas do item embalado — só a importação em lote os edita hoje. */
     weightGrams: number | null;
@@ -1177,4 +1179,156 @@ export interface AdminUnpackedCustomer {
     /** Fim da armazenagem grátis do item mais antigo. */
     freeStorageUntil: string | null;
     items: AdminUnpackedItem[];
+}
+
+// ---------------------------------------------------------------------------
+// Custos e lucro
+// ---------------------------------------------------------------------------
+
+export const COST_CATEGORIES = [
+    'PACKAGING',
+    'GIFTS',
+    'DOMESTIC_FREIGHT',
+    'INTERNATIONAL_FREIGHT',
+    'PRODUCT',
+    'TAXES',
+    'MARKETING',
+    'PLATFORM',
+    'PAYROLL',
+    'OTHER',
+] as const;
+export type CostCategory = (typeof COST_CATEGORIES)[number];
+export type CostCurrency = 'CNY' | 'BRL';
+export type CostAutoApply = 'ORDER' | 'PACKAGE';
+
+export interface CostEntry {
+    id: string;
+    category: CostCategory;
+    description: string;
+    quantity: number;
+    unitAmountMinor: string;
+    amountMinor: string;
+    currency: CostCurrency;
+    exchangeRate: string | null;
+    amountCnyMinor: string;
+    incurredOn: string;
+    orderId: string | null;
+    packageId: string | null;
+    packageCode: string | null;
+    createdBy: { id: string; name: string } | null;
+    /** Lançado sozinho no pagamento (embalagem/brinde automático). */
+    automatic: boolean;
+    createdAt: string;
+}
+
+export interface CostEntryPage extends Page<CostEntry> {
+    totalCnyMinor: string;
+}
+
+export interface CostPreset {
+    id: string;
+    name: string;
+    category: CostCategory;
+    unitAmountMinor: string;
+    currency: CostCurrency;
+    /** Entra sozinho em todo pedido pago ou toda caixa paga; nulo = só manual. */
+    autoApply: CostAutoApply | null;
+    autoQuantity: number;
+    isActive: boolean;
+}
+
+export interface OrderCostItem {
+    id: string;
+    productName: string;
+    productId: string | null;
+    quantity: number;
+    unitAmountMinor: string;
+    unitCostAmountMinor: string | null;
+    productCostAmountMinor: string | null;
+    effectiveUnitCostAmountMinor: string | null;
+}
+
+export interface OrderCostSheet {
+    orderId: string;
+    status: string;
+    paidAt: string | null;
+    customerName: string | null;
+    revenue: {
+        merchandiseMinor: string;
+        serviceFeeMinor: string;
+        optionalServicesMinor: string;
+        discountMinor: string;
+        totalMinor: string;
+    };
+    items: OrderCostItem[];
+    entries: CostEntry[];
+    costs: { productsMinor: string; entriesMinor: string; totalMinor: string };
+    profitMinor: string;
+    itemsMissingCost: number;
+}
+
+export interface PackageCostSheet {
+    packageId: string;
+    packageCode: string;
+    status: string;
+    paidAt: string | null;
+    customerName: string | null;
+    revenue: { shippingMinor: string; storageMinor: string; discountMinor: string; totalMinor: string };
+    entries: CostEntry[];
+    costs: { freightMinor: string; entriesMinor: string; totalMinor: string };
+    profitMinor: string;
+}
+
+export interface ProfitSummary {
+    from: string;
+    to: string;
+    groupBy: 'day' | 'month';
+    revenue: {
+        merchandiseMinor: string;
+        serviceFeeMinor: string;
+        optionalServicesMinor: string;
+        shippingMinor: string;
+        storageMinor: string;
+        fxSpreadMinor: string;
+        discountsMinor: string;
+        totalMinor: string;
+    };
+    costs: {
+        productsMinor: string;
+        freightMinor: string;
+        entriesByCategory: Partial<Record<CostCategory, string>>;
+        entriesMinor: string;
+        totalMinor: string;
+    };
+    profitMinor: string;
+    marginBasisPoints: number | null;
+    counts: { orders: number; packages: number; topUps: number; costEntries: number; itemsMissingCost: number };
+    fxSpreadBrlMinor: string;
+    currentCnyToBrlRate: string | null;
+    series: Array<{ bucket: string; revenueMinor: string; costsMinor: string; profitMinor: string }>;
+}
+
+export interface ProfitOrderRow {
+    orderId: string;
+    paidAt: string;
+    status: string;
+    customerName: string | null;
+    itemsSummary: string;
+    revenueMinor: string;
+    productCostMinor: string;
+    entriesCostMinor: string;
+    profitMinor: string;
+    itemsMissingCost: number;
+}
+
+export interface ProfitPackageRow {
+    packageId: string;
+    packageCode: string;
+    paidAt: string;
+    status: string;
+    customerName: string | null;
+    revenueMinor: string;
+    freightCostMinor: string;
+    entriesCostMinor: string;
+    profitMinor: string;
 }

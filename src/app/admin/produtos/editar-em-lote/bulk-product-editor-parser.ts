@@ -7,6 +7,7 @@ import {
     toInt,
     toNonEmptyString,
     toOptionalAmountMinor,
+    toNullableAmountMinor,
     toOptionalInt,
     type MarketplaceValue,
 } from '../product-bulk-shared';
@@ -32,6 +33,8 @@ export interface BulkEditProductBody {
     marketplaceUrl?: string;
     sourceAmountMinor: string;
     estimatedShippingAmountMinor?: string;
+    /** `undefined` = não mexe; `null` apaga o custo. */
+    costAmountMinor?: string | null;
     stock: number;
     weightGrams?: number;
     lengthMm?: number;
@@ -140,6 +143,7 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
             record.estimatedShippingAmountMinor,
             'estimatedShippingAmountMinor',
         ),
+        costAmountMinor: toNullableAmountMinor(record.costAmountMinor, 'costAmountMinor'),
         stock: toInt(record.stock, 'stock', 0),
         weightGrams: toOptionalInt(record.weightGrams, 'weightGrams', 1),
         lengthMm: toOptionalInt(record.lengthMm, 'lengthMm', 1),

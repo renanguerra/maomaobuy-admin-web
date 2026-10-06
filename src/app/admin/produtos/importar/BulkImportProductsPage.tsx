@@ -24,6 +24,7 @@ const TEMPLATE = [
         marketplace: 'TAOBAO',
         marketplaceUrl: 'https://item.taobao.com/item.htm?id=123456',
         sourceAmountMinor: '12990',
+        costAmountMinor: '8500',
         estimatedShippingAmountMinor: '4990',
         stock: 25,
         weightGrams: 1200,
@@ -42,6 +43,7 @@ const TEMPLATE = [
         marketplace: 'MAOMAOBUY',
         description: 'Vendido direto pela MaoMaoBuy, sem link de origem.',
         sourceAmountMinor: '5000',
+        costAmountMinor: '2800',
         stock: 10,
     },
 ];
