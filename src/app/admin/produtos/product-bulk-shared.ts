@@ -53,6 +53,28 @@ export function toNonEmptyString(value: unknown, field: string, maxLength: numbe
     return trimmed;
 }
 
+const CHINA_PREFIX = /^\s*EXCLUSIVO(?:\s+CHINA)?\s*[-–—:]\s*/i;
+const JAPAN_PREFIX = /^\s*EXCLUSIVO\s+JAP[ÃA]O\s*[-–—:]\s*/i;
+
+/**
+ * "Exclusivo da China" é campo do produto, não prefixo do nome. Arquivos
+ * antigos ainda trazem "EXCLUSIVO - …" / "EXCLUSIVO CHINA - …": o prefixo sai
+ * do nome e marca o campo. "EXCLUSIVO JAPÃO - …" só perde o prefixo. Sem
+ * prefixo, vale o `isChinaExclusive` do arquivo (`undefined` = não informado).
+ */
+export function resolveChinaExclusive(
+    name: string,
+    raw: unknown,
+): { name: string; isChinaExclusive: boolean | undefined } {
+    if (raw !== undefined && raw !== null && typeof raw !== 'boolean')
+        throw new Error('Campo "isChinaExclusive" precisa ser true ou false.');
+    const explicit = typeof raw === 'boolean' ? raw : undefined;
+    if (CHINA_PREFIX.test(name))
+        return { name: name.replace(CHINA_PREFIX, ''), isChinaExclusive: explicit ?? true };
+    if (JAPAN_PREFIX.test(name)) return { name: name.replace(JAPAN_PREFIX, ''), isChinaExclusive: explicit };
+    return { name, isChinaExclusive: explicit };
+}
+
 export function resolveCategories(
     raw: unknown,
     categories: readonly AdminCategory[],

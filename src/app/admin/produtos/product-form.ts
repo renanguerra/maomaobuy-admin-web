@@ -22,6 +22,7 @@ export interface ProductFormValues {
     costAmountMinor: string;
     stock: string;
     isPublished: boolean;
+    isChinaExclusive: boolean;
     isPreSale: boolean;
     /** `YYYY-MM-DD`, como o `<input type="date">` entrega e o backend espera. */
     releaseDate: string;
@@ -54,6 +55,7 @@ const EMPTY: ProductFormValues = {
     costAmountMinor: '0',
     stock: '0',
     isPublished: false,
+    isChinaExclusive: false,
     isPreSale: false,
     releaseDate: '',
     isOnDemand: false,
@@ -85,6 +87,7 @@ function fromProduct(product: AdminProduct): ProductFormValues {
         costAmountMinor: product.costAmountMinor ?? '0',
         stock: String(product.stock),
         isPublished: product.isPublished,
+        isChinaExclusive: product.isChinaExclusive ?? false,
         isPreSale: product.isPreSale,
         releaseDate: product.releaseDate ?? '',
         isOnDemand: product.isOnDemand,
@@ -172,6 +175,7 @@ export function toProductPayload(values: ProductFormValues) {
         costAmountMinor: values.costAmountMinor !== '0' ? values.costAmountMinor : null,
         stock: Number(values.stock),
         isPublished: values.isPublished,
+        isChinaExclusive: values.isChinaExclusive,
         isPreSale: values.isPreSale,
         // Fora da pré-venda a data não é enviada em branco: o backend recusa
         // string vazia e apaga a data sozinho quando a pré-venda cai.

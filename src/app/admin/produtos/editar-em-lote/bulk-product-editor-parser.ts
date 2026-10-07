@@ -3,6 +3,7 @@ import { slugify } from '../../categorias/slugify';
 import {
     MARKETPLACE_VALUES,
     resolveCategories,
+    resolveChinaExclusive,
     toAmountMinor,
     toInt,
     toNonEmptyString,
@@ -41,6 +42,8 @@ export interface BulkEditProductBody {
     widthMm?: number;
     heightMm?: number;
     isPublished: boolean;
+    /** `undefined` = arquivo não trouxe o campo, o valor gravado não muda. */
+    isChinaExclusive?: boolean;
     isPreSale: boolean;
     releaseDate?: string;
     /** `undefined` = arquivo não trouxe o campo, o valor gravado não muda. */
@@ -97,7 +100,11 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
         throw new Error('Campo "id" precisa ser o UUID do produto (veja o arquivo exportado).');
     const id = record.id.trim();
 
-    const name = toNonEmptyString(record.name, 'name', 300);
+    const { name, isChinaExclusive } = resolveChinaExclusive(
+        toNonEmptyString(record.name, 'name', 300),
+        record.isChinaExclusive,
+    );
+    if (!name) throw new Error('Campo "name" ficou vazio depois de tirar o prefixo "EXCLUSIVO".');
     const slugSource = typeof record.slug === 'string' && record.slug.trim() ? record.slug : name;
     const slug = slugify(slugSource);
     if (!slug) throw new Error('Não foi possível gerar um slug válido — informe "slug" ou "name".');
@@ -150,6 +157,7 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
         widthMm: toOptionalInt(record.widthMm, 'widthMm', 1),
         heightMm: toOptionalInt(record.heightMm, 'heightMm', 1),
         isPublished: Boolean(record.isPublished),
+        isChinaExclusive,
         isPreSale,
         releaseDate,
         isOnDemand,

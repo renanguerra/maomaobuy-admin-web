@@ -629,6 +629,8 @@ export const ptBR = {
                     'Vendido só no checkout do carrinho, fora do cupom, rende moedas multiplicadas. Não aparece na loja.',
             },
             publishCheckbox: 'Publicar ao concluir',
+            chinaExclusiveCheckbox: 'Exclusivo da China',
+            chinaExclusiveHint: 'Mostra o selo "Exclusivo da China" no card da loja. Não escreva isso no nome.',
             categoriesTitle: 'Categorias',
             variants: {
                 title: 'Variantes (opcional)',

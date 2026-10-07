@@ -610,6 +610,8 @@ export const zhHans: Messages = {
                 addonHint: '只在购物车结账时出售，不参与优惠券，积分加倍。不在商店显示。',
             },
             publishCheckbox: '完成后立即发布',
+            chinaExclusiveCheckbox: '中国限定',
+            chinaExclusiveHint: '在商店商品卡片上显示“中国限定”标签。名称中无需再写。',
             categoriesTitle: '分类',
             variants: {
                 title: '规格（选填）',
