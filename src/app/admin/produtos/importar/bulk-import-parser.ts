@@ -3,6 +3,7 @@ import { slugify } from '../../categorias/slugify';
 import {
     MARKETPLACE_VALUES,
     resolveCategories,
+    resolveChinaExclusive,
     toAmountMinor,
     toInt,
     toNonEmptyString,
@@ -30,6 +31,8 @@ export interface BulkImportProductBody {
     /** Custo unitário em fen, só no painel. */
     costAmountMinor?: string | null;
     stock: number;
+    /** Selo "Exclusivo da China" no card da loja. */
+    isChinaExclusive: boolean;
     weightGrams?: number;
     lengthMm?: number;
     widthMm?: number;
@@ -99,7 +102,11 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
     if (typeof raw !== 'object' || raw === null) throw new Error('Cada produto precisa ser um objeto JSON.');
     const record = raw as Record<string, unknown>;
 
-    const name = toNonEmptyString(record.name, 'name', 300);
+    const { name, isChinaExclusive } = resolveChinaExclusive(
+        toNonEmptyString(record.name, 'name', 300),
+        record.isChinaExclusive,
+    );
+    if (!name) throw new Error('Campo "name" ficou vazio depois de tirar o prefixo "EXCLUSIVO".');
     const slugSource = typeof record.slug === 'string' && record.slug.trim() ? record.slug : name;
     const slug = slugify(slugSource);
     if (!slug) throw new Error('Não foi possível gerar um slug válido — informe "slug" ou "name".');
@@ -132,6 +139,7 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
             ),
             costAmountMinor: toNullableAmountMinor(record.costAmountMinor, 'costAmountMinor'),
             stock: toInt(record.stock, 'stock', 0),
+            isChinaExclusive: isChinaExclusive ?? false,
             weightGrams: toOptionalInt(record.weightGrams, 'weightGrams', 1),
             lengthMm: toOptionalInt(record.lengthMm, 'lengthMm', 1),
             widthMm: toOptionalInt(record.widthMm, 'widthMm', 1),

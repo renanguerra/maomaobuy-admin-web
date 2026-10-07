@@ -219,6 +219,14 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                     label={t('products.new.publishCheckbox')}
                     onChange={(event) => patch({ isPublished: event.target.checked })}
                 />
+                <Checkbox
+                    boxed
+                    checked={values.isChinaExclusive}
+                    className="mt-3"
+                    description={t('products.new.chinaExclusiveHint')}
+                    label={t('products.new.chinaExclusiveCheckbox')}
+                    onChange={(event) => patch({ isChinaExclusive: event.target.checked })}
+                />
             </SectionCard>
 
             <SectionCard description={t('products.new.preSale.description')} title={t('products.new.preSale.title')}>

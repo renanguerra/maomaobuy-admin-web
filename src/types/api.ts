@@ -229,6 +229,8 @@ export interface AdminProduct {
     /** Coin Shop: preço em MaoMaoCoins; `null` = não é recompensa. */
     coinPrice: number | null;
     isCoinExclusive: boolean;
+    /** Selo "Exclusivo da China" no card da loja. */
+    isChinaExclusive: boolean;
     coinRedeemLimitPerUser: number | null;
     coinAvailableFrom: string | null;
     coinAvailableUntil: string | null;

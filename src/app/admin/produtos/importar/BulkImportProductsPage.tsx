@@ -27,6 +27,7 @@ const TEMPLATE = [
         costAmountMinor: '8500',
         estimatedShippingAmountMinor: '4990',
         stock: 25,
+        isChinaExclusive: false,
         weightGrams: 1200,
         lengthMm: 250,
         widthMm: 180,
