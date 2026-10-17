@@ -11,6 +11,7 @@ export type MenuItemKey =
     | 'inspections'
     | 'packages'
     | 'unpacked'
+    | 'carriers'
     | 'users'
     | 'products'
     | 'categories'

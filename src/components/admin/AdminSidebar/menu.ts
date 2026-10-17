@@ -15,6 +15,7 @@ import {
     Sparkles,
     Tags,
     TicketPercent,
+    Truck,
     Users,
     Wallet,
 } from 'lucide-react';
@@ -41,6 +42,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
             },
             { key: 'packages', href: '/admin/pacotes', icon: Boxes, badge: 'packages' },
             { key: 'unpacked', href: '/admin/sem-pacote', icon: PackageOpen },
+            { key: 'carriers', href: '/admin/transportadoras', icon: Truck },
             {
                 key: 'productRequests',
                 href: '/admin/pedidos-de-produto',

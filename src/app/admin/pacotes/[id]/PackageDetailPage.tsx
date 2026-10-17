@@ -16,6 +16,7 @@ import {
     Ruler,
     Send,
     Trash2,
+    Truck,
     Upload,
     Wallet,
     XCircle,
@@ -23,6 +24,7 @@ import {
 import { ActionBar } from '@/components/admin/ActionBar';
 import { PackageCostSheetDialog } from '@/components/admin/CostSheets';
 import { ActionDialog } from '@/components/admin/ActionDialog';
+import { CarrierQuoteDialog, CarrierShipmentSection } from '@/components/admin/CarrierShipments';
 import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
@@ -65,6 +67,7 @@ type DialogKind =
     | 'shipment'
     | 'add-items'
     | 'override-status'
+    | 'carrier-quote'
     | null;
 
 /** Situações finais do pacote — nada mais é anexado depois delas. */
@@ -121,6 +124,13 @@ export function PackageDetailPage() {
     const [removingItem, setRemovingItem] = useState<AdminPackageItem>();
     const [busy, setBusy] = useState<string>();
     const [uploading, setUploading] = useState(false);
+    // Linha e custo escolhidos na cotação Westlink: preenchem a cotação do
+    // pacote e, depois do pagamento, a linha do envio.
+    const [carrierSelection, setCarrierSelection] = useState<{
+        parcel: { weightGrams: number; lengthMillimeters: number; widthMillimeters: number; heightMillimeters: number };
+        costAmountMinor: string;
+        channelCode: string;
+    }>();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const load = useCallback(() => {
@@ -345,6 +355,14 @@ export function PackageDetailPage() {
     // Espelha `FREIGHT_QUOTABLE_STATUSES` do backend: com a cobrança aberta o
     // frete ainda pode ser corrigido — o cliente só pagou depois de pagar.
     const canRequoteFreight = pkg.status === 'AWAITING_FREIGHT_PAYMENT';
+    const canQuoteCarrier = canEditItems || pkg.status === 'AWAITING_FREIGHT_QUOTE' || canRequoteFreight;
+    const shipmentDefaults = {
+        weightGrams: carrierSelection?.parcel.weightGrams ?? pkg.weightGrams,
+        lengthMillimeters: carrierSelection?.parcel.lengthMillimeters ?? pkg.lengthMillimeters,
+        widthMillimeters: carrierSelection?.parcel.widthMillimeters ?? pkg.widthMillimeters,
+        heightMillimeters: carrierSelection?.parcel.heightMillimeters ?? pkg.heightMillimeters,
+        freightCostAmountMinor: carrierSelection?.costAmountMinor ?? pkg.freightCostAmountMinor,
+    };
     const trackingStep = TRACKING_NEXT_STEP[pkg.status];
     // Corrigir o rastreio só faz sentido enquanto o pacote está a caminho.
     const canCorrectDispatch = pkg.shippedAt !== null && !CLOSED_STATUSES.includes(pkg.status);
@@ -352,6 +370,7 @@ export function PackageDetailPage() {
     const canOverrideStatus = statusTargets.length > 0;
     const hasActions =
         canEditItems ||
+        canQuoteCarrier ||
         canCancel ||
         pkg.status === 'READY_FOR_DISPATCH' ||
         canCorrectDispatch ||
@@ -454,6 +473,16 @@ export function PackageDetailPage() {
                             size="small"
                         >
                             {t('packages.detail.actions.quoteFreight')}
+                        </Button>
+                    )}
+                    {canQuoteCarrier && (
+                        <Button
+                            leadingIcon={<Truck className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('carrier-quote')}
+                            size="small"
+                            variant="secondary"
+                        >
+                            {t('carrier.quote.action')}
                         </Button>
                     )}
                     {canRequoteFreight && (
@@ -601,6 +630,18 @@ export function PackageDetailPage() {
                             </ListRows>
                         )}
                     </SectionCard>
+
+                    {(pkg.status === 'READY_FOR_DISPATCH' || pkg.shippedAt) && (
+                        <CarrierShipmentSection
+                            onPackageChanged={(updated) => {
+                                if (updated) setPkg(updated);
+                                else load();
+                                void refreshPendingCounts();
+                            }}
+                            pkg={pkg}
+                            preferredChannelCode={carrierSelection?.channelCode}
+                        />
+                    )}
 
                     <SectionCard
                         description={t('packages.detail.photosSection.description')}
@@ -826,7 +867,7 @@ export function PackageDetailPage() {
                         kind: 'number',
                         min: 1,
                         suffix: 'g',
-                        defaultValue: pkg.weightGrams ? String(pkg.weightGrams) : undefined,
+                        defaultValue: shipmentDefaults.weightGrams ? String(shipmentDefaults.weightGrams) : undefined,
                         placeholder: '1500',
                     },
                     {
@@ -835,7 +876,9 @@ export function PackageDetailPage() {
                         kind: 'number',
                         min: 1,
                         suffix: 'mm',
-                        defaultValue: pkg.lengthMillimeters ? String(pkg.lengthMillimeters) : undefined,
+                        defaultValue: shipmentDefaults.lengthMillimeters
+                            ? String(shipmentDefaults.lengthMillimeters)
+                            : undefined,
                         placeholder: '300',
                     },
                     {
@@ -844,7 +887,9 @@ export function PackageDetailPage() {
                         kind: 'number',
                         min: 1,
                         suffix: 'mm',
-                        defaultValue: pkg.widthMillimeters ? String(pkg.widthMillimeters) : undefined,
+                        defaultValue: shipmentDefaults.widthMillimeters
+                            ? String(shipmentDefaults.widthMillimeters)
+                            : undefined,
                         placeholder: '200',
                     },
                     {
@@ -853,7 +898,9 @@ export function PackageDetailPage() {
                         kind: 'number',
                         min: 1,
                         suffix: 'mm',
-                        defaultValue: pkg.heightMillimeters ? String(pkg.heightMillimeters) : undefined,
+                        defaultValue: shipmentDefaults.heightMillimeters
+                            ? String(shipmentDefaults.heightMillimeters)
+                            : undefined,
                         placeholder: '150',
                     },
                     {
@@ -864,7 +911,7 @@ export function PackageDetailPage() {
                         hint: t('packages.detail.dialogs.shipment.amountHint'),
                         kind: 'currency',
                         suffix: 'CNY',
-                        defaultValue: pkg.freightCostAmountMinor ?? '0',
+                        defaultValue: shipmentDefaults.freightCostAmountMinor ?? '0',
                     },
                 ]}
             />
@@ -977,6 +1024,16 @@ export function PackageDetailPage() {
                           ]),
                 ]}
             />
+            {dialog === 'carrier-quote' && (
+                <CarrierQuoteDialog
+                    onClose={() => setDialog(null)}
+                    onUse={(selection) => {
+                        setCarrierSelection(selection);
+                        setDialog('shipment');
+                    }}
+                    pkg={pkg}
+                />
+            )}
             <AddPackageItemsDialog
                 onAdded={(updated) => {
                     setPkg(updated);
