@@ -11,7 +11,7 @@ import { StatusPill } from '@/components/admin/StatusPill';
 import { Button } from '@/components/ui/Button';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
-import type { CarrierChannel, CarrierChannels } from '@/types/carrier';
+import { kilograms, type CarrierChannel, type CarrierChannels } from '@/types/carrier';
 
 /**
  * As linhas da Westlink para o Brasil, com tudo o que a tabela de preços diz
@@ -81,6 +81,8 @@ export function CarriersPage() {
             )}
             {!data && !error && <SkeletonCards label={t('carrier.page.title')} />}
 
+            {data && <ChannelComparison channels={data.channels} />}
+
             {data && (
                 <div className="grid gap-5 xl:grid-cols-2">
                     {data.channels.map((channel) => (
@@ -107,29 +109,111 @@ export function CarriersPage() {
     );
 }
 
+/**
+ * As dez linhas lado a lado, para escolher sem ler dez cartões. Cada código
+ * leva ao cartão completo.
+ */
+function ChannelComparison({ channels }: { channels: CarrierChannel[] }) {
+    const { t } = useTranslation();
+    const headers = [
+        t('carrier.page.compare.line'),
+        t('carrier.page.compare.weight'),
+        t('carrier.channel.volumetric'),
+        t('carrier.channel.cargo'),
+        t('carrier.channel.days'),
+        t('carrier.page.compare.account'),
+    ];
+    return (
+        <SectionCard flush title={t('carrier.page.compare.title')}>
+            <div className="overflow-x-auto">
+                <table className="w-full min-w-[40rem] border-collapse text-sm">
+                    <thead>
+                        <tr className="border-b border-line text-left text-xs text-muted dark:border-night-line dark:text-night-muted">
+                            {headers.map((header) => (
+                                <th className="px-4 py-2 font-semibold" key={header} scope="col">
+                                    {header}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {channels.map((channel) => (
+                            <tr
+                                className="border-b border-line last:border-0 dark:border-night-line"
+                                key={channel.code}
+                            >
+                                <th className="px-4 py-2 text-left font-normal" scope="row">
+                                    <a
+                                        className="mm-data font-semibold text-primary no-underline hover:underline dark:text-night-accent"
+                                        href={`#linha-${channel.code}`}
+                                    >
+                                        {channel.code}
+                                    </a>{' '}
+                                    <span className="text-ink dark:text-night-text">{channel.name}</span>
+                                    {channel.preferred && (
+                                        <span className="ml-1.5 align-middle">
+                                            <StatusPill tone="success">{t('carrier.channel.preferred')}</StatusPill>
+                                        </span>
+                                    )}
+                                </th>
+                                <td className="mm-data px-4 py-2 whitespace-nowrap">
+                                    {kilograms(channel.maxWeightGrams)}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap">
+                                    {channel.volumetricDivisor
+                                        ? `÷${channel.volumetricDivisor}`
+                                        : t('carrier.channel.noVolumetric')}
+                                </td>
+                                <td className="px-4 py-2">
+                                    {channel.cargoTypes.map((type) => t(`carrier.cargo.${type}`)).join(', ')}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap">
+                                    {t('carrier.channel.daysValue', {
+                                        min: channel.estimatedDays.min,
+                                        max: channel.estimatedDays.max,
+                                    })}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap">
+                                    {channel.enabledForAccount === null
+                                        ? t('common.dash')
+                                        : channel.enabledForAccount
+                                          ? t('carrier.page.enabled')
+                                          : t('carrier.page.notEnabled')}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </SectionCard>
+    );
+}
+
 function ChannelCard({ channel }: { channel: CarrierChannel }) {
     const { t } = useTranslation();
     return (
-        <SectionCard
-            icon={<Truck aria-hidden="true" />}
-            title={
-                <span className="inline-flex flex-wrap items-center gap-2">
-                    <span className="mm-data">{channel.code}</span>
-                    <span>{channel.name}</span>
-                </span>
-            }
-            action={
-                <span className="inline-flex flex-wrap items-center gap-1.5">
-                    <CarrierChannelBadges channel={channel} />
-                    {channel.enabledForAccount !== null && (
-                        <StatusPill tone={channel.enabledForAccount ? 'success' : 'danger'}>
-                            {channel.enabledForAccount ? t('carrier.page.enabled') : t('carrier.page.notEnabled')}
-                        </StatusPill>
-                    )}
-                </span>
-            }
-        >
-            <CarrierChannelDetails channel={channel} />
-        </SectionCard>
+        <div className="scroll-mt-6" id={`linha-${channel.code}`}>
+            <SectionCard
+                icon={<Truck aria-hidden="true" />}
+                title={
+                    <span className="inline-flex flex-wrap items-center gap-2">
+                        <span className="mm-data">{channel.code}</span>
+                        <span>{channel.name}</span>
+                    </span>
+                }
+                action={
+                    <span className="inline-flex flex-wrap items-center gap-1.5">
+                        <CarrierChannelBadges channel={channel} />
+                        {channel.enabledForAccount !== null && (
+                            <StatusPill tone={channel.enabledForAccount ? 'success' : 'danger'}>
+                                {channel.enabledForAccount ? t('carrier.page.enabled') : t('carrier.page.notEnabled')}
+                            </StatusPill>
+                        )}
+                    </span>
+                }
+            >
+                <CarrierChannelDetails channel={channel} />
+            </SectionCard>
+        </div>
     );
 }

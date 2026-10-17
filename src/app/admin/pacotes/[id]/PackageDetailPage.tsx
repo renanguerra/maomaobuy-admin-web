@@ -126,6 +126,7 @@ export function PackageDetailPage() {
     const [uploading, setUploading] = useState(false);
     // Linha e custo escolhidos na cotação Westlink: preenchem a cotação do
     // pacote e, depois do pagamento, a linha do envio.
+    const [hasCarrierShipment, setHasCarrierShipment] = useState(false);
     const [carrierSelection, setCarrierSelection] = useState<{
         parcel: { weightGrams: number; lengthMillimeters: number; widthMillimeters: number; heightMillimeters: number };
         costAmountMinor: string;
@@ -506,12 +507,17 @@ export function PackageDetailPage() {
                         </Button>
                     )}
                     {pkg.status === 'READY_FOR_DISPATCH' && (
+                        // Com envio Westlink criado, o despacho é pelo envio
+                        // (mesmo rastreio da etiqueta); o manual fica de lado.
                         <Button
                             leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
                             onClick={() => setDialog('dispatch')}
                             size="small"
+                            variant={hasCarrierShipment ? 'ghost' : 'primary'}
                         >
-                            {t('packages.detail.actions.dispatch')}
+                            {hasCarrierShipment
+                                ? t('carrier.section.manualDispatch')
+                                : t('packages.detail.actions.dispatch')}
                         </Button>
                     )}
                     {trackingStep && (
@@ -638,6 +644,7 @@ export function PackageDetailPage() {
                                 else load();
                                 void refreshPendingCounts();
                             }}
+                            onActiveChange={setHasCarrierShipment}
                             pkg={pkg}
                             preferredChannelCode={carrierSelection?.channelCode}
                         />

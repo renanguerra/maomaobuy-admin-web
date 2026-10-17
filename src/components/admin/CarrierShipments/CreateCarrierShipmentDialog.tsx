@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Alert } from '@/components/admin/Alert';
 import { useTotpEnrollmentGate } from '@/components/admin/ActionDialog/ActionDialog';
 import { SkeletonCards } from '@/components/admin/Skeleton';
@@ -72,6 +72,12 @@ export function CreateCarrierShipmentDialog({
     const [remember, setRemember] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string>();
+    const errorRef = useRef<HTMLDivElement>(null);
+
+    // O erro da Westlink chega no fim de um formulário comprido: rola até ele.
+    useEffect(() => {
+        if (error) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, [error]);
 
     useEffect(() => {
         Promise.all([
@@ -297,9 +303,11 @@ export function CreateCarrierShipmentDialog({
                     />
 
                     {error && (
-                        <Alert tone="danger">
-                            <p>{error}</p>
-                        </Alert>
+                        <div ref={errorRef}>
+                            <Alert tone="danger" title={t('carrier.create.errorTitle')}>
+                                <p>{error}</p>
+                            </Alert>
+                        </div>
                     )}
                 </form>
             )}

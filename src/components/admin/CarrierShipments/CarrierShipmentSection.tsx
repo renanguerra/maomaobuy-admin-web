@@ -23,6 +23,8 @@ interface CarrierShipmentSectionProps {
     preferredChannelCode?: string;
     /** O despacho e o rastreio mexem no pacote; a página recarrega. */
     onPackageChanged: (updated?: AdminPackage) => void;
+    /** Avisa a página se há envio vivo — o despacho manual perde o destaque. */
+    onActiveChange?: (hasActive: boolean) => void;
 }
 
 type Dialog = 'create' | 'dispatch' | 'cancel' | null;
@@ -33,7 +35,12 @@ type Dialog = 'create' | 'dispatch' | 'cancel' | null;
  * despacho manual da página continua valendo para quem não usa a
  * transportadora.
  */
-export function CarrierShipmentSection({ pkg, preferredChannelCode, onPackageChanged }: CarrierShipmentSectionProps) {
+export function CarrierShipmentSection({
+    pkg,
+    preferredChannelCode,
+    onPackageChanged,
+    onActiveChange,
+}: CarrierShipmentSectionProps) {
     const { t } = useTranslation();
     const { notify } = useToast();
     const [shipments, setShipments] = useState<CarrierShipment[]>();
@@ -55,6 +62,11 @@ export function CarrierShipmentSection({ pkg, preferredChannelCode, onPackageCha
     }, [load, pkg.status]);
 
     const active = shipments?.find((shipment) => shipment.status === 'CREATED');
+    const hasActive = Boolean(active);
+
+    useEffect(() => {
+        onActiveChange?.(hasActive);
+    }, [hasActive, onActiveChange]);
     const cancelled = shipments?.filter((shipment) => shipment.status === 'CANCELLED') ?? [];
     const canCreate = !active && pkg.status === 'READY_FOR_DISPATCH';
 
@@ -355,6 +367,10 @@ function ActiveShipment({
                         : t('carrier.section.createdAt', { date: formatDate(shipment.createdAt) })}
                 </span>
             </div>
+
+            {canDispatch && !shipment.trackingNumber && (
+                <p className="m-0 text-xs text-muted dark:text-night-muted">{t('carrier.section.waitingNumber')}</p>
+            )}
 
             <div className="flex flex-wrap gap-2">
                 <Button

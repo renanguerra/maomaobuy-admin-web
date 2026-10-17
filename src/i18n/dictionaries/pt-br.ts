@@ -2238,6 +2238,12 @@ export const ptBR = {
             notEnabled: 'Não liberada na conta',
             otherChannels: 'Outras linhas da conta',
             otherChannelsHint: 'Liberadas na conta, mas fora da nossa tabela do Brasil.',
+            compare: {
+                title: 'Comparação das linhas',
+                line: 'Linha',
+                weight: 'Peso máximo',
+                account: 'Na conta',
+            },
         },
         channel: {
             preferred: 'Preferida',
@@ -2333,6 +2339,9 @@ export const ptBR = {
             createdToast: 'Envio criado na Westlink',
             cancelledToast: 'Envio cancelado na Westlink',
             dispatchedToast: 'Pacote despachado com o envio Westlink',
+            manualDispatch: 'Despachar manualmente',
+            waitingNumber:
+                'Despachar fica disponível quando a Westlink devolver o número de rastreio. Use Atualizar para buscar.',
         },
         dialogs: {
             dispatch: {
@@ -2381,6 +2390,7 @@ export const ptBR = {
             remember: 'Lembrar nomes e código HS nos produtos',
             rememberHint: 'O próximo envio com estes produtos já vem preenchido.',
             submit: 'Criar envio',
+            errorTitle: 'A Westlink não aceitou o envio',
         },
     },
     actionDialog: {

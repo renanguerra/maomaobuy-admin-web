@@ -2181,6 +2181,12 @@ export const zhHans: Messages = {
             notEnabled: '账户未开通',
             otherChannels: '账户的其他渠道',
             otherChannelsHint: '账户已开通，但不在我们的巴西价格表中。',
+            compare: {
+                title: '渠道对比',
+                line: '渠道',
+                weight: '最大重量',
+                account: '账户',
+            },
         },
         channel: {
             preferred: '首选',
@@ -2275,6 +2281,8 @@ export const zhHans: Messages = {
             createdToast: '已在 Westlink 创建订单',
             cancelledToast: '已取消 Westlink 订单',
             dispatchedToast: '已用 Westlink 订单发货',
+            manualDispatch: '手动发货',
+            waitingNumber: 'Westlink 返回追踪号后才能发货。请点击刷新获取。',
         },
         dialogs: {
             dispatch: {
@@ -2321,6 +2329,7 @@ export const zhHans: Messages = {
             remember: '在商品中记住品名和海关编码',
             rememberHint: '下次发同样的商品时会自动填好。',
             submit: '下单',
+            errorTitle: 'Westlink 未接受此订单',
         },
     },
     actionDialog: {
