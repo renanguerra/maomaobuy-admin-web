@@ -19,6 +19,7 @@ export type MenuItemKey =
     | 'emails'
     | 'optionalServices'
     | 'coupons'
+    | 'topUps'
     | 'profit'
     | 'productRequests'
     | 'siteNotices'

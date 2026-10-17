@@ -19,7 +19,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import type { AdminCategory, AdminProduct, BulkResult, Page } from '@/types/api';
-import { cny, money, productSourceLabel } from '@/types/api';
+import { cny, money } from '@/types/api';
 
 type BulkAction = 'publish' | 'draft' | 'delete';
 
@@ -243,12 +243,6 @@ export function ProductsListPage() {
             ),
         },
         {
-            key: 'marketplace',
-            header: t('products.list.columns.marketplace'),
-            hideBelow: 'md',
-            cell: (product) => productSourceLabel(product.marketplace),
-        },
-        {
             key: 'price',
             header: t('products.list.columns.basePrice'),
             numeric: true,
@@ -264,11 +258,27 @@ export function ProductsListPage() {
             ),
         },
         {
-            key: 'variants',
-            header: t('products.list.columns.variants'),
-            hideBelow: 'lg',
+            key: 'stock',
+            header: t('products.list.columns.stock'),
             numeric: true,
-            cell: (product) => product.variants.length,
+            cell: (product) => (
+                <span className="block">
+                    <span
+                        className={
+                            product.stock <= 0 && !product.isOnDemand
+                                ? 'font-semibold text-origin-700 dark:text-night-coral'
+                                : 'font-semibold'
+                        }
+                    >
+                        {product.stock}
+                    </span>
+                    {product.isOnDemand && (
+                        <span className="mt-0.5 block text-[11px] text-muted dark:text-night-muted">
+                            {t('products.list.onDemand')}
+                        </span>
+                    )}
+                </span>
+            ),
         },
         {
             key: 'status',

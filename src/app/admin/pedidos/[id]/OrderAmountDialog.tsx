@@ -27,6 +27,10 @@ interface OrderAmountDialogProps {
     fieldLabel: string;
     fieldName: string;
     currentAmountMinor: string;
+    /** Moeda do campo; padrão BRL. */
+    currency?: string;
+    /** Texto de apoio do campo; padrão "valor atual". */
+    hint?: string;
     confirmLabel: string;
     /** Mesmo comportamento do `ActionDialog`: default `true`, com cadastro do autenticador antes se preciso. */
     requireTotp?: boolean;
@@ -52,6 +56,8 @@ export function OrderAmountDialog({
     fieldLabel,
     fieldName,
     currentAmountMinor,
+    currency = 'BRL',
+    hint,
     confirmLabel,
     requireTotp = true,
     requireReason = false,
@@ -87,7 +93,9 @@ export function OrderAmountDialog({
             {/* Montado só enquanto o diálogo está aberto: cada abertura parte do
                 valor atual do pedido, e não do rascunho da tentativa anterior. */}
             <OrderAmountForm
+                currency={currency}
                 currentAmountMinor={currentAmountMinor}
+                hint={hint}
                 fieldLabel={fieldLabel}
                 fieldName={fieldName}
                 onConfirm={onConfirm}
@@ -103,6 +111,8 @@ function OrderAmountForm({
     fieldLabel,
     fieldName,
     currentAmountMinor,
+    currency,
+    hint,
     requireTotp,
     requireReason,
     onConfirm,
@@ -111,6 +121,8 @@ function OrderAmountForm({
     fieldLabel: string;
     fieldName: string;
     currentAmountMinor: string;
+    currency: string;
+    hint: string | undefined;
     requireTotp: boolean;
     requireReason: boolean;
     onConfirm: (values: OrderAmountDialogValues) => Promise<void>;
@@ -142,8 +154,8 @@ function OrderAmountForm({
     return (
         <form className="grid gap-4" id={FORM_ID} onSubmit={handleSubmit}>
             <CurrencyInput
-                currency="BRL"
-                hint={t('orders.amountDialog.currentValue', { amount: money(currentAmountMinor) })}
+                currency={currency}
+                hint={hint ?? t('orders.amountDialog.currentValue', { amount: money(currentAmountMinor, currency) })}
                 label={fieldLabel}
                 minor={minor}
                 name={fieldName}

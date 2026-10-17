@@ -77,10 +77,10 @@ export function EmailDeliveriesPage() {
             cell: (row) =>
                 row.userId ? (
                     <Link
-                        className="mm-data text-primary no-underline hover:underline dark:text-night-accent"
+                        className="text-primary no-underline hover:underline dark:text-night-accent"
                         href={`/admin/usuarios/${row.userId}`}
                     >
-                        @{row.recipientDomain}
+                        {row.recipientName || `@${row.recipientDomain}`}
                     </Link>
                 ) : (
                     <span className="mm-data text-muted dark:text-night-subtle">@{row.recipientDomain}</span>
@@ -133,11 +133,7 @@ export function EmailDeliveriesPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader
-                description={t('emails.description')}
-                kicker={t('emails.kicker')}
-                title={t('emails.title')}
-            />
+            <PageHeader description={t('emails.description')} kicker={t('emails.kicker')} title={t('emails.title')} />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>
@@ -169,7 +165,9 @@ export function EmailDeliveriesPage() {
                     minWidth="60rem"
                     rowKey={(row) => row.id}
                     rows={result?.data ?? []}
-                    empty={<EmptyState description={t('emails.emptyDescription')} icon={Mail} title={t('emails.empty')} />}
+                    empty={
+                        <EmptyState description={t('emails.emptyDescription')} icon={Mail} title={t('emails.empty')} />
+                    }
                 />
 
                 {result && result.data.length > 0 && (

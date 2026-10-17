@@ -329,6 +329,11 @@ export interface AdminOrderItem {
     category: { id: string; name: string; slug: string } | null;
     /** Preço declarado pelo cliente em yuan (fen), só informativo. */
     referencePriceCnyMinor: string | null;
+    /** Item cancelado sozinho num pedido pago (ausente em backend antigo). */
+    cancelledAt?: string | null;
+    cancellationReason?: string | null;
+    /** O que voltou ao saldo por este item, em fen. */
+    refundedAmountMinor?: string;
 }
 
 export interface AdminOrderMedia {
@@ -545,6 +550,7 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         MARKED_PAID_BY_CUSTOMER: 'Cliente marcou como pago',
         PAYMENT_CONFIRMED: 'Pagamento confirmado',
         CREATED_BY_ADMIN: 'Pedido montado pela equipe',
+        ITEM_CANCELLED: 'Item cancelado',
     },
     'zh-Hans': {
         DESCRIPTION_UPDATED: '描述已更新',
@@ -568,6 +574,7 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         MARKED_PAID_BY_CUSTOMER: '客户已标记为已付款',
         PAYMENT_CONFIRMED: '付款已确认',
         CREATED_BY_ADMIN: '订单由团队代建',
+        ITEM_CANCELLED: '商品已取消',
     },
 };
 
@@ -863,6 +870,8 @@ export interface AdminEmailDelivery {
     category: string;
     status: string;
     recipientDomain: string;
+    /** Nome do cliente; nulo nos alertas da operação (ou em backend antigo). */
+    recipientName?: string | null;
     userId: string | null;
     subjectId: string | null;
     attempts: number;
@@ -870,6 +879,45 @@ export interface AdminEmailDelivery {
     sentAt: string | null;
     lastError: string | null;
     createdAt: string;
+}
+
+export const TOP_UP_STATUSES = [
+    'AWAITING_PROVIDER',
+    'PENDING',
+    'CONFIRMED',
+    'EXPIRED',
+    'PARTIALLY_REFUNDED',
+    'REFUNDED',
+    'REVERSED',
+    'CANCELLED',
+] as const;
+
+export type TopUpStatus = (typeof TOP_UP_STATUSES)[number];
+
+/** `GET /finance/top-ups`: uma recarga do histórico. */
+export interface AdminTopUp {
+    id: string;
+    userId: string;
+    userName: string;
+    status: string;
+    /** O que o cliente pagou, em centavos de real. */
+    amountMinor: string;
+    /** O que entrou no saldo, em fen. */
+    creditAmountMinor: string;
+    effectiveRate: string | null;
+    fxSpreadMinor: string;
+    pspFeeMinor: string;
+    /** `MANUAL` = pagamento recebido por fora e lançado pelo painel. */
+    providerName: string | null;
+    createdAt: string;
+    confirmedAt: string | null;
+    expiresAt: string | null;
+}
+
+export interface AdminTopUpsPage extends Page<AdminTopUp> {
+    /** Soma das confirmadas no filtro: pago (centavos) e creditado (fen). */
+    confirmedAmountMinor: string;
+    confirmedCreditMinor: string;
 }
 
 export const EMAIL_DELIVERY_STATUSES = ['PENDING', 'SENT', 'FAILED', 'SKIPPED'] as const;
