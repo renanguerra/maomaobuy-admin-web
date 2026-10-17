@@ -388,8 +388,12 @@ html:lang(zh-Hans) {
         box-shadow: 0 8px 24px rgb(4 12 15 / 20%);
     }
 
-    /* Rolagem horizontal discreta (tabelas largas, abas de filtro). */
+    /* Rolagem horizontal discreta (tabelas largas, abas de filtro).
+       `relative` prende nela o texto `sr-only` (absoluto) das células: sem
+       isso ele escapava e esticava a página — a lista de pedidos rolava para
+       o lado em 1024 px. */
     .mm-scroll-x {
+        position: relative;
         overflow-x: auto;
         scrollbar-width: thin;
         scrollbar-color: var(--color-warm-400) transparent;
