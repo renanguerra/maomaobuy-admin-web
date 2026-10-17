@@ -82,6 +82,22 @@ const EMAIL_DELIVERY_STATUS_TONES: Record<string, StatusTone> = {
     SKIPPED: 'neutral',
 };
 
+/** Recarga: aguardando pagamento é âmbar, virou saldo é verde, morreu é inerte. */
+const TOP_UP_STATUS_TONES: Record<string, StatusTone> = {
+    AWAITING_PROVIDER: 'warning',
+    PENDING: 'warning',
+    CONFIRMED: 'success',
+    EXPIRED: 'neutral',
+    PARTIALLY_REFUNDED: 'info',
+    REFUNDED: 'neutral',
+    REVERSED: 'danger',
+    CANCELLED: 'neutral',
+};
+
+export function topUpStatusTone(status: string): StatusTone {
+    return TOP_UP_STATUS_TONES[status] ?? 'neutral';
+}
+
 export function emailDeliveryStatusTone(status: string): StatusTone {
     return EMAIL_DELIVERY_STATUS_TONES[status] ?? 'neutral';
 }

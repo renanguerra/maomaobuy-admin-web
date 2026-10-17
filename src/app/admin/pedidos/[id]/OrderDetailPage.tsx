@@ -45,6 +45,7 @@ import {
     orderStatusLabel,
     totalUnits,
     type AdminOrder,
+    type AdminOrderItem,
 } from '@/types/api';
 import { QuantityBadge } from '@/components/admin/QuantityBadge';
 import { InspectionCard } from '@/components/admin/InspectionCard';
@@ -99,6 +100,19 @@ const SOURCING_NEXT_STEP: Record<string, { status: string; labelKey: MessageKey 
     SELLER_SHIPPED: { status: 'IN_WAREHOUSE', labelKey: 'orders.detail.actions.markInWarehouse' },
 };
 
+/**
+ * Parte do item no que o pedido pagou pela mercadoria (mercadoria + taxa −
+ * cupom), na proporção do preço dele entre todos os itens. Mesma conta de
+ * `AdminOrdersRepository.itemRefundShare` no backend.
+ */
+function itemRefundShare(order: AdminOrder, item: AdminOrderItem): string {
+    const line = (entry: AdminOrderItem) => BigInt(entry.unitAmountMinor) * BigInt(entry.quantity);
+    const base = order.items.reduce((total, entry) => total + line(entry), BigInt(0));
+    const paid = BigInt(order.totalAmountMinor) - BigInt(order.discountAmountMinor);
+    if (base <= BigInt(0) || paid <= BigInt(0)) return '0';
+    return ((paid * line(item)) / base).toString();
+}
+
 export function OrderDetailPage() {
     const { t } = useTranslation();
     const { admin } = useAdminAccountAuth();
@@ -110,6 +124,7 @@ export function OrderDetailPage() {
     const [dialog, setDialog] = useState<DialogKind>(null);
     const [busy, setBusy] = useState<string>();
     const [costSheetOpen, setCostSheetOpen] = useState(false);
+    const [cancelItemId, setCancelItemId] = useState<string>();
 
     const load = useCallback(() => {
         api<AdminOrder>(`/orders/${params.id}`)
@@ -163,6 +178,20 @@ export function OrderDetailPage() {
             }),
         });
         applyUpdate(updated, t('orders.detail.feedback.priceChanged'));
+    }
+
+    async function handleCancelItemConfirm(values: OrderAmountDialogValues) {
+        if (!cancelItemId) return;
+        const updated = await api<AdminOrder>(`/orders/${params.id}/items/${cancelItemId}/cancel`, {
+            method: 'POST',
+            body: JSON.stringify({
+                totpCode: values.totpCode,
+                reason: values.reason,
+                refundAmountMinor: values.newAmountMinor,
+            }),
+        });
+        setCancelItemId(undefined);
+        applyUpdate(updated, t('orders.detail.feedback.itemCancelled'));
     }
 
     async function handleShippingEstimateConfirm(values: OrderAmountDialogValues) {
@@ -316,6 +345,18 @@ export function OrderDetailPage() {
     // devolve dinheiro, é do Financeiro (o backend responde 403 aos outros).
     const canCancelPaid =
         PAID_CANCELLABLE_STATUSES.includes(order.status) && (admin?.role === 'FINANCE' || admin?.role === 'SUPERADMIN');
+    // Um item sozinho sai do pedido pago e a parte dele volta ao saldo. O
+    // último item vivo não: aí é cancelar o pedido inteiro.
+    const activeItemCount = order.items.filter((item) => !item.cancelledAt).length;
+    const canCancelItem = canCancelPaid && activeItemCount > 1;
+    const itemToCancel = order.items.find((item) => item.id === cancelItemId);
+    // Cancelar o pedido inteiro devolve só o que ainda não voltou por item.
+    const remainingRefundMinor = order.items
+        .reduce(
+            (total, item) => total - BigInt(item.refundedAmountMinor ?? '0'),
+            BigInt(order.chargeableTotalAmountMinor),
+        )
+        .toString();
     const canOverrideStatus = order.fulfillmentMode === 'SOURCED' && OVERRIDABLE_FROM_STATUSES.includes(order.status);
     // Pedido montado pela equipe troca os itens até o cliente aceitar.
     const canEditItems = order.createdByAdminId !== null && order.status === 'AWAITING_CUSTOMER_APPROVAL';
@@ -553,12 +594,34 @@ export function OrderDetailPage() {
                             {order.items.map((item) => (
                                 <li key={item.id}>
                                     <ListRow
+                                        className={item.cancelledAt ? 'opacity-70' : ''}
                                         leading={<QuantityBadge quantity={item.quantity} />}
                                         title={
                                             <>
                                                 <span className="sr-only">{item.quantity} × </span>
-                                                {item.productName}
+                                                <span className={item.cancelledAt ? 'line-through' : ''}>
+                                                    {item.productName}
+                                                </span>
                                             </>
+                                        }
+                                        pill={
+                                            item.cancelledAt ? (
+                                                <StatusPill tone="danger">
+                                                    {t('orders.detail.itemsSection.cancelled')}
+                                                </StatusPill>
+                                            ) : undefined
+                                        }
+                                        actions={
+                                            canCancelItem && !item.cancelledAt ? (
+                                                <Button
+                                                    leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
+                                                    onClick={() => setCancelItemId(item.id)}
+                                                    size="small"
+                                                    variant="ghost"
+                                                >
+                                                    {t('orders.detail.actions.cancelItem')}
+                                                </Button>
+                                            ) : undefined
                                         }
                                         value={money(
                                             lineTotalMinor(item.unitAmountMinor, item.quantity),
@@ -583,6 +646,17 @@ export function OrderDetailPage() {
                                                           amount: money(item.referencePriceCnyMinor, 'CNY'),
                                                       })}`
                                                     : ''}
+                                                {item.cancelledAt && (
+                                                    <span className="mt-1 block text-origin-700 dark:text-night-coral">
+                                                        {t('orders.detail.itemsSection.refunded', {
+                                                            amount: money(
+                                                                item.refundedAmountMinor ?? '0',
+                                                                item.currency,
+                                                            ),
+                                                        })}
+                                                        {item.cancellationReason ? ` · ${item.cancellationReason}` : ''}
+                                                    </span>
+                                                )}
                                                 {item.marketplaceUrl && (
                                                     <a
                                                         className="mt-1 block truncate text-primary dark:text-night-accent"
@@ -790,7 +864,7 @@ export function OrderDetailPage() {
                 description={
                     canCancelPaid
                         ? t('orders.detail.dialogs.cancelRefund.description', {
-                              amount: money(order.chargeableTotalAmountMinor, order.currency),
+                              amount: money(remainingRefundMinor, order.currency),
                           })
                         : t('orders.detail.dialogs.reject.description')
                 }
@@ -895,6 +969,24 @@ export function OrderDetailPage() {
                 onConfirm={handlePriceConfirm}
                 open={dialog === 'change-price'}
                 title={t('orders.detail.dialogs.changePrice.title')}
+            />
+            <OrderAmountDialog
+                confirmLabel={t('orders.detail.dialogs.cancelItem.confirmLabel')}
+                currency={order.currency}
+                currentAmountMinor={itemToCancel ? itemRefundShare(order, itemToCancel) : '0'}
+                hint={t('orders.detail.dialogs.cancelItem.hint', {
+                    amount: money(itemToCancel ? itemRefundShare(order, itemToCancel) : '0', order.currency),
+                })}
+                description={t('orders.detail.dialogs.cancelItem.description', {
+                    product: itemToCancel?.productName ?? '',
+                })}
+                fieldLabel={t('orders.detail.dialogs.cancelItem.fieldLabel')}
+                fieldName="refundAmountMinor"
+                onCancel={() => setCancelItemId(undefined)}
+                onConfirm={handleCancelItemConfirm}
+                open={Boolean(itemToCancel)}
+                requireReason
+                title={t('orders.detail.dialogs.cancelItem.title')}
             />
             <OrderAmountDialog
                 confirmLabel={t('orders.detail.dialogs.changeShippingEstimate.confirmLabel')}

@@ -6,6 +6,7 @@ import {
     LayoutDashboard,
     Mail,
     Megaphone,
+    ArrowDownToLine,
     Package,
     PackageOpen,
     PackageSearch,
@@ -67,6 +68,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
         key: 'finance',
         items: [
             { key: 'finance', href: '/admin/financeiro', icon: Wallet, badge: 'finance' },
+            { key: 'topUps', href: '/admin/recargas', icon: ArrowDownToLine },
             { key: 'coupons', href: '/admin/cupons', icon: TicketPercent },
             { key: 'profit', href: '/admin/lucro', icon: ChartColumn },
         ],

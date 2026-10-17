@@ -9,6 +9,7 @@ export {
     productRequestStatusTone,
     publishedTone,
     refundStatusTone,
+    topUpStatusTone,
     userStatusTone,
 } from './status-tone';
 export type { StatusTone } from './status-tone';
