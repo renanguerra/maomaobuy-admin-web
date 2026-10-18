@@ -60,7 +60,9 @@ export function PageHeader({
                     )}
                 </div>
 
-                {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
+                {/* `max-w-full` e não `shrink-0`: com muitas ações o grupo quebra
+                    linha dentro do cabeçalho em vez de empurrar a página. */}
+                {actions && <div className="flex max-w-full flex-wrap items-center gap-2">{actions}</div>}
             </div>
         </header>
     );

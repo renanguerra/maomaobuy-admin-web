@@ -17,10 +17,10 @@ export const ORDER_QUEUE_TABS = {
     review: { statuses: ['AWAITING_REVIEW'], counts: ['ordersToReview'] },
     purchase: { statuses: ['SUBMITTED'], counts: ['ordersToPurchase'] },
     seller: { statuses: ['PURCHASED', 'SELLER_SHIPPED'], counts: ['ordersWithSeller', 'ordersInboundToWarehouse'] },
-    inspect: { statuses: ['IN_WAREHOUSE'], counts: ['ordersToInspect'] },
+    warehouse: { statuses: ['IN_WAREHOUSE'], counts: ['ordersInWarehouse'] },
     refund: { statuses: ['REFUND_REQUESTED'], counts: ['ordersRefundToConfirm'] },
     customer: {
-        statuses: ['AWAITING_CUSTOMER_APPROVAL', 'UNPAID', 'INSPECTION_PENDING', 'READY_TO_SHIP', 'PARTIALLY_SHIPPED'],
+        statuses: ['AWAITING_CUSTOMER_APPROVAL', 'UNPAID', 'READY_TO_SHIP', 'PARTIALLY_SHIPPED'],
     },
 } as const satisfies Record<string, QueueTab<OrderStatus>>;
 
@@ -66,8 +66,7 @@ export const TEAM_PACKAGE_STATUSES: readonly PackageStatus[] = [
 export const STAGE_LINKS: Record<WorkQueueStageKey, string> = {
     ordersToReview: '/admin/pedidos?fila=review',
     ordersToPurchase: '/admin/pedidos?fila=purchase',
-    ordersToInspect: '/admin/inspecoes',
-    inspectionsAwaitingAdmin: '/admin/inspecoes',
+    ordersInWarehouse: '/admin/pedidos?fila=warehouse',
     ordersRefundToConfirm: '/admin/pedidos?fila=refund',
     packagesDraft: '/admin/pacotes?fila=review',
     packagesToReview: '/admin/pacotes?fila=review',
@@ -81,7 +80,6 @@ export const STAGE_LINKS: Record<WorkQueueStageKey, string> = {
     packagesInTransit: '/admin/pacotes?fila=transit',
     ordersAwaitingCustomerApproval: '/admin/pedidos?status=AWAITING_CUSTOMER_APPROVAL',
     ordersAwaitingPayment: '/admin/pedidos?status=UNPAID',
-    inspectionsAwaitingCustomer: '/admin/pedidos?status=INSPECTION_PENDING',
     ordersUnpacked: '/admin/sem-pacote',
     packagesAwaitingFreightPayment: '/admin/pacotes?fila=freight',
 };

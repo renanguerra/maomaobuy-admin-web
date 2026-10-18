@@ -8,9 +8,9 @@ export type MenuBadge = keyof PendingCounts;
 export type MenuItemKey =
     | 'dashboard'
     | 'orders'
-    | 'inspections'
     | 'packages'
     | 'unpacked'
+    | 'carriers'
     | 'users'
     | 'products'
     | 'categories'

@@ -13,7 +13,6 @@ const ORDER_STATUS_TONES: Record<string, StatusTone> = {
     PURCHASED: 'info',
     SELLER_SHIPPED: 'info',
     IN_WAREHOUSE: 'info',
-    INSPECTION_PENDING: 'warning',
     READY_TO_SHIP: 'info',
     PARTIALLY_SHIPPED: 'info',
     SHIPPED: 'info',
@@ -60,13 +59,6 @@ const REFUND_STATUS_TONES: Record<string, StatusTone> = {
     FAILED: 'danger',
 };
 
-const INSPECTION_STATUS_TONES: Record<string, StatusTone> = {
-    PENDING: 'neutral',
-    AWAITING_CUSTOMER: 'info',
-    AWAITING_ADMIN: 'warning',
-    DECIDED: 'success',
-};
-
 const PRODUCT_REQUEST_STATUS_TONES: Record<string, StatusTone> = {
     NEW: 'warning',
     REVIEWING: 'info',
@@ -100,10 +92,6 @@ export function topUpStatusTone(status: string): StatusTone {
 
 export function emailDeliveryStatusTone(status: string): StatusTone {
     return EMAIL_DELIVERY_STATUS_TONES[status] ?? 'neutral';
-}
-
-export function inspectionStatusTone(status: string): StatusTone {
-    return INSPECTION_STATUS_TONES[status] ?? 'neutral';
 }
 
 export function orderStatusTone(status: string): StatusTone {

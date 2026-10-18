@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
     CheckCircle2,
     History,
@@ -48,7 +48,6 @@ import {
     type AdminOrderItem,
 } from '@/types/api';
 import { QuantityBadge } from '@/components/admin/QuantityBadge';
-import { InspectionCard } from '@/components/admin/InspectionCard';
 import { OrderMediaManager } from './OrderMediaManager';
 import { OrderOptionalServicesSection } from './OrderOptionalServices';
 import { OrderAmountDialog, type OrderAmountDialogValues } from './OrderAmountDialog';
@@ -70,28 +69,14 @@ const APPROVAL_FEEDBACK_KEY: Record<ApprovalDialogKind, MessageKey> = {
  * pedido — a operação nunca escolhe para onde pular.
  */
 /** Fases pagas em que o backend ainda aceita cancelar (`REJECTABLE_STATUSES`). */
-const PAID_CANCELLABLE_STATUSES = [
-    'SUBMITTED',
-    'PURCHASED',
-    'SELLER_SHIPPED',
-    'IN_WAREHOUSE',
-    'INSPECTION_PENDING',
-    'READY_TO_SHIP',
-];
+const PAID_CANCELLABLE_STATUSES = ['SUBMITTED', 'PURCHASED', 'SELLER_SHIPPED', 'IN_WAREHOUSE', 'READY_TO_SHIP'];
 
 /**
  * Ajuste manual de status (`POST /orders/:id/status`): origens e destinos que
  * o backend aceita. Fora daqui o pedido ainda não foi pago, já viajou ou foi
  * encerrado, e cada caso tem a própria ação.
  */
-const OVERRIDABLE_FROM_STATUSES = [
-    'SUBMITTED',
-    'PURCHASED',
-    'SELLER_SHIPPED',
-    'IN_WAREHOUSE',
-    'INSPECTION_PENDING',
-    'READY_TO_SHIP',
-];
+const OVERRIDABLE_FROM_STATUSES = ['SUBMITTED', 'PURCHASED', 'SELLER_SHIPPED', 'IN_WAREHOUSE', 'READY_TO_SHIP'];
 const OVERRIDE_TARGET_STATUSES = ['PURCHASED', 'SELLER_SHIPPED', 'IN_WAREHOUSE', 'READY_TO_SHIP'];
 
 const SOURCING_NEXT_STEP: Record<string, { status: string; labelKey: MessageKey }> = {
@@ -118,7 +103,6 @@ export function OrderDetailPage() {
     const { admin } = useAdminAccountAuth();
     const { notify } = useToast();
     const params = useParams<{ id: string }>();
-    const router = useRouter();
     const [order, setOrder] = useState<AdminOrder>();
     const [error, setError] = useState<string>();
     const [dialog, setDialog] = useState<DialogKind>(null);
@@ -237,50 +221,13 @@ export function OrderDetailPage() {
         applyUpdate(updated, t('orders.detail.feedback.statusOverridden'));
     }
 
-    /** Abre o laudo de um item que chegou ao armazém. */
-    async function openInspection(orderItemId: string) {
-        setBusy('inspection');
-        try {
-            await api(`/inspections`, {
-                method: 'POST',
-                body: JSON.stringify({ orderItemId }),
-            });
-            load();
-        } catch (err) {
-            notify({
-                tone: 'danger',
-                title: t('common.errors.actionTitle'),
-                description: err instanceof ApiError ? err.message : t('common.errors.generic'),
-            });
-        } finally {
-            setBusy(undefined);
-        }
-    }
-
-    async function publishInspection(inspectionId: string) {
-        setBusy('inspection');
-        try {
-            await api(`/inspections/${inspectionId}/publish`, { method: 'POST' });
-            notify({ tone: 'success', title: t('inspections.feedback.published') });
-            void refreshPendingCounts();
-            load();
-        } catch (err) {
-            notify({
-                tone: 'danger',
-                title: t('common.errors.actionTitle'),
-                description: err instanceof ApiError ? err.message : t('common.errors.generic'),
-            });
-        } finally {
-            setBusy(undefined);
-        }
-    }
-
     async function markReadyToShip() {
         setBusy('mark-ready-to-ship');
         try {
+            // Sem motivo: o backend grava o texto que o cliente lê no histórico.
             const updated = await api<AdminOrder>(`/orders/${params.id}/mark-ready-to-ship`, {
                 method: 'POST',
-                body: JSON.stringify({ reason: t('orders.detail.actions.markReadyToShipReason') }),
+                body: JSON.stringify({}),
             });
             applyUpdate(updated, t('orders.detail.feedback.markedReadyToShip'));
         } catch (err) {
@@ -336,10 +283,6 @@ export function OrderDetailPage() {
     const sourcingStep = order.fulfillmentMode === 'SOURCED' ? SOURCING_NEXT_STEP[order.status] : undefined;
     // Só o admin master devolve dinheiro (`@Roles(SUPERADMIN)` em confirm-refund).
     const canConfirmRefund = admin?.role === 'SUPERADMIN';
-    // Itens que chegaram ao armazém e ainda não têm laudo aberto.
-    const inspectedItemIds = new Set(order.inspections.map((inspection) => inspection.orderItemId));
-    const itemsWithoutInspection =
-        order.status === 'IN_WAREHOUSE' ? order.items.filter((item) => !inspectedItemIds.has(item.id)) : [];
     // Espelha `REJECTABLE_STATUSES` do backend: pedido pago que ainda não
     // viajou pode ser cancelado e o pagamento volta ao saldo na hora. Como
     // devolve dinheiro, é do Financeiro (o backend responde 403 aos outros).
@@ -367,7 +310,7 @@ export function OrderDetailPage() {
         Boolean(sourcingStep) ||
         canOverrideStatus ||
         canCancelPaid ||
-        order.status === 'INSPECTION_PENDING' ||
+        order.status === 'IN_WAREHOUSE' ||
         order.status === 'REFUND_REQUESTED';
 
     return (
@@ -516,19 +459,9 @@ export function OrderDetailPage() {
                     {order.status === 'IN_WAREHOUSE' && (
                         <Button
                             leadingIcon={<PackageCheck className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => router.push(`/admin/inspecoes?orderId=${order.id}`)}
-                            size="small"
-                        >
-                            {t('orders.detail.actions.openInspection')}
-                        </Button>
-                    )}
-                    {order.status === 'INSPECTION_PENDING' && (
-                        <Button
-                            leadingIcon={<PackageCheck className="h-4 w-4" aria-hidden="true" />}
                             loading={busy === 'mark-ready-to-ship'}
                             onClick={markReadyToShip}
                             size="small"
-                            variant="ghost"
                         >
                             {t('orders.detail.actions.markReadyToShip')}
                         </Button>
@@ -684,50 +617,6 @@ export function OrderDetailPage() {
                             </p>
                         </SectionCard>
                     )}
-
-                    {itemsWithoutInspection.length > 0 && (
-                        <SectionCard
-                            description={t('orders.detail.inspectionSection.description')}
-                            title={t('orders.detail.inspectionSection.title')}
-                        >
-                            <ul className="m-0 grid list-none gap-2 p-0">
-                                {itemsWithoutInspection.map((item) => (
-                                    <li
-                                        className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 dark:border-night-line"
-                                        key={item.id}
-                                    >
-                                        <span className="min-w-0 truncate text-sm font-semibold text-ink dark:text-night-text">
-                                            {item.productName}
-                                        </span>
-                                        <Button
-                                            loading={busy === 'inspection'}
-                                            onClick={() => openInspection(item.id)}
-                                            size="small"
-                                        >
-                                            {t('inspections.queue.open')}
-                                        </Button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </SectionCard>
-                    )}
-
-                    {order.inspections.map((inspection) => (
-                        <InspectionCard
-                            busy={busy === 'inspection'}
-                            inspection={inspection}
-                            key={inspection.id}
-                            onChanged={async () => load()}
-                            onFail={(err) =>
-                                notify({
-                                    tone: 'danger',
-                                    title: t('common.errors.actionTitle'),
-                                    description: err instanceof ApiError ? err.message : t('common.errors.generic'),
-                                })
-                            }
-                            onPublish={() => publishInspection(inspection.id)}
-                        />
-                    ))}
 
                     {canEditDescriptionAndMedia ? (
                         <OrderMediaManager media={order.media} onChanged={load} orderId={order.id} />

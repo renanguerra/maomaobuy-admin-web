@@ -26,8 +26,7 @@ const TEAM_STAGES: readonly WorkQueueStageKey[] = [
     'ordersToPurchase',
     'ordersWithSeller',
     'ordersInboundToWarehouse',
-    'ordersToInspect',
-    'inspectionsAwaitingAdmin',
+    'ordersInWarehouse',
     'packagesDraft',
     'packagesToReview',
     'packagesToQuote',
@@ -50,7 +49,6 @@ const HIDDEN_WHEN_EMPTY: ReadonlySet<WorkQueueStageKey> = new Set([
 const CUSTOMER_STAGES: readonly WorkQueueStageKey[] = [
     'ordersAwaitingCustomerApproval',
     'ordersAwaitingPayment',
-    'inspectionsAwaitingCustomer',
     'ordersUnpacked',
     'packagesAwaitingFreightPayment',
 ];
