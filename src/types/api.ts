@@ -262,7 +262,6 @@ export const ORDER_STATUSES = [
     'PURCHASED',
     'SELLER_SHIPPED',
     'IN_WAREHOUSE',
-    'INSPECTION_PENDING',
     'READY_TO_SHIP',
     'PARTIALLY_SHIPPED',
     'SHIPPED',
@@ -282,7 +281,6 @@ const ORDER_STATUS_LABELS: Record<Locale, Record<OrderStatus, string>> = {
         PURCHASED: 'Comprado',
         SELLER_SHIPPED: 'Enviado pelo vendedor',
         IN_WAREHOUSE: 'No depósito',
-        INSPECTION_PENDING: 'Aguardando inspeção',
         READY_TO_SHIP: 'Pronto para envio',
         PARTIALLY_SHIPPED: 'Parcialmente enviado',
         SHIPPED: 'Enviado',
@@ -299,7 +297,6 @@ const ORDER_STATUS_LABELS: Record<Locale, Record<OrderStatus, string>> = {
         PURCHASED: '已购买',
         SELLER_SHIPPED: '卖家已发货',
         IN_WAREHOUSE: '已到仓',
-        INSPECTION_PENDING: '待验货',
         READY_TO_SHIP: '可发货',
         PARTIALLY_SHIPPED: '部分发货',
         SHIPPED: '已发货',
@@ -495,7 +492,6 @@ export interface AdminOrder {
     items: AdminOrderItem[];
     optionalServices: OrderOptionalService[];
     media: AdminOrderMedia[];
-    inspections: OrderInspection[];
     changeLogs: AdminOrderChangeLog[];
 }
 
@@ -551,6 +547,16 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         PAYMENT_CONFIRMED: 'Pagamento confirmado',
         CREATED_BY_ADMIN: 'Pedido montado pela equipe',
         ITEM_CANCELLED: 'Item cancelado',
+        SUBMITTED_TO_SELLER: 'Compra feita com o vendedor',
+        SELLER_SHIPPED: 'Vendedor enviou ao armazém',
+        ARRIVED_IN_WAREHOUSE: 'Chegou ao armazém',
+        READY_TO_SHIP: 'Liberado para envio',
+        SHIPPED: 'Enviado ao cliente',
+        DELIVERED: 'Entregue',
+        STOCK_RESERVATION_EXPIRED: 'Reserva de estoque expirada',
+        REFUND_REQUESTED: 'Reembolso solicitado',
+        INSPECTION_PUBLISHED: 'Inspeção publicada (fluxo antigo)',
+        INSPECTION_DECIDED: 'Cliente decidiu a inspeção (fluxo antigo)',
     },
     'zh-Hans': {
         DESCRIPTION_UPDATED: '描述已更新',
@@ -575,6 +581,16 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         PAYMENT_CONFIRMED: '付款已确认',
         CREATED_BY_ADMIN: '订单由团队代建',
         ITEM_CANCELLED: '商品已取消',
+        SUBMITTED_TO_SELLER: '已向卖家下单',
+        SELLER_SHIPPED: '卖家已发往仓库',
+        ARRIVED_IN_WAREHOUSE: '已到仓',
+        READY_TO_SHIP: '已放行发货',
+        SHIPPED: '已发给客户',
+        DELIVERED: '已签收',
+        STOCK_RESERVATION_EXPIRED: '库存预留已过期',
+        REFUND_REQUESTED: '已申请退款',
+        INSPECTION_PUBLISHED: '验货单已发布（旧流程）',
+        INSPECTION_DECIDED: '客户已决定验货结果（旧流程）',
     },
 };
 
@@ -726,18 +742,10 @@ export interface AdminPackageAssemblyOrder {
     optionalServices: OrderOptionalService[];
 }
 
-export interface AdminPackageAssemblyInspection {
-    status: string;
-    decision: string | null;
-    decisionNote: string | null;
-    summary: string | null;
-}
-
 export interface AdminPackageAssemblyItem extends AdminPackageItem {
     orderId: string;
     /** Rótulo da variação do catálogo ("Azul / M"); `null` fora do catálogo. */
     variantLabel: string | null;
-    inspection: AdminPackageAssemblyInspection | null;
 }
 
 /** Uma folha por pacote: o pacote, os itens e os pedidos de onde eles vêm. */
@@ -1034,83 +1042,6 @@ export function formatDate(value: string | null) {
     }).format(new Date(value));
 }
 
-// ---------------------------------------------------------------------------
-// Inspeções
-// ---------------------------------------------------------------------------
-
-export const INSPECTION_STATUSES = ['PENDING', 'AWAITING_CUSTOMER', 'AWAITING_ADMIN', 'DECIDED'] as const;
-export type InspectionStatus = (typeof INSPECTION_STATUSES)[number];
-
-const INSPECTION_STATUS_LABELS: Record<Locale, Record<InspectionStatus, string>> = {
-    'pt-BR': {
-        PENDING: 'Rascunho',
-        AWAITING_CUSTOMER: 'Com o cliente',
-        AWAITING_ADMIN: 'Ação pedida pelo cliente',
-        DECIDED: 'Decidida',
-    },
-    'zh-Hans': {
-        PENDING: '草稿',
-        AWAITING_CUSTOMER: '等待客户',
-        AWAITING_ADMIN: '客户请求处理',
-        DECIDED: '已决定',
-    },
-};
-
-export function inspectionStatusLabel(status: string) {
-    return INSPECTION_STATUS_LABELS[getStoreLocale()][status as InspectionStatus] ?? status;
-}
-
-export interface AdminInspectionMedia {
-    id: string;
-    type: 'IMAGE' | 'VIDEO';
-    mimeType: string;
-    sizeBytes: string;
-    sortOrder: number;
-    altText: string | null;
-    url: string | null;
-}
-
-export interface AdminInspection {
-    id: string;
-    orderItemId: string;
-    orderId: string | null;
-    productName: string | null;
-    userId: string;
-    status: string;
-    summary: string | null;
-    tests: Array<{ name: string; result: string; notes?: string }>;
-    media: AdminInspectionMedia[];
-    decision: string | null;
-    decisionNote: string | null;
-    completedAt: string | null;
-    decisionDeadlineAt: string | null;
-    decidedAt: string | null;
-    createdAt: string;
-}
-
-/** O laudo como ele chega dentro do pedido — a forma que o painel edita. */
-export interface OrderInspection {
-    id: string;
-    orderItemId: string;
-    productName: string;
-    status: string;
-    summary: string | null;
-    tests: Array<{ name: string; result: string; notes?: string }>;
-    media: AdminInspectionMedia[];
-    decision: string | null;
-    decisionNote: string | null;
-    decisionDeadlineAt: string | null;
-    decidedAt: string | null;
-}
-
-/** Item que chegou ao armazém e ainda não tem laudo aberto. */
-export interface AdminPendingInspectionItem {
-    orderItemId: string;
-    orderId: string;
-    userId: string;
-    productName: string;
-}
-
 export interface AdminCoinTransaction {
     id: string;
     type: 'PURCHASE' | 'REFERRAL' | 'ADMIN_ADJUSTMENT' | 'REDEEM' | 'REDEEM_REFUND' | 'REVERSAL';
@@ -1176,8 +1107,7 @@ export type WorkQueueOwner = 'TEAM' | 'CUSTOMER' | 'EXTERNAL';
 export type WorkQueueStageKey =
     | 'ordersToReview'
     | 'ordersToPurchase'
-    | 'ordersToInspect'
-    | 'inspectionsAwaitingAdmin'
+    | 'ordersInWarehouse'
     | 'ordersRefundToConfirm'
     | 'packagesDraft'
     | 'packagesToReview'
@@ -1191,7 +1121,6 @@ export type WorkQueueStageKey =
     | 'packagesInTransit'
     | 'ordersAwaitingCustomerApproval'
     | 'ordersAwaitingPayment'
-    | 'inspectionsAwaitingCustomer'
     | 'ordersUnpacked'
     | 'packagesAwaitingFreightPayment';
 

@@ -8,7 +8,6 @@ import type { MenuItemKey } from './AdminSidebar.types';
  * área é balcão comum (pedidos, e-mails, painel).
  */
 const WRITE_ROLES: Partial<Record<MenuItemKey, readonly string[]>> = {
-    inspections: ['WAREHOUSE'],
     packages: ['WAREHOUSE'],
     productRequests: ['SUPPORT', 'CATALOG'],
     users: ['SUPPORT'],

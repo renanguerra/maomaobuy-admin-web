@@ -13,7 +13,6 @@ import {
     formatCpf,
     formatDate,
     formatPhone,
-    inspectionStatusLabel,
     orderStatusLabel,
     packageStatusLabel,
     productSourceLabel,
@@ -304,11 +303,8 @@ function Sheet({ sheet, page, total, generatedAt }: SheetProps) {
                             <th className="w-28 py-1.5 pr-2" scope="col">
                                 {t('packages.assembly.columns.order')}
                             </th>
-                            <th className="w-12 py-1.5 pr-2 text-right" scope="col">
+                            <th className="w-12 py-1.5 text-right" scope="col">
                                 {t('packages.assembly.columns.quantity')}
-                            </th>
-                            <th className="w-28 py-1.5" scope="col">
-                                {t('packages.assembly.columns.inspection')}
                             </th>
                         </tr>
                     </thead>
@@ -387,7 +383,6 @@ function ItemRow({ index, item, order }: ItemRowProps) {
               : order
                 ? t('packages.assembly.order.mode.SOURCED')
                 : null;
-    const decisionKey = item.inspection?.decision as 'KEEP' | 'REQUEST_ACTION' | 'REFUSE' | null | undefined;
 
     return (
         <tr className="border-b border-warm-300 align-top print:break-inside-avoid">
@@ -438,28 +433,12 @@ function ItemRow({ index, item, order }: ItemRowProps) {
                 </Link>
                 {order && <span className="block text-warm-700">{orderStatusLabel(order.status)}</span>}
             </td>
-            <td className="py-2 pr-2 text-right">
+            <td className="py-2 text-right">
                 <strong className="mm-data block text-base leading-none">{item.quantity}</strong>
                 {orderItem.quantity !== item.quantity && (
                     <span className="block text-[9px] text-warm-600">
                         {t('packages.assembly.item.requested', { count: orderItem.quantity })}
                     </span>
-                )}
-            </td>
-            <td className="py-2">
-                {item.inspection ? (
-                    <>
-                        <span className="block font-semibold">
-                            {decisionKey
-                                ? t(`packages.assembly.inspectionDecisions.${decisionKey}`)
-                                : inspectionStatusLabel(item.inspection.status)}
-                        </span>
-                        {item.inspection.decisionNote && (
-                            <span className="block text-warm-700">{item.inspection.decisionNote}</span>
-                        )}
-                    </>
-                ) : (
-                    <span className="text-warm-500">{t('packages.assembly.item.noInspection')}</span>
                 )}
             </td>
         </tr>

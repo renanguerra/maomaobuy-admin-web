@@ -3,7 +3,6 @@ export type { StatusPillProps } from './StatusPill';
 export {
     adminAccountStatusTone,
     emailDeliveryStatusTone,
-    inspectionStatusTone,
     orderStatusTone,
     packageStatusTone,
     productRequestStatusTone,

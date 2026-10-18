@@ -16,8 +16,7 @@ export interface MenuBadgeCount {
  * vendedor ou transportadora só aparece no painel quando atrasa.
  */
 const BADGE_STAGES = {
-    orders: ['ordersToReview', 'ordersToPurchase', 'ordersRefundToConfirm'],
-    inspections: ['ordersToInspect', 'inspectionsAwaitingAdmin'],
+    orders: ['ordersToReview', 'ordersToPurchase', 'ordersInWarehouse', 'ordersRefundToConfirm'],
     packages: ['packagesDraft', 'packagesToReview', 'packagesToQuote', 'packagesToDispatch', 'packagesException'],
     productRequests: ['productRequestsNew'],
     finance: ['refundRequests'],
