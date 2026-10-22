@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ShieldCheck, Truck } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
-import { CarrierChannelBadges, CarrierChannelDetails } from '@/components/admin/CarrierShipments';
+import { CarrierChannelBadges, CarrierChannelDetails, CarrierSimulator } from '@/components/admin/CarrierShipments';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
@@ -80,6 +80,8 @@ export function CarriersPage() {
                 </Alert>
             )}
             {!data && !error && <SkeletonCards label={t('carrier.page.title')} />}
+
+            {data && <CarrierSimulator />}
 
             {data && <ChannelComparison channels={data.channels} />}
 

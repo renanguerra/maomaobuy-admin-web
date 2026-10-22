@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
     ArrowUpRight,
     CheckCircle2,
@@ -10,6 +10,7 @@ import {
     Images,
     ListRestart,
     MessageSquare,
+    OctagonAlert,
     Package as PackageIcon,
     Pencil,
     Plus,
@@ -68,10 +69,24 @@ type DialogKind =
     | 'add-items'
     | 'override-status'
     | 'carrier-quote'
+    | 'shipping-failure'
     | null;
 
 /** Situações finais do pacote — nada mais é anexado depois delas. */
-const CLOSED_STATUSES = ['DELIVERED', 'RETURNED', 'CANCELLED'];
+const CLOSED_STATUSES = ['DELIVERED', 'RETURNED', 'SHIPPING_FAILED', 'CANCELLED'];
+
+/**
+ * Espelha `SHIPPING_FAILABLE_STATUSES` do backend: frete pago e pacote ainda
+ * não encerrado. Antes do pagamento o caminho é cancelar.
+ */
+const SHIPPING_FAILABLE_STATUSES = [
+    'READY_FOR_DISPATCH',
+    'SHIPPED',
+    'IN_TRANSIT',
+    'CUSTOMS',
+    'OUT_FOR_DELIVERY',
+    'EXCEPTION',
+];
 
 /**
  * Destinos do ajuste manual (`POST /packages/:id/status`), na ordem do fluxo.
@@ -117,6 +132,7 @@ export function PackageDetailPage() {
     const { notify } = useToast();
     const confirm = useConfirm();
     const params = useParams<{ id: string }>();
+    const router = useRouter();
     const [pkg, setPkg] = useState<AdminPackage>();
     const [error, setError] = useState<string>();
     const [dialog, setDialog] = useState<DialogKind>(null);
@@ -178,6 +194,19 @@ export function PackageDetailPage() {
                 }),
             });
             applyUpdate(updated, t('packages.detail.feedback.statusOverridden'));
+            return;
+        }
+
+        if (action === 'shipping-failure') {
+            // A resposta é o substituto: a conferência continua nele.
+            const replacement = await api<AdminPackage>(`/packages/${params.id}/shipping-failure`, {
+                method: 'POST',
+                body: JSON.stringify(values),
+            });
+            setDialog(null);
+            notify({ tone: 'success', title: t('packages.detail.feedback.shippingFailure') });
+            void refreshPendingCounts();
+            router.push(`/admin/pacotes/${replacement.id}`);
             return;
         }
 
@@ -347,6 +376,9 @@ export function PackageDetailPage() {
     const isDraft = pkg.status === 'DRAFT';
     const isAwaitingApproval = pkg.status === 'AWAITING_APPROVAL';
     const canEditItems = isDraft || isAwaitingApproval;
+    // Substituto de um pacote com problema no envio: nasce com o frete pago,
+    // então não tem cotação nem cobrança — só conferência e despacho.
+    const freightPaid = pkg.paidAt !== null;
     // Espelha `lockMutable` do backend: o admin ainda troca itens depois de
     // aprovado, até cotar o frete — o pacote que ele cria já nasce aí.
     const canEditContents = canEditItems || pkg.status === 'AWAITING_FREIGHT_QUOTE';
@@ -356,7 +388,9 @@ export function PackageDetailPage() {
     // Espelha `FREIGHT_QUOTABLE_STATUSES` do backend: com a cobrança aberta o
     // frete ainda pode ser corrigido — o cliente só pagou depois de pagar.
     const canRequoteFreight = pkg.status === 'AWAITING_FREIGHT_PAYMENT';
-    const canQuoteCarrier = canEditItems || pkg.status === 'AWAITING_FREIGHT_QUOTE' || canRequoteFreight;
+    const canQuoteCarrier =
+        !freightPaid && (canEditItems || pkg.status === 'AWAITING_FREIGHT_QUOTE' || canRequoteFreight);
+    const canFailShipment = freightPaid && SHIPPING_FAILABLE_STATUSES.includes(pkg.status);
     const shipmentDefaults = {
         weightGrams: carrierSelection?.parcel.weightGrams ?? pkg.weightGrams,
         lengthMillimeters: carrierSelection?.parcel.lengthMillimeters ?? pkg.lengthMillimeters,
@@ -376,7 +410,8 @@ export function PackageDetailPage() {
         pkg.status === 'READY_FOR_DISPATCH' ||
         canCorrectDispatch ||
         Boolean(trackingStep) ||
-        canOverrideStatus;
+        canOverrideStatus ||
+        canFailShipment;
 
     return (
         <div className="grid gap-6">
@@ -417,8 +452,46 @@ export function PackageDetailPage() {
             />
             <PackageCostSheetDialog onClose={() => setCostSheetOpen(false)} packageId={costSheetOpen ? pkg.id : null} />
 
+            {pkg.replacedByPackage && (
+                <Alert
+                    tone="danger"
+                    title={t('packages.detail.replacement.replacedTitle')}
+                    action={
+                        <ButtonLink href={`/admin/pacotes/${pkg.replacedByPackage.id}`} size="small" variant="secondary">
+                            {t('packages.detail.replacement.open', { code: pkg.replacedByPackage.packageCode })}
+                        </ButtonLink>
+                    }
+                >
+                    <p>
+                        {t('packages.detail.replacement.replacedDescription', {
+                            code: pkg.replacedByPackage.packageCode,
+                        })}
+                    </p>
+                </Alert>
+            )}
+            {pkg.replacesPackage && (
+                <Alert
+                    tone="info"
+                    title={t('packages.detail.replacement.replacesTitle', { code: pkg.replacesPackage.packageCode })}
+                    action={
+                        <ButtonLink href={`/admin/pacotes/${pkg.replacesPackage.id}`} size="small" variant="secondary">
+                            {t('packages.detail.replacement.open', { code: pkg.replacesPackage.packageCode })}
+                        </ButtonLink>
+                    }
+                >
+                    <p>{t('packages.detail.replacement.replacesDescription')}</p>
+                </Alert>
+            )}
+
             {pkg.rejectionReason && (
-                <Alert tone="danger" title={t('packages.detail.fields.rejectionReason')}>
+                <Alert
+                    tone="danger"
+                    title={
+                        pkg.status === 'SHIPPING_FAILED'
+                            ? t('packages.detail.fields.shippingFailureReason')
+                            : t('packages.detail.fields.rejectionReason')
+                    }
+                >
                     <p>{pkg.rejectionReason}</p>
                 </Alert>
             )}
@@ -428,7 +501,7 @@ export function PackageDetailPage() {
                     description={t('packages.detail.actionBar.description')}
                     title={t('packages.detail.actionBar.title', { status: packageStatusLabel(pkg.status) })}
                 >
-                    {canEditItems && (
+                    {canEditItems && !freightPaid && (
                         <Button
                             leadingIcon={<Ruler className="h-4 w-4" aria-hidden="true" />}
                             onClick={() => setDialog('shipment')}
@@ -549,6 +622,16 @@ export function PackageDetailPage() {
                             variant="ghost"
                         >
                             {t('packages.detail.actions.overrideStatus')}
+                        </Button>
+                    )}
+                    {canFailShipment && (
+                        <Button
+                            leadingIcon={<OctagonAlert className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('shipping-failure')}
+                            size="small"
+                            variant="danger"
+                        >
+                            {t('packages.detail.actions.shippingFailure')}
                         </Button>
                     )}
                 </ActionBar>
@@ -844,6 +927,16 @@ export function PackageDetailPage() {
                 open={dialog === 'reject'}
                 requireReason
                 title={t('packages.detail.dialogs.reject.title')}
+                variant="danger"
+            />
+            <ActionDialog
+                confirmLabel={t('packages.detail.dialogs.shippingFailure.confirmLabel')}
+                description={t('packages.detail.dialogs.shippingFailure.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleActionConfirm}
+                open={dialog === 'shipping-failure'}
+                requireReason
+                title={t('packages.detail.dialogs.shippingFailure.title')}
                 variant="danger"
             />
             <ActionDialog

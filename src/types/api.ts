@@ -542,6 +542,7 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         CANCELLED_BY_CUSTOMER: 'Cliente cancelou o pedido',
         SOURCING_FAILED: 'Compra no vendedor falhou; pedido em reembolso',
         PACKAGE_RETURNED: 'Pacote devolvido ao armazém; item liberado',
+        PACKAGE_SHIPPING_FAILED: 'Problema no envio; item segue em pacote substituto',
         PAYMENT_DATA_SENT: 'Pedido liberado para pagamento',
         MARKED_PAID_BY_CUSTOMER: 'Cliente marcou como pago',
         PAYMENT_CONFIRMED: 'Pagamento confirmado',
@@ -576,6 +577,7 @@ const ORDER_CHANGE_LOG_TYPE_LABELS: Record<Locale, Record<string, string>> = {
         CANCELLED_BY_CUSTOMER: '客户已取消订单',
         SOURCING_FAILED: '向卖家采购失败；订单进入退款',
         PACKAGE_RETURNED: '包裹已退回仓库；商品已释放',
+        PACKAGE_SHIPPING_FAILED: '运输问题；商品转入替代包裹',
         PAYMENT_DATA_SENT: '订单已开放付款',
         MARKED_PAID_BY_CUSTOMER: '客户已标记为已付款',
         PAYMENT_CONFIRMED: '付款已确认',
@@ -615,6 +617,7 @@ export const PACKAGE_STATUSES = [
     'DELIVERED',
     'EXCEPTION',
     'RETURNED',
+    'SHIPPING_FAILED',
     'CANCELLED',
 ] as const;
 export type PackageStatus = (typeof PACKAGE_STATUSES)[number];
@@ -633,6 +636,7 @@ const PACKAGE_STATUS_LABELS: Record<Locale, Record<PackageStatus, string>> = {
         DELIVERED: 'Entregue',
         EXCEPTION: 'Ocorrência',
         RETURNED: 'Devolvido',
+        SHIPPING_FAILED: 'Problema no envio',
         CANCELLED: 'Cancelado',
     },
     'zh-Hans': {
@@ -648,6 +652,7 @@ const PACKAGE_STATUS_LABELS: Record<Locale, Record<PackageStatus, string>> = {
         DELIVERED: '已签收',
         EXCEPTION: '异常',
         RETURNED: '已退回',
+        SHIPPING_FAILED: '运输问题',
         CANCELLED: '已取消',
     },
 };
@@ -726,6 +731,16 @@ export interface AdminPackage {
     userId: string;
     userEmail: string;
     userName: string;
+    /** Pacote com problema no envio que este substitui (frete já pago lá). */
+    replacesPackage: LinkedPackage | null;
+    /** Substituto deste pacote, quando ele teve problema no envio. */
+    replacedByPackage: LinkedPackage | null;
+}
+
+/** O outro lado do vínculo de problema no envio. */
+export interface LinkedPackage {
+    id: string;
+    packageCode: string;
 }
 
 // ---------------------------------------------------------------------------

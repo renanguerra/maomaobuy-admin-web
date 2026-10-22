@@ -1153,6 +1153,7 @@ export const zhHans: Messages = {
                 correctDispatch: '修正物流信息',
                 overrideStatus: '修改状态',
                 cancel: '取消包裹',
+                shippingFailure: '运输问题',
             },
             fields: {
                 shipping: '收取运费',
@@ -1171,6 +1172,15 @@ export const zhHans: Messages = {
                 deliveredAt: '签收时间',
                 destination: '收货地址',
                 rejectionReason: '拒绝原因',
+                shippingFailureReason: '运输问题原因',
+            },
+            replacement: {
+                replacesTitle: '替代包裹 {{code}}',
+                replacesDescription:
+                    '因运输问题创建，运费已在原包裹支付。请核对商品：移出的商品可用于其他包裹、取消或退款。审批后直接进入待发货。',
+                replacedTitle: '包裹因运输问题已关闭',
+                replacedDescription: '仅供查询。商品已转入包裹 {{code}}。',
+                open: '打开 {{code}}',
             },
             itemsSection: {
                 title: '商品',
@@ -1220,6 +1230,7 @@ export const zhHans: Messages = {
                 correctDispatch: '物流信息已修正。',
                 statusOverridden: '包裹状态已修改。',
                 trackingAdvanced: '物流状态已更新。',
+                shippingFailure: '问题已登记。这是替代包裹：请核对商品并审批。',
                 submitted: '包裹已提交审批。',
                 photoUploaded: '照片上传成功。',
             },
@@ -1265,6 +1276,12 @@ export const zhHans: Messages = {
                     notifyYes: '发送一封关于新状态的邮件',
                     notifyHint: '跳过的步骤不会发送邮件。“待发货”状态没有邮件。',
                     carrierHint: '可选。包裹尚未登记发货时使用。',
+                },
+                shippingFailure: {
+                    title: '运输问题',
+                    description:
+                        '关闭此包裹（仅供查询），并创建一个待审核的替代包裹，商品、地址和已付运费保持不变。运费不退回余额。客户会在网站上看到原因（不发邮件）。',
+                    confirmLabel: '登记问题',
                 },
                 correctDispatch: {
                     title: '修正物流信息',
@@ -2183,6 +2200,17 @@ export const zhHans: Messages = {
             details: '渠道详情',
             breakdown: '费用明细',
             otherCurrency: 'API 以 {{currency}} 报价；建议成本仍采用价格表的人民币金额。',
+            customer: '客户支付',
+        },
+        simulator: {
+            title: '运费试算',
+            description:
+                '为尚未打包的箱子报价，渠道和算法与包裹报价相同。申报价值为箱内商品价值（人民币），API 用于计算税费。“客户支付”为成本加当前加价，不含仓储费和优惠券。不会保存任何数据。',
+            postalCode: '邮编 (CEP)',
+            state: '州 (UF)',
+            city: '城市',
+            declared: '申报价值',
+            submit: '试算',
         },
         section: {
             title: 'Westlink 发货',

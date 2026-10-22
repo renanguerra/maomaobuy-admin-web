@@ -1187,6 +1187,7 @@ export const ptBR = {
                 correctDispatch: 'Corrigir rastreio',
                 overrideStatus: 'Alterar status',
                 cancel: 'Cancelar pacote',
+                shippingFailure: 'Problema no envio',
             },
             fields: {
                 shipping: 'Frete cobrado',
@@ -1205,6 +1206,15 @@ export const ptBR = {
                 deliveredAt: 'Entregue em',
                 destination: 'Destino',
                 rejectionReason: 'Motivo da rejeição',
+                shippingFailureReason: 'Motivo do problema no envio',
+            },
+            replacement: {
+                replacesTitle: 'Substitui o pacote {{code}}',
+                replacesDescription:
+                    'Pacote criado por problema no envio, com o frete já pago no original. Confira os itens: o que sair fica livre para outro pacote, cancelamento ou reembolso. Ao aprovar, vai direto para despacho.',
+                replacedTitle: 'Pacote encerrado por problema no envio',
+                replacedDescription: 'Fica só para consulta. Os itens seguem no pacote {{code}}.',
+                open: 'Abrir {{code}}',
             },
             itemsSection: {
                 title: 'Itens',
@@ -1255,6 +1265,7 @@ export const ptBR = {
                 correctDispatch: 'Dados de rastreio corrigidos.',
                 statusOverridden: 'Status do pacote alterado.',
                 trackingAdvanced: 'Rastreio atualizado.',
+                shippingFailure: 'Problema registrado. Este é o pacote substituto: confira os itens e aprove.',
                 submitted: 'Pacote enviado para aprovação.',
                 photoUploaded: 'Foto enviada com sucesso.',
             },
@@ -1302,6 +1313,12 @@ export const ptBR = {
                     notifyYes: 'Enviar um e-mail sobre o novo status',
                     notifyHint: 'As etapas puladas nunca geram e-mail. "Pronto para despacho" não tem e-mail.',
                     carrierHint: 'Opcional. Usado se o pacote ainda não tinha despacho registrado.',
+                },
+                shippingFailure: {
+                    title: 'Problema no envio',
+                    description:
+                        'Encerra este pacote, que fica só para consulta, e cria um substituto em conferência com os mesmos itens, o mesmo destino e o frete já pago. Nenhum frete volta ao saldo. O cliente vê o motivo no site (sem e-mail).',
+                    confirmLabel: 'Registrar problema',
                 },
                 correctDispatch: {
                     title: 'Corrigir rastreio',
@@ -2239,6 +2256,17 @@ export const ptBR = {
             details: 'Detalhes da linha',
             breakdown: 'Como chegou nesse valor',
             otherCurrency: 'A API cotou em {{currency}}; o custo sugerido continua o da tabela, em yuan.',
+            customer: 'Cliente paga',
+        },
+        simulator: {
+            title: 'Simular frete',
+            description:
+                'Cota uma caixa que ainda não existe, nas mesmas linhas e com o mesmo cálculo da cotação do pacote. O valor declarado é o dos itens, em yuan (a API usa para as taxas). "Cliente paga" é o custo mais a margem atual, sem armazenagem nem cupom. Nada é gravado.',
+            postalCode: 'CEP',
+            state: 'UF',
+            city: 'Cidade',
+            declared: 'Valor declarado',
+            submit: 'Simular',
         },
         section: {
             title: 'Envio pela Westlink',
