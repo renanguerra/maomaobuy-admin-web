@@ -317,7 +317,7 @@ export function PackagesListPage() {
                                 options={PACKAGE_STATUSES.map((value) => ({ value, label: packageStatusLabel(value) }))}
                             />
                             <Checkbox
-                                checked={showCancelled || status === 'CANCELLED'}
+                                checked={showCancelled || status === 'CANCELLED' || status === 'SHIPPING_FAILED'}
                                 className="pb-2.5"
                                 disabled={statuses.length > 0}
                                 label={t('packages.list.showCancelled')}

@@ -1054,7 +1054,7 @@ export const ptBR = {
             description: 'Consolidação, aprovação de frete, cobrança e despacho dos pacotes dos clientes.',
             statusLabel: 'Status',
             statusAll: 'Todos',
-            showCancelled: 'Exibir cancelados',
+            showCancelled: 'Exibir cancelados e com problema no envio',
             error: 'Não foi possível carregar os pacotes.',
             loading: 'Carregando pacotes…',
             tabsLabel: 'Filas de pacotes',

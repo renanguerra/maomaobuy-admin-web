@@ -1020,7 +1020,7 @@ export const zhHans: Messages = {
             description: '客户包裹的集运、运费审批、收费与发货管理。',
             statusLabel: '状态',
             statusAll: '全部',
-            showCancelled: '显示已取消',
+            showCancelled: '显示已取消和运输问题',
             error: '无法加载包裹列表。',
             loading: '正在加载包裹…',
             tabsLabel: '包裹队列',
