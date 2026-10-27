@@ -1,1 +1,5 @@
-export { ProductsListPage as default } from './ProductsListPage';
+import { ProductsListPage } from './ProductsListPage';
+
+export default function StoreProductsListRoute() {
+    return <ProductsListPage kind="STORE" />;
+}

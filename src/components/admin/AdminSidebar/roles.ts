@@ -13,6 +13,8 @@ const WRITE_ROLES: Partial<Record<MenuItemKey, readonly string[]>> = {
     users: ['SUPPORT'],
     siteNotices: ['SUPPORT'],
     products: ['CATALOG'],
+    coinShop: ['CATALOG'],
+    checkoutAddons: ['CATALOG'],
     categories: ['CATALOG'],
     optionalServices: [],
     coupons: ['FINANCE'],

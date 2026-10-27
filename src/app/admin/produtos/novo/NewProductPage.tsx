@@ -13,10 +13,11 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
-import type { AdminCategory, AdminProduct } from '@/types/api';
+import type { AdminCategory, AdminProduct, ProductKind } from '@/types/api';
 import { ProductFormFields } from '../ProductFormFields';
 import { ProductMediaManager } from '../ProductMediaManager';
 import { VariantFormDialog, type VariantFormValues } from '../VariantFormDialog';
+import { productPath } from '../product-kind';
 import { toProductPayload, useProductForm } from '../product-form';
 import { minorToAmount } from '../[id]/ProductDetailPage.utils';
 import type { VariantDraft } from './NewProductPage.types';
@@ -31,11 +32,11 @@ const STEPS = [
  * a mídia é enviada contra o ID recém-criado. Não dá para inverter — o upload
  * pré-assinado exige um produto existente.
  */
-export function NewProductPage() {
+export function NewProductPage({ kind = 'STORE' }: { kind?: ProductKind }) {
     const { t } = useTranslation();
     const { notify } = useToast();
     const router = useRouter();
-    const form = useProductForm();
+    const form = useProductForm(undefined, kind);
     const [step, setStep] = useState<'info' | 'media'>('info');
     const [categories, setCategories] = useState<AdminCategory[]>([]);
     const [variants, setVariants] = useState<VariantDraft[]>([]);
@@ -71,7 +72,8 @@ export function NewProductPage() {
 
     async function handleCreateDraft(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        if (form.values.sourceAmountMinor === '0') {
+        // Na Coin Shop o valor em yuan é só referência; pode ficar zerado.
+        if (kind !== 'COIN_SHOP' && form.values.sourceAmountMinor === '0') {
             setError(t('products.new.priceRequiredError'));
             return;
         }
@@ -84,6 +86,7 @@ export function NewProductPage() {
                 method: 'POST',
                 body: JSON.stringify({
                     ...payload,
+                    kind,
                     // O produto nasce como rascunho: publicar antes da mídia deixaria
                     // a loja com um item sem foto.
                     isPublished: false,
@@ -124,7 +127,7 @@ export function NewProductPage() {
                 });
             }
             notify({ tone: 'success', title: t('products.new.finishedToast', { name: product.name }) });
-            router.replace(`/admin/produtos/${product.id}`);
+            router.replace(productPath(kind, product.id));
         } catch (err) {
             setError(err instanceof ApiError ? err.message : t('products.new.publishError'));
             setFinishing(false);
@@ -134,11 +137,13 @@ export function NewProductPage() {
     return (
         <div className="grid gap-6">
             <PageHeader
-                backHref="/admin/produtos"
-                backLabel={t('products.new.backLink')}
-                description={step === 'info' ? t('products.new.stepHintInfo') : t('products.new.stepHintMedia')}
-                kicker={t('products.new.kicker')}
-                title={t('products.new.title')}
+                backHref={productPath(kind)}
+                backLabel={t(`productKinds.${kind}.backLink`)}
+                description={
+                    step === 'info' ? t(`productKinds.${kind}.newDescription`) : t('products.new.stepHintMedia')
+                }
+                kicker={t(`productKinds.${kind}.kicker`)}
+                title={t(`productKinds.${kind}.newTitle`)}
             />
 
             <ol className="m-0 flex list-none flex-wrap items-center gap-3 p-0">
@@ -278,7 +283,7 @@ export function NewProductPage() {
 
                     <div className="flex flex-wrap justify-end gap-2">
                         <Button
-                            onClick={() => router.replace(`/admin/produtos/${product.id}`)}
+                            onClick={() => router.replace(productPath(kind, product.id))}
                             type="button"
                             variant="ghost"
                         >

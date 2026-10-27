@@ -201,10 +201,14 @@ export interface AdminProductSubcategoryRef {
     categoryId: string;
 }
 
+/** Loja, Coin Shop ou "Leve junto" — fixo depois de criado. */
+export type ProductKind = 'STORE' | 'COIN_SHOP' | 'CHECKOUT_ADDON';
+
 export interface AdminProduct {
     id: string;
     slug: string;
     name: string;
+    kind: ProductKind;
     description: string;
     marketplace: string;
     marketplaceUrl: string | null;

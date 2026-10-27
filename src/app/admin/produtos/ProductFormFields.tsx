@@ -39,57 +39,102 @@ export interface ProductFormFieldsProps {
 }
 
 /**
- * Campos comuns de produto, usados tanto na criação quanto na edição. Cada
- * bloco é um cartão: o admin percorre origem → identificação → preço →
- * disponibilidade → classificação sem perder de vista onde está.
+ * Campos de produto, usados tanto na criação quanto na edição. Cada bloco é
+ * um cartão: o admin percorre origem → identificação → preço →
+ * disponibilidade → classificação sem perder de vista onde está. O tipo do
+ * produto decide os blocos: Coin Shop e "Leve junto" são sempre estoque
+ * próprio pronto, sem pré-venda, sob demanda nem categorias da vitrine.
  */
 export function ProductFormFields({ form, categories, slugIsPublished = false }: ProductFormFieldsProps) {
     const { t } = useTranslation();
     const { values, patch, setName, setSlug, toggleCategory, toggleSubcategory } = form;
-    const isOwnStock = values.sourceType === 'MAOMAOBUY';
+    const isStore = values.kind === 'STORE';
+    const isCoinShop = values.kind === 'COIN_SHOP';
+    const isCheckoutAddon = values.kind === 'CHECKOUT_ADDON';
+    const isOwnStock = !isStore || values.sourceType === 'MAOMAOBUY';
 
     return (
         <>
-            <SectionCard
-                description={t('products.new.sourceType.description')}
-                title={t('products.new.sourceType.legend')}
-            >
-                <fieldset className="m-0 grid gap-3 border-0 p-0 sm:grid-cols-2">
-                    <legend className="sr-only">{t('products.new.sourceType.legend')}</legend>
-                    {SOURCE_OPTIONS.map((option) => {
-                        const Icon = option.icon;
-                        const selected = values.sourceType === option.value;
-                        return (
-                            <label
-                                className={`flex cursor-pointer flex-col gap-1.5 rounded-xl border p-4 transition ${
-                                    selected
-                                        ? 'border-brand-400 bg-brand-50 dark:border-night-accent/40 dark:bg-night-brand'
-                                        : 'border-line hover:border-brand-300 dark:border-night-line'
-                                }`}
-                                key={option.value}
-                            >
-                                <input
-                                    checked={selected}
-                                    className="sr-only"
-                                    name="sourceType"
-                                    onChange={() => patch({ sourceType: option.value })}
-                                    type="radio"
-                                />
-                                <span className="flex items-center gap-2 text-sm font-bold text-ink dark:text-night-text">
-                                    <Icon
-                                        className="h-4 w-4 shrink-0 text-primary dark:text-night-accent"
-                                        aria-hidden="true"
+            {isStore && (
+                <SectionCard
+                    description={t('products.new.sourceType.description')}
+                    title={t('products.new.sourceType.legend')}
+                >
+                    <fieldset className="m-0 grid gap-3 border-0 p-0 sm:grid-cols-2">
+                        <legend className="sr-only">{t('products.new.sourceType.legend')}</legend>
+                        {SOURCE_OPTIONS.map((option) => {
+                            const Icon = option.icon;
+                            const selected = values.sourceType === option.value;
+                            return (
+                                <label
+                                    className={`flex cursor-pointer flex-col gap-1.5 rounded-xl border p-4 transition ${
+                                        selected
+                                            ? 'border-brand-400 bg-brand-50 dark:border-night-accent/40 dark:bg-night-brand'
+                                            : 'border-line hover:border-brand-300 dark:border-night-line'
+                                    }`}
+                                    key={option.value}
+                                >
+                                    <input
+                                        checked={selected}
+                                        className="sr-only"
+                                        name="sourceType"
+                                        onChange={() => patch({ sourceType: option.value })}
+                                        type="radio"
                                     />
-                                    {t(option.titleKey)}
-                                </span>
-                                <span className="text-xs leading-relaxed text-muted dark:text-night-muted">
-                                    {t(option.descriptionKey)}
-                                </span>
-                            </label>
-                        );
-                    })}
-                </fieldset>
-            </SectionCard>
+                                    <span className="flex items-center gap-2 text-sm font-bold text-ink dark:text-night-text">
+                                        <Icon
+                                            className="h-4 w-4 shrink-0 text-primary dark:text-night-accent"
+                                            aria-hidden="true"
+                                        />
+                                        {t(option.titleKey)}
+                                    </span>
+                                    <span className="text-xs leading-relaxed text-muted dark:text-night-muted">
+                                        {t(option.descriptionKey)}
+                                    </span>
+                                </label>
+                            );
+                        })}
+                    </fieldset>
+                </SectionCard>
+            )}
+
+            {isCoinShop && (
+                <SectionCard description={t('products.new.coins.description')} title={t('products.new.coins.title')}>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Input
+                            hint={t('products.new.coins.priceHint')}
+                            label={t('products.new.coins.price')}
+                            min={1}
+                            onChange={(event) => patch({ coinPrice: event.target.value })}
+                            required
+                            step={1}
+                            type="number"
+                            value={values.coinPrice}
+                        />
+                        <Input
+                            hint={t('products.new.coins.limitHint')}
+                            label={t('products.new.coins.limit')}
+                            min={1}
+                            onChange={(event) => patch({ coinRedeemLimitPerUser: event.target.value })}
+                            step={1}
+                            type="number"
+                            value={values.coinRedeemLimitPerUser}
+                        />
+                        <Input
+                            label={t('products.new.coins.from')}
+                            onChange={(event) => patch({ coinAvailableFrom: event.target.value })}
+                            type="datetime-local"
+                            value={values.coinAvailableFrom}
+                        />
+                        <Input
+                            label={t('products.new.coins.until')}
+                            onChange={(event) => patch({ coinAvailableUntil: event.target.value })}
+                            type="datetime-local"
+                            value={values.coinAvailableUntil}
+                        />
+                    </div>
+                </SectionCard>
+            )}
 
             <SectionCard title={t('products.new.basicInfo.title')}>
                 <div className="grid gap-4">
@@ -132,14 +177,18 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
 
             <SectionCard
                 description={
-                    isOwnStock
-                        ? t('products.new.originPrice.descriptionMaoMaoBuy')
-                        : t('products.new.originPrice.descriptionMarketplace')
+                    isCoinShop
+                        ? t('products.new.originPrice.descriptionCoinShop')
+                        : isOwnStock
+                          ? t('products.new.originPrice.descriptionMaoMaoBuy')
+                          : t('products.new.originPrice.descriptionMarketplace')
                 }
                 title={
-                    isOwnStock
-                        ? t('products.new.originPrice.titleMaoMaoBuy')
-                        : t('products.new.originPrice.titleMarketplace')
+                    isCoinShop
+                        ? t('products.new.originPrice.titleCoinShop')
+                        : isOwnStock
+                          ? t('products.new.originPrice.titleMaoMaoBuy')
+                          : t('products.new.originPrice.titleMarketplace')
                 }
             >
                 <div className="grid gap-4">
@@ -166,14 +215,17 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                     <div className="grid gap-4 sm:grid-cols-2">
                         <CurrencyInput
                             currency="CNY"
+                            hint={isCoinShop ? t('products.new.originPrice.referenceHint') : undefined}
                             label={
-                                isOwnStock
-                                    ? t('products.new.originPrice.salePriceCny')
-                                    : t('products.new.originPrice.basePrice')
+                                isCoinShop
+                                    ? t('products.new.originPrice.referencePrice')
+                                    : isOwnStock
+                                      ? t('products.new.originPrice.salePriceCny')
+                                      : t('products.new.originPrice.basePrice')
                             }
                             minor={values.sourceAmountMinor}
                             onMinorChange={(minor) => patch({ sourceAmountMinor: minor })}
-                            required
+                            required={!isCoinShop}
                         />
                         <CurrencyInput
                             currency="CNY"
@@ -183,21 +235,25 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                             onMinorChange={(minor) => patch({ costAmountMinor: minor })}
                         />
                     </div>
-                    <p className="mt-2 text-xs text-muted dark:text-night-muted">
-                        {unitMarginLabel(values.sourceAmountMinor, values.costAmountMinor, t)}
-                    </p>
+                    {!isCoinShop && (
+                        <p className="mt-2 text-xs text-muted dark:text-night-muted">
+                            {unitMarginLabel(values.sourceAmountMinor, values.costAmountMinor, t)}
+                        </p>
+                    )}
                 </div>
             </SectionCard>
 
             <SectionCard title={t('products.new.shippingStock.title')}>
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <CurrencyInput
-                        currency="BRL"
-                        hint={t('products.new.shippingStock.estimatedShippingHint')}
-                        label={t('products.new.shippingStock.estimatedShipping')}
-                        minor={values.estimatedShippingAmountMinor}
-                        onMinorChange={(minor) => patch({ estimatedShippingAmountMinor: minor })}
-                    />
+                    {isStore && (
+                        <CurrencyInput
+                            currency="BRL"
+                            hint={t('products.new.shippingStock.estimatedShippingHint')}
+                            label={t('products.new.shippingStock.estimatedShipping')}
+                            minor={values.estimatedShippingAmountMinor}
+                            onMinorChange={(minor) => patch({ estimatedShippingAmountMinor: minor })}
+                        />
+                    )}
                     <Input
                         hint={t('products.new.shippingStock.stockHint')}
                         label={t('products.new.shippingStock.stock')}
@@ -209,6 +265,20 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                         type="number"
                         value={values.stock}
                     />
+                    <Input
+                        hint={
+                            isCheckoutAddon
+                                ? t('products.new.shippingStock.weightAddonHint')
+                                : t('products.new.shippingStock.weightHint')
+                        }
+                        label={t('products.new.shippingStock.weight')}
+                        min={1}
+                        onChange={(event) => patch({ weightGrams: event.target.value })}
+                        required={isCheckoutAddon}
+                        step={1}
+                        type="number"
+                        value={values.weightGrams}
+                    />
                 </div>
 
                 <Checkbox
@@ -219,168 +289,97 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                     label={t('products.new.publishCheckbox')}
                     onChange={(event) => patch({ isPublished: event.target.checked })}
                 />
-                <Checkbox
-                    boxed
-                    checked={values.isChinaExclusive}
-                    className="mt-3"
-                    description={t('products.new.chinaExclusiveHint')}
-                    label={t('products.new.chinaExclusiveCheckbox')}
-                    onChange={(event) => patch({ isChinaExclusive: event.target.checked })}
-                />
-            </SectionCard>
-
-            <SectionCard description={t('products.new.preSale.description')} title={t('products.new.preSale.title')}>
-                <Checkbox
-                    boxed
-                    checked={values.isPreSale}
-                    description={t('products.new.preSale.checkboxHint')}
-                    label={t('products.new.preSale.checkbox')}
-                    // Desmarcar limpa a data no mesmo gesto: o backend a apaga
-                    // de qualquer jeito, e deixá-la na tela sugere que ela
-                    // continua valendo.
-                    // Pré-venda e sob demanda se excluem: marcar uma desmarca a outra.
-                    onChange={(event) =>
-                        patch({
-                            isPreSale: event.target.checked,
-                            ...(event.target.checked ? { isOnDemand: false } : { releaseDate: '' }),
-                        })
-                    }
-                />
-                {values.isPreSale && (
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                        <Input
-                            hint={t('products.new.preSale.releaseDateHint')}
-                            label={t('products.new.preSale.releaseDate')}
-                            onChange={(event) => patch({ releaseDate: event.target.value })}
-                            required
-                            type="date"
-                            value={values.releaseDate}
-                        />
-                    </div>
-                )}
-            </SectionCard>
-
-            <SectionCard description={t('products.new.onDemand.description')} title={t('products.new.onDemand.title')}>
-                <Checkbox
-                    boxed
-                    checked={values.isOnDemand}
-                    description={t('products.new.onDemand.checkboxHint')}
-                    label={t('products.new.onDemand.checkbox')}
-                    onChange={(event) =>
-                        patch({
-                            isOnDemand: event.target.checked,
-                            ...(event.target.checked
-                                ? {
-                                      isPreSale: false,
-                                      releaseDate: '',
-                                      onDemandLeadDays: values.onDemandLeadDays || String(DEFAULT_ON_DEMAND_LEAD_DAYS),
-                                  }
-                                : {}),
-                        })
-                    }
-                />
-                {values.isOnDemand && (
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                        <Input
-                            hint={t('products.new.onDemand.leadDaysHint')}
-                            label={t('products.new.onDemand.leadDays')}
-                            max={60}
-                            min={1}
-                            onChange={(event) => patch({ onDemandLeadDays: event.target.value })}
-                            required
-                            step={1}
-                            type="number"
-                            value={values.onDemandLeadDays}
-                        />
-                    </div>
-                )}
-            </SectionCard>
-
-            {values.sourceType === 'MAOMAOBUY' && (
-                <SectionCard description={t('products.new.coins.description')} title={t('products.new.coins.title')}>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <Input
-                            hint={t('products.new.coins.priceHint')}
-                            label={t('products.new.coins.price')}
-                            min={1}
-                            onChange={(event) =>
-                                patch({
-                                    coinPrice: event.target.value,
-                                    ...(event.target.value ? {} : { isCoinExclusive: false }),
-                                })
-                            }
-                            step={1}
-                            type="number"
-                            value={values.coinPrice}
-                        />
-                        <Input
-                            hint={t('products.new.coins.weightHint')}
-                            label={t('products.new.coins.weight')}
-                            min={1}
-                            onChange={(event) => patch({ weightGrams: event.target.value })}
-                            required={values.isCheckoutAddon}
-                            step={1}
-                            type="number"
-                            value={values.weightGrams}
-                        />
-                    </div>
-                    {values.coinPrice && (
-                        <>
-                            <Checkbox
-                                boxed
-                                checked={values.isCoinExclusive}
-                                className="mt-4"
-                                description={t('products.new.coins.exclusiveHint')}
-                                label={t('products.new.coins.exclusive')}
-                                onChange={(event) =>
-                                    patch({
-                                        isCoinExclusive: event.target.checked,
-                                        ...(event.target.checked ? { isCheckoutAddon: false } : {}),
-                                    })
-                                }
-                            />
-                            <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                                <Input
-                                    hint={t('products.new.coins.limitHint')}
-                                    label={t('products.new.coins.limit')}
-                                    min={1}
-                                    onChange={(event) => patch({ coinRedeemLimitPerUser: event.target.value })}
-                                    step={1}
-                                    type="number"
-                                    value={values.coinRedeemLimitPerUser}
-                                />
-                                <Input
-                                    label={t('products.new.coins.from')}
-                                    onChange={(event) => patch({ coinAvailableFrom: event.target.value })}
-                                    type="datetime-local"
-                                    value={values.coinAvailableFrom}
-                                />
-                                <Input
-                                    label={t('products.new.coins.until')}
-                                    onChange={(event) => patch({ coinAvailableUntil: event.target.value })}
-                                    type="datetime-local"
-                                    value={values.coinAvailableUntil}
-                                />
-                            </div>
-                        </>
-                    )}
+                {isStore && (
                     <Checkbox
                         boxed
-                        checked={values.isCheckoutAddon}
-                        className="mt-4"
-                        description={t('products.new.coins.addonHint')}
-                        label={t('products.new.coins.addon')}
+                        checked={values.isChinaExclusive}
+                        className="mt-3"
+                        description={t('products.new.chinaExclusiveHint')}
+                        label={t('products.new.chinaExclusiveCheckbox')}
+                        onChange={(event) => patch({ isChinaExclusive: event.target.checked })}
+                    />
+                )}
+            </SectionCard>
+
+            {isStore && (
+                <SectionCard
+                    description={t('products.new.preSale.description')}
+                    title={t('products.new.preSale.title')}
+                >
+                    <Checkbox
+                        boxed
+                        checked={values.isPreSale}
+                        description={t('products.new.preSale.checkboxHint')}
+                        label={t('products.new.preSale.checkbox')}
+                        // Desmarcar limpa a data no mesmo gesto: o backend a apaga
+                        // de qualquer jeito, e deixá-la na tela sugere que ela
+                        // continua valendo.
+                        // Pré-venda e sob demanda se excluem: marcar uma desmarca a outra.
                         onChange={(event) =>
                             patch({
-                                isCheckoutAddon: event.target.checked,
-                                ...(event.target.checked ? { isCoinExclusive: false } : {}),
+                                isPreSale: event.target.checked,
+                                ...(event.target.checked ? { isOnDemand: false } : { releaseDate: '' }),
                             })
                         }
                     />
+                    {values.isPreSale && (
+                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                            <Input
+                                hint={t('products.new.preSale.releaseDateHint')}
+                                label={t('products.new.preSale.releaseDate')}
+                                onChange={(event) => patch({ releaseDate: event.target.value })}
+                                required
+                                type="date"
+                                value={values.releaseDate}
+                            />
+                        </div>
+                    )}
                 </SectionCard>
             )}
 
-            {categories.length > 0 && (
+            {isStore && (
+                <SectionCard
+                    description={t('products.new.onDemand.description')}
+                    title={t('products.new.onDemand.title')}
+                >
+                    <Checkbox
+                        boxed
+                        checked={values.isOnDemand}
+                        description={t('products.new.onDemand.checkboxHint')}
+                        label={t('products.new.onDemand.checkbox')}
+                        onChange={(event) =>
+                            patch({
+                                isOnDemand: event.target.checked,
+                                ...(event.target.checked
+                                    ? {
+                                          isPreSale: false,
+                                          releaseDate: '',
+                                          onDemandLeadDays:
+                                              values.onDemandLeadDays || String(DEFAULT_ON_DEMAND_LEAD_DAYS),
+                                      }
+                                    : {}),
+                            })
+                        }
+                    />
+                    {values.isOnDemand && (
+                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                            <Input
+                                hint={t('products.new.onDemand.leadDaysHint')}
+                                label={t('products.new.onDemand.leadDays')}
+                                max={60}
+                                min={1}
+                                onChange={(event) => patch({ onDemandLeadDays: event.target.value })}
+                                required
+                                step={1}
+                                type="number"
+                                value={values.onDemandLeadDays}
+                            />
+                        </div>
+                    )}
+                </SectionCard>
+            )}
+
+            {isStore && categories.length > 0 && (
                 <SectionCard
                     description={t('products.new.categoriesDescription')}
                     title={t('products.new.categoriesTitle')}

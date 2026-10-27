@@ -40,7 +40,7 @@ export function FulfilledProductSection({
         if (!searching) return;
         let active = true;
         const current = term.trim();
-        const query = new URLSearchParams({ search: current, status: 'published', limit: '8' });
+        const query = new URLSearchParams({ search: current, status: 'published', kind: 'STORE', limit: '8' });
         api<Page<AdminProduct>>(`/products?${query.toString()}`)
             .then((page) => {
                 if (active) setFound({ term: current, products: page.data });

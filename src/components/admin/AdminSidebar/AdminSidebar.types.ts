@@ -13,6 +13,8 @@ export type MenuItemKey =
     | 'carriers'
     | 'users'
     | 'products'
+    | 'coinShop'
+    | 'checkoutAddons'
     | 'categories'
     | 'finance'
     | 'admins'

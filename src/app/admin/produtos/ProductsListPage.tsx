@@ -18,8 +18,9 @@ import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
-import type { AdminCategory, AdminProduct, BulkResult, Page } from '@/types/api';
+import type { AdminCategory, AdminProduct, BulkResult, Page, ProductKind } from '@/types/api';
 import { cny, money } from '@/types/api';
+import { productPath } from './product-kind';
 
 type BulkAction = 'publish' | 'draft' | 'delete';
 
@@ -50,7 +51,11 @@ function filtersKey(filters: Filters, pageNumber: number) {
     return `${pageNumber}|${filters.category}|${filters.subcategory}|${filters.status}|${filters.cost}`;
 }
 
-export function ProductsListPage() {
+/**
+ * Lista de um tipo de produto só: loja, Coin Shop ou "Leve junto" — cada um
+ * no seu endereço, com o próprio botão de criar (27/10/2026).
+ */
+export function ProductsListPage({ kind = 'STORE' }: { kind?: ProductKind }) {
     const { t } = useTranslation();
     const { notify } = useToast();
     const confirm = useConfirm();
@@ -80,7 +85,7 @@ export function ProductsListPage() {
     useEffect(() => {
         let active = true;
         const key = filtersKey(filters, pageNumber);
-        const query = new URLSearchParams({ page: String(pageNumber), limit: String(LIMIT) });
+        const query = new URLSearchParams({ page: String(pageNumber), limit: String(LIMIT), kind });
         if (filters.status) query.set('status', filters.status);
         if (filters.category) query.set('categoryId', filters.category);
         if (filters.subcategory) query.set('subcategoryId', filters.subcategory);
@@ -97,7 +102,7 @@ export function ProductsListPage() {
         return () => {
             active = false;
         };
-    }, [filters, pageNumber, refreshToken, t]);
+    }, [filters, pageNumber, refreshToken, kind, t]);
 
     // Muda a página sem deixar uma seleção de outra listagem sobreviver.
     const changePage = useCallback((next: number) => {
@@ -219,7 +224,7 @@ export function ProductsListPage() {
                         <span className="min-w-0">
                             <Link
                                 className="block truncate font-semibold text-primary no-underline hover:underline dark:text-night-accent"
-                                href={`/admin/produtos/${product.id}`}
+                                href={productPath(kind, product.id)}
                             >
                                 {product.name}
                             </Link>
@@ -231,24 +236,34 @@ export function ProductsListPage() {
                 );
             },
         },
-        {
-            key: 'categories',
-            header: t('products.list.columns.category'),
-            hideBelow: 'lg',
-            cell: (product) => (
-                <span className="text-muted dark:text-night-muted">
-                    {[...product.categories, ...product.subcategories].map((entry) => entry.name).join(', ') ||
-                        t('common.dash')}
-                </span>
-            ),
-        },
+        // Categorias são da vitrine: Coin Shop e "Leve junto" não têm.
+        ...(kind === 'STORE'
+            ? ([
+                  {
+                      key: 'categories',
+                      header: t('products.list.columns.category'),
+                      hideBelow: 'lg',
+                      cell: (product) => (
+                          <span className="text-muted dark:text-night-muted">
+                              {[...product.categories, ...product.subcategories]
+                                  .map((entry) => entry.name)
+                                  .join(', ') || t('common.dash')}
+                          </span>
+                      ),
+                  },
+              ] satisfies DataTableColumn<AdminProduct>[])
+            : []),
         {
             key: 'price',
-            header: t('products.list.columns.basePrice'),
+            header: kind === 'COIN_SHOP' ? t('products.list.columns.coinPrice') : t('products.list.columns.basePrice'),
             numeric: true,
             cell: (product) => (
                 <span className="block">
-                    <span className="font-semibold">{money(product.sourceAmountMinor, product.sourceCurrency)}</span>
+                    <span className="font-semibold">
+                        {kind === 'COIN_SHOP'
+                            ? t('products.list.coinsValue', { coins: product.coinPrice ?? 0 })
+                            : money(product.sourceAmountMinor, product.sourceCurrency)}
+                    </span>
                     <span className="mt-0.5 block text-[11px] text-muted dark:text-night-muted">
                         {product.costAmountMinor !== null
                             ? t('products.list.costValue', { value: cny(product.costAmountMinor) })
@@ -290,19 +305,6 @@ export function ProductsListPage() {
                     </StatusPill>
                     {product.isPreSale && <StatusPill tone="warning">{t('products.list.statusPreSale')}</StatusPill>}
                     {product.isOnDemand && <StatusPill tone="warning">{t('products.list.statusOnDemand')}</StatusPill>}
-                    {product.coinPrice !== null && product.coinPrice !== undefined && (
-                        <StatusPill tone="info">
-                            {t(
-                                product.isCoinExclusive
-                                    ? 'products.list.statusCoinExclusive'
-                                    : 'products.list.statusCoinShop',
-                                { coins: product.coinPrice },
-                            )}
-                        </StatusPill>
-                    )}
-                    {product.isCheckoutAddon && (
-                        <StatusPill tone="info">{t('products.list.statusCheckoutAddon')}</StatusPill>
-                    )}
                 </div>
             ),
         },
@@ -311,30 +313,35 @@ export function ProductsListPage() {
     return (
         <div className="grid gap-6">
             <PageHeader
-                description={t('products.list.description')}
+                description={t(`productKinds.${kind}.listDescription`)}
                 kicker={t('products.list.kicker')}
-                title={t('products.list.title')}
+                title={t(`productKinds.${kind}.listTitle`)}
                 actions={
                     <>
+                        {/* Importação e edição em lote são só da loja. */}
+                        {kind === 'STORE' && (
+                            <>
+                                <ButtonLink
+                                    href="/admin/produtos/importar"
+                                    leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
+                                    variant="secondary"
+                                >
+                                    {t('products.list.importButton')}
+                                </ButtonLink>
+                                <ButtonLink
+                                    href="/admin/produtos/editar-em-lote"
+                                    leadingIcon={<FileJson className="h-4 w-4" aria-hidden="true" />}
+                                    variant="secondary"
+                                >
+                                    {t('products.list.bulkEditorButton')}
+                                </ButtonLink>
+                            </>
+                        )}
                         <ButtonLink
-                            href="/admin/produtos/importar"
-                            leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
-                            variant="secondary"
-                        >
-                            {t('products.list.importButton')}
-                        </ButtonLink>
-                        <ButtonLink
-                            href="/admin/produtos/editar-em-lote"
-                            leadingIcon={<FileJson className="h-4 w-4" aria-hidden="true" />}
-                            variant="secondary"
-                        >
-                            {t('products.list.bulkEditorButton')}
-                        </ButtonLink>
-                        <ButtonLink
-                            href="/admin/produtos/novo"
+                            href={productPath(kind, 'novo')}
                             leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
                         >
-                            {t('products.list.newButton')}
+                            {t(`productKinds.${kind}.newButton`)}
                         </ButtonLink>
                     </>
                 }
@@ -365,26 +372,31 @@ export function ProductsListPage() {
                         ) : undefined
                     }
                 >
-                    <Select
-                        fieldClassName="w-full max-w-56"
-                        label={t('products.list.categoryLabel')}
-                        onChange={(event) => updateFilters({ category: event.target.value, subcategory: '' })}
-                        options={categories.map((category) => ({ value: category.id, label: category.name }))}
-                        placeholderOption={t('products.list.categoryAll')}
-                        value={filters.category}
-                    />
-                    <Select
-                        disabled={subcategoryOptions.length === 0}
-                        fieldClassName="w-full max-w-56"
-                        label={t('products.list.subcategoryLabel')}
-                        onChange={(event) => updateFilters({ subcategory: event.target.value })}
-                        options={subcategoryOptions.map((subcategory) => ({
-                            value: subcategory.id,
-                            label: subcategory.name,
-                        }))}
-                        placeholderOption={t('products.list.categoryAll')}
-                        value={filters.subcategory}
-                    />
+                    {/* Categorias são da vitrine: Coin Shop e "Leve junto" não têm. */}
+                    {kind === 'STORE' && (
+                        <>
+                            <Select
+                                fieldClassName="w-full max-w-56"
+                                label={t('products.list.categoryLabel')}
+                                onChange={(event) => updateFilters({ category: event.target.value, subcategory: '' })}
+                                options={categories.map((category) => ({ value: category.id, label: category.name }))}
+                                placeholderOption={t('products.list.categoryAll')}
+                                value={filters.category}
+                            />
+                            <Select
+                                disabled={subcategoryOptions.length === 0}
+                                fieldClassName="w-full max-w-56"
+                                label={t('products.list.subcategoryLabel')}
+                                onChange={(event) => updateFilters({ subcategory: event.target.value })}
+                                options={subcategoryOptions.map((subcategory) => ({
+                                    value: subcategory.id,
+                                    label: subcategory.name,
+                                }))}
+                                placeholderOption={t('products.list.categoryAll')}
+                                value={filters.subcategory}
+                            />
+                        </>
+                    )}
                     <Select
                         fieldClassName="w-full max-w-44"
                         label={t('products.list.statusLabel')}
@@ -480,11 +492,11 @@ export function ProductsListPage() {
                                     </Button>
                                 ) : (
                                     <ButtonLink
-                                        href="/admin/produtos/novo"
+                                        href={productPath(kind, 'novo')}
                                         leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
                                         size="small"
                                     >
-                                        {t('products.list.newButton')}
+                                        {t(`productKinds.${kind}.newButton`)}
                                     </ButtonLink>
                                 )
                             }

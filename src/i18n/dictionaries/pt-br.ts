@@ -80,7 +80,9 @@ export const ptBR = {
         },
         items: {
             users: 'Usuários',
-            products: 'Produtos',
+            products: 'Produtos da loja',
+            coinShop: 'CoinShop',
+            checkoutAddons: 'Leve junto',
             categories: 'Categorias',
             orders: 'Pedidos',
             packages: 'Pacotes',
@@ -329,6 +331,40 @@ export const ptBR = {
             createdToast: 'Pacote {{code}} criado.',
         },
     },
+    productKinds: {
+        STORE: {
+            kicker: 'Loja',
+            listTitle: 'Produtos da loja',
+            listDescription:
+                'O que aparece na vitrine, na busca e no carrinho: estoque próprio e anúncios dos marketplaces.',
+            newButton: 'Novo produto da loja',
+            newTitle: 'Novo produto da loja',
+            newDescription:
+                'Produto da vitrine. Para recompensa em moedas use a CoinShop; para o checkout, o Leve junto.',
+            backLink: 'Voltar para produtos da loja',
+        },
+        COIN_SHOP: {
+            kicker: 'CoinShop',
+            listTitle: 'CoinShop',
+            listDescription:
+                'Recompensas resgatadas com MaoMaoCoins. Não aparecem na vitrine, na busca nem no carrinho.',
+            newButton: 'Nova recompensa',
+            newTitle: 'Nova recompensa da CoinShop',
+            newDescription:
+                'Só sai por moedas, com estoque próprio. Para vender também na loja, cadastre um produto da loja à parte.',
+            backLink: 'Voltar para a CoinShop',
+        },
+        CHECKOUT_ADDON: {
+            kicker: 'Leve junto',
+            listTitle: 'Leve junto',
+            listDescription:
+                'Itens oferecidos no fechamento do carrinho. Ficam fora da vitrine e do cupom e rendem moedas multiplicadas.',
+            newButton: 'Novo item do Leve junto',
+            newTitle: 'Novo item do Leve junto',
+            newDescription: 'Vendido só no checkout, com estoque próprio e peso cadastrado. Não aparece na loja.',
+            backLink: 'Voltar para o Leve junto',
+        },
+    },
     products: {
         list: {
             kicker: 'Catálogo',
@@ -341,7 +377,7 @@ export const ptBR = {
             statusAll: 'Todos',
             statusPreSale: 'Pré-venda',
             statusOnDemand: 'Sob demanda',
-            statusCoinShop: 'Coin Shop · {{coins}}',
+            statusCoinShop: 'CoinShop · {{coins}}',
             statusCoinExclusive: 'Só moedas · {{coins}}',
             statusCheckoutAddon: 'Leve junto',
             statusPublished: 'Publicado',
@@ -351,6 +387,7 @@ export const ptBR = {
             costMissing: 'Sem custo',
             costValue: 'custo {{value}}',
             noCost: 'sem custo',
+            coinsValue: '{{coins}} moedas',
             error: 'Não foi possível carregar os produtos.',
             loading: 'Carregando produtos…',
             columns: {
@@ -358,6 +395,7 @@ export const ptBR = {
                 category: 'Categoria',
                 marketplace: 'Marketplace',
                 basePrice: 'Preço base',
+                coinPrice: 'Preço em moedas',
                 variants: 'Variantes',
                 stock: 'Estoque',
                 status: 'Status',
@@ -502,6 +540,9 @@ export const ptBR = {
             view: {
                 sourceType: 'Tipo de produto',
                 basePrice: 'Preço base',
+                coinPrice: 'Preço em moedas',
+                coinLimit: 'Limite por cliente',
+                noLimit: 'Sem limite',
                 estimatedShipping: 'Frete estimado',
                 stock: 'Estoque',
                 originUrl: 'URL de origem',
@@ -574,6 +615,11 @@ export const ptBR = {
             originPrice: {
                 titleMaoMaoBuy: 'Preço',
                 titleMarketplace: 'Origem e preço',
+                titleCoinShop: 'Valor e custo',
+                descriptionCoinShop:
+                    'O cliente paga em moedas. O valor em yuan é só referência; o custo entra no relatório de lucro.',
+                referencePrice: 'Valor de referência (CNY)',
+                referenceHint: 'Não é cobrado. Pode ficar zerado.',
                 descriptionMaoMaoBuy: 'Sem link de origem — preço final já em reais, cobrado do cliente sem conversão.',
                 descriptionMarketplace: 'Dados do anúncio comprado sob encomenda no marketplace de origem.',
                 marketplace: 'Marketplace de origem',
@@ -592,6 +638,9 @@ export const ptBR = {
                     'Só informativo — mostrado ao cliente na página do produto, não é cobrado com o pedido.',
                 stock: 'Estoque',
                 stockHint: 'Unidades disponíveis. Só é debitado quando o pedido é aprovado e liberado para pagamento.',
+                weight: 'Peso embalado (g)',
+                weightHint: 'Opcional. Ajuda a estimar o frete da caixa.',
+                weightAddonHint: 'Obrigatório. O checkout só mostra itens até o teto das configurações.',
             },
             preSale: {
                 title: 'Pré-venda',
@@ -612,22 +661,15 @@ export const ptBR = {
                 leadDaysHint: 'O cliente vê "até N dias". Padrão: 4.',
             },
             coins: {
-                title: 'MaoMaoCoin',
+                title: 'Resgate com moedas',
                 description:
-                    'Coin Shop e "Leve junto" só valem para estoque próprio pronto no armazém (sem pré-venda nem sob demanda).',
-                price: 'Preço na Coin Shop (moedas)',
-                priceHint: 'Vazio = fora da Coin Shop. A recompensa sai sem armazenagem e o frete é do pacote.',
-                weight: 'Peso embalado (g)',
-                weightHint: 'Obrigatório para "Leve junto"; o checkout só mostra itens até o teto das configurações.',
-                exclusive: 'Só com moedas',
-                exclusiveHint: 'Some da loja, da busca e do carrinho: sai apenas pela Coin Shop.',
+                    'Estoque próprio pronto no armazém. A recompensa sai sem armazenagem e o frete é do pacote do cliente.',
+                price: 'Preço (moedas)',
+                priceHint: 'Quantas MaoMaoCoins o cliente gasta por unidade.',
                 limit: 'Limite por cliente',
                 limitHint: 'Vazio = sem limite.',
                 from: 'Resgate abre em',
                 until: 'Resgate fecha em',
-                addon: 'Produto adicional do checkout ("Leve junto")',
-                addonHint:
-                    'Vendido só no checkout do carrinho, fora do cupom, rende moedas multiplicadas. Não aparece na loja.',
             },
             publishCheckbox: 'Publicar ao concluir',
             chinaExclusiveCheckbox: 'Exclusivo da China',
