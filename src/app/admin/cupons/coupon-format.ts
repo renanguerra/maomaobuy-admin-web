@@ -2,8 +2,10 @@ import type { Coupon, CouponStatus } from '@/types/api';
 import { cny } from '@/types/api';
 import type { StatusTone } from '@/components/admin/StatusPill';
 
-/** "10%" ou "¥5,00" — a etiqueta curta do desconto. */
-export function couponDiscountLabel(coupon: Pick<Coupon, 'discountType' | 'discountValue'>): string {
+/** "10%", "¥5,00" ou o nome do brinde — a etiqueta curta do que o cupom dá. */
+export function couponDiscountLabel(coupon: Pick<Coupon, 'discountType' | 'discountValue' | 'gift'>): string {
+    if (coupon.gift) return coupon.gift.productName;
+    if (coupon.discountValue === null) return '—';
     if (coupon.discountType === 'PERCENTAGE') return `${percentFromBasisPoints(coupon.discountValue)}%`;
     return cny(coupon.discountValue);
 }

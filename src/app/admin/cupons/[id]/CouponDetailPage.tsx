@@ -39,7 +39,9 @@ export function CouponDetailPage() {
                 setError(undefined);
             })
             .catch((err) =>
-                setError(err instanceof ApiError && err.status === 404 ? t('coupons.detail.notFound') : t('coupons.error')),
+                setError(
+                    err instanceof ApiError && err.status === 404 ? t('coupons.detail.notFound') : t('coupons.error'),
+                ),
             );
     }, [params.id, t]);
 
@@ -48,10 +50,12 @@ export function CouponDetailPage() {
     }, [load]);
 
     async function submit(values: CouponFormValues) {
-        const { code, scope, discountType, ...editable } = values;
+        const { code, scope, discountType, giftProductId, giftVariantExternalId, ...editable } = values;
         void code;
         void scope;
         void discountType;
+        void giftProductId;
+        void giftVariantExternalId;
         await api(`/coupons/${params.id}`, { method: 'PATCH', body: JSON.stringify(editable) });
         notify({ tone: 'success', title: t('coupons.updatedFeedback') });
         setEditing(false);
@@ -61,7 +65,11 @@ export function CouponDetailPage() {
     if (error)
         return (
             <div className="grid gap-6">
-                <PageHeader backHref="/admin/cupons" backLabel={t('coupons.detail.back')} title={t('coupons.detail.kicker')} />
+                <PageHeader
+                    backHref="/admin/cupons"
+                    backLabel={t('coupons.detail.back')}
+                    title={t('coupons.detail.kicker')}
+                />
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>
                     <p>{error}</p>
                 </Alert>
@@ -88,7 +96,9 @@ export function CouponDetailPage() {
                     href={`/admin/usuarios/${redemption.user.id}`}
                 >
                     <span className="block truncate font-semibold">{redemption.user.name}</span>
-                    <span className="block truncate text-xs text-muted dark:text-night-muted">{redemption.user.email}</span>
+                    <span className="block truncate text-xs text-muted dark:text-night-muted">
+                        {redemption.user.email}
+                    </span>
                 </Link>
             ),
         },
@@ -105,7 +115,10 @@ export function CouponDetailPage() {
                           ? `/admin/pacotes/${redemption.referenceId}`
                           : null;
                 return href ? (
-                    <Link className="text-sm text-primary no-underline hover:underline dark:text-night-accent" href={href}>
+                    <Link
+                        className="text-sm text-primary no-underline hover:underline dark:text-night-accent"
+                        href={href}
+                    >
                         {label} <span className="mm-data">#{short}</span>
                     </Link>
                 ) : (
@@ -153,16 +166,22 @@ export function CouponDetailPage() {
                 <DescriptionList
                     items={[
                         { label: t('coupons.detail.fields.scope'), value: t(`coupons.scopes.${coupon.scope}`) },
-                        {
-                            label: t('coupons.detail.fields.discount'),
-                            value: `${couponDiscountLabel(coupon)} (${t(`coupons.discountTypes.${coupon.discountType}`)})`,
-                            numeric: true,
-                        },
-                        {
-                            label: t('coupons.detail.fields.maxDiscount'),
-                            value: coupon.maxDiscountMinor ? cny(coupon.maxDiscountMinor) : t('common.dash'),
-                            numeric: true,
-                        },
+                        coupon.gift
+                            ? { label: t('coupons.form.gift'), value: coupon.gift.productName }
+                            : {
+                                  label: t('coupons.detail.fields.discount'),
+                                  value: `${couponDiscountLabel(coupon)} (${t(`coupons.discountTypes.${coupon.discountType ?? 'FIXED'}`)})`,
+                                  numeric: true,
+                              },
+                        ...(coupon.gift
+                            ? []
+                            : [
+                                  {
+                                      label: t('coupons.detail.fields.maxDiscount'),
+                                      value: coupon.maxDiscountMinor ? cny(coupon.maxDiscountMinor) : t('common.dash'),
+                                      numeric: true,
+                                  },
+                              ]),
                         {
                             label: t('coupons.detail.fields.minAmount'),
                             value: coupon.minAmountMinor ? cny(coupon.minAmountMinor) : t('common.dash'),
@@ -173,16 +192,25 @@ export function CouponDetailPage() {
                             value: coupon.maxUses === null ? t('coupons.unlimited') : String(coupon.maxUses),
                             numeric: true,
                         },
-                        { label: t('coupons.detail.fields.maxUsesPerUser'), value: String(coupon.maxUsesPerUser), numeric: true },
+                        {
+                            label: t('coupons.detail.fields.maxUsesPerUser'),
+                            value: String(coupon.maxUsesPerUser),
+                            numeric: true,
+                        },
                         { label: t('coupons.detail.fields.usedCount'), value: String(coupon.usedCount), numeric: true },
                         {
                             label: t('coupons.detail.fields.validity'),
-                            value: [
-                                coupon.startsAt ? t('coupons.fromDate', { date: formatDate(coupon.startsAt) }) : null,
-                                coupon.expiresAt ? t('coupons.untilDate', { date: formatDate(coupon.expiresAt) }) : null,
-                            ]
-                                .filter(Boolean)
-                                .join(' · ') || t('coupons.noExpiry'),
+                            value:
+                                [
+                                    coupon.startsAt
+                                        ? t('coupons.fromDate', { date: formatDate(coupon.startsAt) })
+                                        : null,
+                                    coupon.expiresAt
+                                        ? t('coupons.untilDate', { date: formatDate(coupon.expiresAt) })
+                                        : null,
+                                ]
+                                    .filter(Boolean)
+                                    .join(' · ') || t('coupons.noExpiry'),
                         },
                         {
                             label: t('coupons.detail.fields.user'),
@@ -207,7 +235,11 @@ export function CouponDetailPage() {
                 />
             </SectionCard>
 
-            <SectionCard description={t('coupons.detail.redemptionsDescription')} flush title={t('coupons.detail.redemptions')}>
+            <SectionCard
+                description={t('coupons.detail.redemptionsDescription')}
+                flush
+                title={t('coupons.detail.redemptions')}
+            >
                 <DataTable
                     caption={t('coupons.detail.redemptions')}
                     columns={redemptionColumns}

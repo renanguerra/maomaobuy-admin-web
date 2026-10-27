@@ -72,7 +72,8 @@ export function CouponsListPage() {
                 if (active)
                     setFailure({
                         key,
-                        message: err instanceof ApiError && err.status === 403 ? t('coupons.forbidden') : t('coupons.error'),
+                        message:
+                            err instanceof ApiError && err.status === 403 ? t('coupons.forbidden') : t('coupons.error'),
                     });
             });
 
@@ -89,10 +90,15 @@ export function CouponsListPage() {
     async function submit(values: CouponFormValues) {
         const existing = editing?.coupon;
         // Na edição, código, escopo e tipo não vão no corpo: o backend não os altera.
-        const { code, scope: valuesScope, discountType, ...editable } = values;
+        // O brinde também não muda: nem produto nem variação vão na edição.
+        const { code, scope: valuesScope, discountType, giftProductId, giftVariantExternalId, ...editable } = values;
         await api(existing ? `/coupons/${existing.id}` : '/coupons', {
             method: existing ? 'PATCH' : 'POST',
-            body: JSON.stringify(existing ? editable : { code, scope: valuesScope, discountType, ...editable }),
+            body: JSON.stringify(
+                existing
+                    ? editable
+                    : { code, scope: valuesScope, discountType, giftProductId, giftVariantExternalId, ...editable },
+            ),
         });
         notify({ tone: 'success', title: t(existing ? 'coupons.updatedFeedback' : 'coupons.createdFeedback') });
         setEditing(null);
@@ -122,7 +128,10 @@ export function CouponsListPage() {
             header: t('coupons.columns.scope'),
             hideBelow: 'md',
             cell: (coupon) => (
-                <StatusPill hideDot tone={coupon.scope === 'SHIPPING' ? 'info' : 'neutral'}>
+                <StatusPill
+                    hideDot
+                    tone={coupon.scope === 'SHIPPING' ? 'info' : coupon.scope === 'GIFT' ? 'warning' : 'neutral'}
+                >
                     {t(`coupons.scopes.${coupon.scope}`)}
                 </StatusPill>
             ),
@@ -136,8 +145,12 @@ export function CouponsListPage() {
                     {(coupon.maxDiscountMinor || coupon.minAmountMinor) && (
                         <span className="mt-0.5 block text-[11px] text-muted dark:text-night-muted">
                             {[
-                                coupon.maxDiscountMinor ? t('coupons.upTo', { max: cny(coupon.maxDiscountMinor) }) : null,
-                                coupon.minAmountMinor ? t('coupons.minAmount', { min: cny(coupon.minAmountMinor) }) : null,
+                                coupon.maxDiscountMinor
+                                    ? t('coupons.upTo', { max: cny(coupon.maxDiscountMinor) })
+                                    : null,
+                                coupon.minAmountMinor
+                                    ? t('coupons.minAmount', { min: cny(coupon.minAmountMinor) })
+                                    : null,
                             ]
                                 .filter(Boolean)
                                 .join(' · ')}
@@ -174,7 +187,9 @@ export function CouponsListPage() {
                         href={`/admin/usuarios/${coupon.user.id}`}
                     >
                         <span className="block truncate">{coupon.user.name}</span>
-                        <span className="block truncate text-xs text-muted dark:text-night-muted">{coupon.user.email}</span>
+                        <span className="block truncate text-xs text-muted dark:text-night-muted">
+                            {coupon.user.email}
+                        </span>
                     </Link>
                 ) : (
                     <span className="text-xs text-muted dark:text-night-muted">{t('coupons.open')}</span>
@@ -253,6 +268,7 @@ export function CouponsListPage() {
                             { value: 'all', label: t('coupons.filters.all') },
                             { value: 'ORDER', label: t('coupons.filters.ORDER') },
                             { value: 'SHIPPING', label: t('coupons.filters.SHIPPING') },
+                            { value: 'GIFT', label: t('coupons.filters.GIFT') },
                         ]}
                         value={scope}
                     />

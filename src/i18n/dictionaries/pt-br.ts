@@ -2019,6 +2019,7 @@ export const ptBR = {
             all: 'Todos',
             ORDER: 'Pedido',
             SHIPPING: 'Frete',
+            GIFT: 'Brinde',
         },
         columns: {
             coupon: 'Cupom',
@@ -2032,10 +2033,12 @@ export const ptBR = {
         scopes: {
             ORDER: 'Pedido',
             SHIPPING: 'Frete',
+            GIFT: 'Brinde',
         },
         scopeHints: {
             ORDER: 'Abate a mercadoria (produto + taxa) ao pagar o pedido ou fechar o carrinho.',
             SHIPPING: 'Abate o frete internacional ao pagar o pacote. A armazenagem fica de fora.',
+            GIFT: 'Não desconta: no checkout do carrinho gera um pedido de brinde com um produto da CoinShop, pronto no armazém.',
         },
         discountTypes: {
             PERCENTAGE: 'Percentual',
@@ -2120,6 +2123,16 @@ export const ptBR = {
             isActive: 'Cupom ativo',
             fixedFieldsHint:
                 'Código, onde vale e tipo de desconto não mudam depois de criado — para outro desconto, crie outro cupom.',
+            gift: 'Brinde',
+            giftSearch: 'Produto da CoinShop',
+            giftSearchPlaceholder: 'Nome do produto',
+            giftNone: 'Nenhum produto da CoinShop encontrado.',
+            giftStock: '{{count}} em estoque',
+            giftVariant: 'Variação do brinde',
+            giftVariantPlaceholder: 'Escolha a variação',
+            giftRequired: 'Escolha o produto do brinde.',
+            giftVariantRequired: 'Escolha qual variação vai de brinde.',
+            giftFixedHint: 'O brinde não muda depois de criado — para outro produto, crie outro cupom.',
         },
     },
     siteNotices: {
