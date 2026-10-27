@@ -380,7 +380,8 @@ export interface OptionalService {
 // Cupons
 // ---------------------------------------------------------------------------
 
-export type CouponScope = 'ORDER' | 'SHIPPING';
+/** `GIFT` é cupom de brinde: sem desconto, dá um produto da CoinShop no checkout. */
+export type CouponScope = 'ORDER' | 'SHIPPING' | 'GIFT';
 export type CouponDiscountType = 'PERCENTAGE' | 'FIXED';
 
 export interface Coupon {
@@ -389,9 +390,12 @@ export interface Coupon {
     name: string;
     description: string | null;
     scope: CouponScope;
-    discountType: CouponDiscountType;
-    /** Pontos-base no percentual (1000 = 10%), fen no fixo. */
-    discountValue: string;
+    /** Nulo no cupom de brinde. */
+    discountType: CouponDiscountType | null;
+    /** Pontos-base no percentual (1000 = 10%), fen no fixo. Nulo no brinde. */
+    discountValue: string | null;
+    /** Só no cupom de brinde: o produto da CoinShop que ele dá. */
+    gift: { productId: string; productName: string } | null;
     maxDiscountMinor: string | null;
     minAmountMinor: string | null;
     maxUses: number | null;

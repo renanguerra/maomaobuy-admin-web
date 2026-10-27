@@ -14,7 +14,7 @@ import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
-import type { AdminUser, Coupon, CouponDiscountType, CouponScope, Page } from '@/types/api';
+import type { AdminProduct, AdminUser, Coupon, CouponDiscountType, CouponScope, Page } from '@/types/api';
 import { basisPointsFromPercent, fromDateTimeLocal, percentFromBasisPoints, toDateTimeLocal } from './coupon-format';
 
 const FORM_ID = 'coupon-form';
@@ -25,9 +25,13 @@ export interface CouponFormValues {
     name: string;
     description: string | null;
     scope: CouponScope;
-    discountType: CouponDiscountType;
-    discountValue: string;
-    maxDiscountMinor: string | null;
+    /** Ausentes no cupom de brinde, que não desconta. */
+    discountType?: CouponDiscountType;
+    discountValue?: string;
+    maxDiscountMinor?: string | null;
+    /** Só no cupom de brinde, e só na criação: o brinde não muda depois. */
+    giftProductId?: string;
+    giftVariantExternalId?: string;
     minAmountMinor: string | null;
     maxUses: number | null;
     maxUsesPerUser: number;
@@ -99,15 +103,21 @@ function CouponForm({
     const [scope, setScope] = useState<CouponScope>(coupon?.scope ?? 'ORDER');
     const [discountType, setDiscountType] = useState<CouponDiscountType>(coupon?.discountType ?? 'PERCENTAGE');
     const [percent, setPercent] = useState(
-        coupon?.discountType === 'PERCENTAGE' ? percentFromBasisPoints(coupon.discountValue) : '10',
+        coupon?.discountType === 'PERCENTAGE' && coupon.discountValue
+            ? percentFromBasisPoints(coupon.discountValue)
+            : '10',
     );
-    const [amount, setAmount] = useState(coupon?.discountType === 'FIXED' ? coupon.discountValue : '0');
+    const [amount, setAmount] = useState(
+        coupon?.discountType === 'FIXED' && coupon.discountValue ? coupon.discountValue : '0',
+    );
     const [maxDiscount, setMaxDiscount] = useState(coupon?.maxDiscountMinor ?? '');
     const [minAmount, setMinAmount] = useState(coupon?.minAmountMinor ?? '');
     const [target, setTarget] = useState<Target>(coupon?.user ? 'user' : 'open');
     const [user, setUser] = useState<Coupon['user']>(coupon?.user ?? null);
     const [isActive, setIsActive] = useState(coupon?.isActive ?? true);
+    const [gift, setGift] = useState<GiftSelection | null>(null);
     const [error, setError] = useState<string>();
+    const isGift = scope === 'GIFT';
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -116,6 +126,14 @@ function CouponForm({
 
         if (target === 'user' && !user) {
             setError(t('coupons.form.userRequired'));
+            return;
+        }
+        if (isGift && !coupon && !gift) {
+            setError(t('coupons.form.giftRequired'));
+            return;
+        }
+        if (isGift && !coupon && gift && gift.variants.length > 0 && !gift.variantExternalId) {
+            setError(t('coupons.form.giftVariantRequired'));
             return;
         }
 
@@ -127,11 +145,22 @@ function CouponForm({
                 name: String(data.get('name') ?? '').trim(),
                 description: String(data.get('description') ?? '').trim() || null,
                 scope,
-                discountType,
-                discountValue:
-                    discountType === 'PERCENTAGE' ? String(basisPointsFromPercent(percent)) : amount,
-                // Vazio ou zero é "sem": o backend guarda nulo, não zero.
-                maxDiscountMinor: discountType === 'PERCENTAGE' && maxDiscount && maxDiscount !== '0' ? maxDiscount : null,
+                // O brinde não desconta: os campos de desconto nem vão.
+                ...(isGift
+                    ? coupon
+                        ? {}
+                        : {
+                              giftProductId: gift?.productId,
+                              giftVariantExternalId: gift?.variantExternalId || undefined,
+                          }
+                    : {
+                          discountType,
+                          discountValue:
+                              discountType === 'PERCENTAGE' ? String(basisPointsFromPercent(percent)) : amount,
+                          // Vazio ou zero é "sem": o backend guarda nulo, não zero.
+                          maxDiscountMinor:
+                              discountType === 'PERCENTAGE' && maxDiscount && maxDiscount !== '0' ? maxDiscount : null,
+                      }),
                 minAmountMinor: minAmount && minAmount !== '0' ? minAmount : null,
                 maxUses: maxUses ? Number(maxUses) : null,
                 maxUsesPerUser: Number(String(data.get('maxUsesPerUser') ?? '1') || 1),
@@ -188,52 +217,73 @@ function CouponForm({
                 options={[
                     { value: 'ORDER', label: t('coupons.scopes.ORDER') },
                     { value: 'SHIPPING', label: t('coupons.scopes.SHIPPING') },
+                    { value: 'GIFT', label: t('coupons.scopes.GIFT') },
                 ]}
                 value={scope}
             />
-            <Select
-                disabled={Boolean(coupon)}
-                hint={coupon ? t('coupons.form.fixedFieldsHint') : undefined}
-                label={t('coupons.form.discountType')}
-                onChange={(event) => setDiscountType(event.target.value as CouponDiscountType)}
-                options={[
-                    { value: 'PERCENTAGE', label: t('coupons.discountTypes.PERCENTAGE') },
-                    { value: 'FIXED', label: t('coupons.discountTypes.FIXED') },
-                ]}
-                value={discountType}
-            />
-
-            {discountType === 'PERCENTAGE' ? (
-                <>
-                    <Input
-                        hint={t('coupons.form.percentHint')}
-                        inputMode="decimal"
-                        label={t('coupons.form.percent')}
-                        max={100}
-                        min={0.01}
-                        onChange={(event) => setPercent(event.target.value)}
-                        required
-                        step={0.01}
-                        type="number"
-                        value={percent}
-                    />
-                    <CurrencyInput
-                        currency="CNY"
-                        hint={t('coupons.form.maxDiscountHint')}
-                        label={t('coupons.form.maxDiscount')}
-                        minor={maxDiscount}
-                        onMinorChange={setMaxDiscount}
-                    />
-                </>
+            {isGift ? (
+                <div className="sm:col-span-2">
+                    {coupon ? (
+                        <p className="m-0 text-sm text-ink dark:text-night-text">
+                            <span className="block text-xs text-muted dark:text-night-muted">
+                                {t('coupons.form.gift')}
+                            </span>
+                            <strong>{coupon.gift?.productName}</strong>
+                            <span className="mt-1 block text-xs text-muted dark:text-night-muted">
+                                {t('coupons.form.giftFixedHint')}
+                            </span>
+                        </p>
+                    ) : (
+                        <GiftPicker onChange={setGift} value={gift} />
+                    )}
+                </div>
             ) : (
-                <CurrencyInput
-                    className="sm:col-span-2"
-                    currency="CNY"
-                    label={t('coupons.form.amount')}
-                    minor={amount}
-                    onMinorChange={setAmount}
-                    required
-                />
+                <>
+                    <Select
+                        disabled={Boolean(coupon)}
+                        hint={coupon ? t('coupons.form.fixedFieldsHint') : undefined}
+                        label={t('coupons.form.discountType')}
+                        onChange={(event) => setDiscountType(event.target.value as CouponDiscountType)}
+                        options={[
+                            { value: 'PERCENTAGE', label: t('coupons.discountTypes.PERCENTAGE') },
+                            { value: 'FIXED', label: t('coupons.discountTypes.FIXED') },
+                        ]}
+                        value={discountType}
+                    />
+
+                    {discountType === 'PERCENTAGE' ? (
+                        <>
+                            <Input
+                                hint={t('coupons.form.percentHint')}
+                                inputMode="decimal"
+                                label={t('coupons.form.percent')}
+                                max={100}
+                                min={0.01}
+                                onChange={(event) => setPercent(event.target.value)}
+                                required
+                                step={0.01}
+                                type="number"
+                                value={percent}
+                            />
+                            <CurrencyInput
+                                currency="CNY"
+                                hint={t('coupons.form.maxDiscountHint')}
+                                label={t('coupons.form.maxDiscount')}
+                                minor={maxDiscount}
+                                onMinorChange={setMaxDiscount}
+                            />
+                        </>
+                    ) : (
+                        <CurrencyInput
+                            className="sm:col-span-2"
+                            currency="CNY"
+                            label={t('coupons.form.amount')}
+                            minor={amount}
+                            onMinorChange={setAmount}
+                            required
+                        />
+                    )}
+                </>
             )}
 
             <CurrencyInput
@@ -350,8 +400,12 @@ function UserPicker({ value, onChange }: { value: Coupon['user']; onChange: (use
         return (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-warm-50 px-3 py-2 dark:border-night-line dark:bg-night-raised">
                 <span className="min-w-0">
-                    <span className="block text-xs text-muted dark:text-night-muted">{t('coupons.form.userSelected')}</span>
-                    <span className="block truncate text-sm font-semibold text-ink dark:text-night-text">{value.name}</span>
+                    <span className="block text-xs text-muted dark:text-night-muted">
+                        {t('coupons.form.userSelected')}
+                    </span>
+                    <span className="block truncate text-sm font-semibold text-ink dark:text-night-text">
+                        {value.name}
+                    </span>
                     <span className="block truncate text-xs text-muted dark:text-night-muted">{value.email}</span>
                 </span>
                 <Button onClick={() => onChange(null)} size="small" type="button" variant="ghost">
@@ -374,9 +428,13 @@ function UserPicker({ value, onChange }: { value: Coupon['user']; onChange: (use
             {searching && (
                 <ul className="m-0 grid max-h-56 list-none gap-1 overflow-y-auto p-0">
                     {results === undefined ? (
-                        <li className="px-2 py-1.5 text-xs text-muted dark:text-night-muted">{t('coupons.form.userSearching')}</li>
+                        <li className="px-2 py-1.5 text-xs text-muted dark:text-night-muted">
+                            {t('coupons.form.userSearching')}
+                        </li>
                     ) : results.length === 0 ? (
-                        <li className="px-2 py-1.5 text-xs text-muted dark:text-night-muted">{t('coupons.form.userNone')}</li>
+                        <li className="px-2 py-1.5 text-xs text-muted dark:text-night-muted">
+                            {t('coupons.form.userNone')}
+                        </li>
                     ) : (
                         results.map((candidate) => (
                             <li key={candidate.id}>
@@ -387,7 +445,9 @@ function UserPicker({ value, onChange }: { value: Coupon['user']; onChange: (use
                                     }
                                     type="button"
                                 >
-                                    <span className="text-sm font-semibold text-ink dark:text-night-text">{candidate.name}</span>
+                                    <span className="text-sm font-semibold text-ink dark:text-night-text">
+                                        {candidate.name}
+                                    </span>
                                     <span className="text-xs text-muted dark:text-night-muted">{candidate.email}</span>
                                 </button>
                             </li>
@@ -395,6 +455,126 @@ function UserPicker({ value, onChange }: { value: Coupon['user']; onChange: (use
                     )}
                 </ul>
             )}
+        </div>
+    );
+}
+
+interface GiftSelection {
+    productId: string;
+    productName: string;
+    variants: { externalId: string; label: string }[];
+    variantExternalId: string;
+}
+
+/**
+ * Escolha do brinde: busca só entre os produtos da CoinShop. Produto com
+ * variações pede qual delas vai — o cupom guarda uma só.
+ */
+function GiftPicker({
+    value,
+    onChange,
+}: {
+    value: GiftSelection | null;
+    onChange: (gift: GiftSelection | null) => void;
+}) {
+    const { t } = useTranslation();
+    const [term, setTerm] = useState('');
+    const [found, setFound] = useState<{ term: string; products: AdminProduct[] }>();
+    const current = term.trim();
+    const results = found?.term === current ? found.products : undefined;
+
+    useEffect(() => {
+        let active = true;
+        const query = new URLSearchParams({ kind: 'COIN_SHOP', limit: '8' });
+        if (current) query.set('search', current);
+        api<Page<AdminProduct>>(`/products?${query.toString()}`)
+            .then((page) => {
+                if (active) setFound({ term: current, products: page.data });
+            })
+            .catch(() => {
+                if (active) setFound({ term: current, products: [] });
+            });
+        return () => {
+            active = false;
+        };
+    }, [current]);
+
+    if (value) {
+        return (
+            <div className="grid gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-line bg-warm-50 px-3 py-2 dark:border-night-line dark:bg-night-raised">
+                    <span className="min-w-0">
+                        <span className="block text-xs text-muted dark:text-night-muted">{t('coupons.form.gift')}</span>
+                        <span className="block truncate text-sm font-semibold text-ink dark:text-night-text">
+                            {value.productName}
+                        </span>
+                    </span>
+                    <Button onClick={() => onChange(null)} size="small" type="button" variant="ghost">
+                        {t('coupons.form.userChange')}
+                    </Button>
+                </div>
+                {value.variants.length > 0 && (
+                    <Select
+                        label={t('coupons.form.giftVariant')}
+                        onChange={(event) => onChange({ ...value, variantExternalId: event.target.value })}
+                        options={value.variants.map((variant) => ({ value: variant.externalId, label: variant.label }))}
+                        placeholderOption={t('coupons.form.giftVariantPlaceholder')}
+                        required
+                        value={value.variantExternalId}
+                    />
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <div className="grid gap-2">
+            <SearchInput
+                clearLabel={t('common.actions.clearSearch')}
+                delay={250}
+                label={t('coupons.form.giftSearch')}
+                onChange={setTerm}
+                placeholder={t('coupons.form.giftSearchPlaceholder')}
+                value={term}
+            />
+            <ul className="m-0 grid max-h-56 list-none gap-1 overflow-y-auto p-0">
+                {results === undefined ? (
+                    <li className="px-2 py-1.5 text-xs text-muted dark:text-night-muted">
+                        {t('coupons.form.userSearching')}
+                    </li>
+                ) : results.length === 0 ? (
+                    <li className="px-2 py-1.5 text-xs text-muted dark:text-night-muted">
+                        {t('coupons.form.giftNone')}
+                    </li>
+                ) : (
+                    results.map((product) => (
+                        <li key={product.id}>
+                            <button
+                                className="flex w-full items-baseline justify-between gap-3 rounded-md px-2 py-1.5 text-left transition hover:bg-brand-50 dark:hover:bg-night-brand-hover"
+                                onClick={() =>
+                                    onChange({
+                                        productId: product.id,
+                                        productName: product.name,
+                                        variants: product.variants.map((variant) => ({
+                                            externalId: variant.externalId,
+                                            label: variant.label,
+                                        })),
+                                        variantExternalId: '',
+                                    })
+                                }
+                                type="button"
+                            >
+                                <span className="text-sm font-semibold text-ink dark:text-night-text">
+                                    {product.name}
+                                </span>
+                                <span className="mm-data shrink-0 text-xs text-muted dark:text-night-muted">
+                                    {t('coupons.form.giftStock', { count: product.stock })}
+                                </span>
+                            </button>
+                        </li>
+                    ))
+                )}
+            </ul>
         </div>
     );
 }

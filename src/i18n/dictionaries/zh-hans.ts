@@ -1961,6 +1961,7 @@ export const zhHans: Messages = {
             all: '全部',
             ORDER: '订单',
             SHIPPING: '运费',
+            GIFT: '赠品',
         },
         columns: {
             coupon: '优惠券',
@@ -1974,10 +1975,12 @@ export const zhHans: Messages = {
         scopes: {
             ORDER: '订单',
             SHIPPING: '运费',
+            GIFT: '赠品',
         },
         scopeHints: {
             ORDER: '支付订单或购物车结账时抵扣商品金额（商品 + 服务费）。',
             SHIPPING: '支付包裹时抵扣国际运费，不含仓储费。',
+            GIFT: '不抵扣金额：在购物车结账时生成一个赠品订单，赠送积分商城商品，已在仓库。',
         },
         discountTypes: {
             PERCENTAGE: '百分比',
@@ -2060,6 +2063,16 @@ export const zhHans: Messages = {
             userRequired: '请选择客户，或将优惠券设为所有人可用。',
             isActive: '优惠券启用',
             fixedFieldsHint: '代码、适用范围和折扣类型创建后不可更改——如需其他折扣，请新建优惠券。',
+            gift: '赠品',
+            giftSearch: '积分商城商品',
+            giftSearchPlaceholder: '商品名称',
+            giftNone: '未找到积分商城商品。',
+            giftStock: '库存 {{count}}',
+            giftVariant: '赠品规格',
+            giftVariantPlaceholder: '选择规格',
+            giftRequired: '请选择赠品商品。',
+            giftVariantRequired: '请选择赠送哪个规格。',
+            giftFixedHint: '赠品创建后不可更改——如需其他商品，请新建优惠券。',
         },
     },
     siteNotices: {
