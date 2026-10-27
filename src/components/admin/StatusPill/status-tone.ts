@@ -35,6 +35,7 @@ const PACKAGE_STATUS_TONES: Record<string, StatusTone> = {
     DELIVERED: 'success',
     EXCEPTION: 'danger',
     RETURNED: 'danger',
+    SHIPPING_FAILED: 'danger',
     CANCELLED: 'neutral',
 };
 

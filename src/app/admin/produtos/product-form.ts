@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { MARKETPLACE_NAMES, type AdminProduct } from '@/types/api';
+import { MARKETPLACE_NAMES, type AdminProduct, type ProductKind } from '@/types/api';
 import { slugify } from '../categorias/slugify';
 
 /** Prazo sugerido ao marcar "sob demanda" — o mesmo padrão do backend. */
@@ -10,6 +10,8 @@ export const DEFAULT_ON_DEMAND_LEAD_DAYS = 4;
 export type ProductSourceType = 'MARKETPLACE' | 'MAOMAOBUY';
 
 export interface ProductFormValues {
+    /** Fixo: vem da tela (criação) ou do produto (edição). */
+    kind: ProductKind;
     sourceType: ProductSourceType;
     name: string;
     slug: string;
@@ -31,19 +33,18 @@ export interface ProductFormValues {
     onDemandLeadDays: string;
     /** Coin Shop. Strings porque vêm de inputs; vazio = sem valor. */
     coinPrice: string;
-    isCoinExclusive: boolean;
     coinRedeemLimitPerUser: string;
     /** `YYYY-MM-DDTHH:mm`, como o `<input type="datetime-local">` entrega. */
     coinAvailableFrom: string;
     coinAvailableUntil: string;
-    isCheckoutAddon: boolean;
-    /** Peso embalado em gramas — obrigatório para o produto adicional. */
+    /** Peso embalado em gramas — obrigatório no "Leve junto". */
     weightGrams: string;
     categoryIds: string[];
     subcategoryIds: string[];
 }
 
 const EMPTY: ProductFormValues = {
+    kind: 'STORE',
     sourceType: 'MARKETPLACE',
     name: '',
     slug: '',
@@ -61,11 +62,9 @@ const EMPTY: ProductFormValues = {
     isOnDemand: false,
     onDemandLeadDays: String(DEFAULT_ON_DEMAND_LEAD_DAYS),
     coinPrice: '',
-    isCoinExclusive: false,
     coinRedeemLimitPerUser: '',
     coinAvailableFrom: '',
     coinAvailableUntil: '',
-    isCheckoutAddon: false,
     weightGrams: '',
     categoryIds: [],
     subcategoryIds: [],
@@ -74,6 +73,7 @@ const EMPTY: ProductFormValues = {
 function fromProduct(product: AdminProduct): ProductFormValues {
     const isOwnStock = product.marketplace === 'MAOMAOBUY';
     return {
+        kind: product.kind,
         sourceType: isOwnStock ? 'MAOMAOBUY' : 'MARKETPLACE',
         name: product.name,
         slug: product.slug,
@@ -93,11 +93,9 @@ function fromProduct(product: AdminProduct): ProductFormValues {
         isOnDemand: product.isOnDemand,
         onDemandLeadDays: String(product.onDemandLeadDays ?? DEFAULT_ON_DEMAND_LEAD_DAYS),
         coinPrice: product.coinPrice ? String(product.coinPrice) : '',
-        isCoinExclusive: product.isCoinExclusive ?? false,
         coinRedeemLimitPerUser: product.coinRedeemLimitPerUser ? String(product.coinRedeemLimitPerUser) : '',
         coinAvailableFrom: toLocalInput(product.coinAvailableFrom),
         coinAvailableUntil: toLocalInput(product.coinAvailableUntil),
-        isCheckoutAddon: product.isCheckoutAddon ?? false,
         weightGrams: product.weightGrams ? String(product.weightGrams) : '',
         categoryIds: product.categories.map((category) => category.id),
         subcategoryIds: product.subcategories.map((subcategory) => subcategory.id),
@@ -109,8 +107,11 @@ function fromProduct(product: AdminProduct): ProductFormValues {
  * exatamente os mesmos campos, e duplicá-los já custou divergência entre as
  * duas telas no passado.
  */
-export function useProductForm(product?: AdminProduct) {
-    const [values, setValues] = useState<ProductFormValues>(product ? fromProduct(product) : EMPTY);
+export function useProductForm(product?: AdminProduct, kind: ProductKind = 'STORE') {
+    // Coin Shop e "Leve junto" são sempre estoque próprio.
+    const [values, setValues] = useState<ProductFormValues>(
+        product ? fromProduct(product) : { ...EMPTY, kind, sourceType: kind === 'STORE' ? 'MARKETPLACE' : 'MAOMAOBUY' },
+    );
     // Enquanto o admin não editar o slug, ele acompanha o nome. Em produto já
     // existente o slug nunca é derivado sozinho: mudá-lo quebra links publicados.
     const [slugTouched, setSlugTouched] = useState(Boolean(product));
@@ -159,9 +160,14 @@ export function useProductForm(product?: AdminProduct) {
 
 export type ProductForm = ReturnType<typeof useProductForm>;
 
-/** Corpo aceito pelo backend em `POST /products` e `PATCH /products/:id`. */
+/**
+ * Corpo aceito pelo backend em `POST /products` e `PATCH /products/:id`. O
+ * tipo não vai aqui: só a criação o manda, e ele não muda depois.
+ */
 export function toProductPayload(values: ProductFormValues) {
-    const isOwnStock = values.sourceType === 'MAOMAOBUY';
+    const isStore = values.kind === 'STORE';
+    const isCoinShop = values.kind === 'COIN_SHOP';
+    const isOwnStock = !isStore || values.sourceType === 'MAOMAOBUY';
     return {
         name: values.name,
         slug: values.slug,
@@ -176,22 +182,20 @@ export function toProductPayload(values: ProductFormValues) {
         stock: Number(values.stock),
         isPublished: values.isPublished,
         isChinaExclusive: values.isChinaExclusive,
-        isPreSale: values.isPreSale,
+        // Pré-venda e sob demanda são só da loja: Coin Shop e "Leve junto"
+        // precisam do item pronto no armazém.
+        isPreSale: isStore && values.isPreSale,
         // Fora da pré-venda a data não é enviada em branco: o backend recusa
         // string vazia e apaga a data sozinho quando a pré-venda cai.
-        releaseDate: values.isPreSale ? values.releaseDate : undefined,
-        isOnDemand: values.isOnDemand,
-        onDemandLeadDays: values.isOnDemand ? Number(values.onDemandLeadDays) : undefined,
-        // Coin Shop só vale para estoque próprio; `null` limpa o que havia.
-        coinPrice: isOwnStock && values.coinPrice ? Number(values.coinPrice) : null,
-        isCoinExclusive: isOwnStock && values.coinPrice !== '' && values.isCoinExclusive,
+        releaseDate: isStore && values.isPreSale ? values.releaseDate : undefined,
+        isOnDemand: isStore && values.isOnDemand,
+        onDemandLeadDays: isStore && values.isOnDemand ? Number(values.onDemandLeadDays) : undefined,
+        // Moedas só na Coin Shop; nos outros tipos `null` (o backend recusa valor).
+        coinPrice: isCoinShop && values.coinPrice ? Number(values.coinPrice) : null,
         coinRedeemLimitPerUser:
-            isOwnStock && values.coinPrice && values.coinRedeemLimitPerUser
-                ? Number(values.coinRedeemLimitPerUser)
-                : null,
-        coinAvailableFrom: isOwnStock && values.coinPrice ? fromLocalInput(values.coinAvailableFrom) : null,
-        coinAvailableUntil: isOwnStock && values.coinPrice ? fromLocalInput(values.coinAvailableUntil) : null,
-        isCheckoutAddon: isOwnStock && values.isCheckoutAddon,
+            isCoinShop && values.coinRedeemLimitPerUser ? Number(values.coinRedeemLimitPerUser) : null,
+        coinAvailableFrom: isCoinShop ? fromLocalInput(values.coinAvailableFrom) : null,
+        coinAvailableUntil: isCoinShop ? fromLocalInput(values.coinAvailableUntil) : null,
         // Vazio não apaga um peso que veio da importação em lote.
         weightGrams: values.weightGrams ? Number(values.weightGrams) : undefined,
         categoryIds: values.categoryIds,

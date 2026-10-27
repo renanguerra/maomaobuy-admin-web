@@ -14,14 +14,20 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
-import { productSourceLabel, type AdminCategory, type AdminProduct } from '@/types/api';
+import { productSourceLabel, type AdminCategory, type AdminProduct, type ProductKind } from '@/types/api';
 import { ProductFormFields } from '../ProductFormFields';
 import { ProductMediaManager } from '../ProductMediaManager';
+import { productPath } from '../product-kind';
 import { toProductPayload, useProductForm } from '../product-form';
 import { ProductVariantsManager } from './ProductVariantsManager';
 import { minorToAmount } from './ProductDetailPage.utils';
 
-export function ProductDetailPage() {
+/**
+ * Detalhe de um produto no endereço do tipo dele. Aberto pelo endereço de
+ * outro tipo (link antigo de `/admin/produtos/<id>` para um item da Coin
+ * Shop, por exemplo), redireciona para o certo.
+ */
+export function ProductDetailPage({ kind = 'STORE' }: { kind?: ProductKind }) {
     const { t } = useTranslation();
     const { notify } = useToast();
     const confirm = useConfirm();
@@ -48,6 +54,10 @@ export function ProductDetailPage() {
     }, [load]);
 
     useEffect(() => {
+        if (product && product.kind !== kind) router.replace(productPath(product.kind, product.id));
+    }, [product, kind, router]);
+
+    useEffect(() => {
         api<AdminCategory[]>('/categories')
             .then(setCategories)
             .catch(() => {
@@ -70,7 +80,7 @@ export function ProductDetailPage() {
 
     async function saveInfo(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
-        if (form.values.sourceAmountMinor === '0') {
+        if (product?.kind !== 'COIN_SHOP' && form.values.sourceAmountMinor === '0') {
             notify({ tone: 'warning', title: t('products.detail.priceRequiredError') });
             return;
         }
@@ -104,7 +114,7 @@ export function ProductDetailPage() {
         try {
             await api(`/products/${params.id}`, { method: 'DELETE' });
             notify({ tone: 'success', title: t('products.detail.deletedToast') });
-            router.replace('/admin/produtos');
+            router.replace(productPath(kind));
         } catch (err) {
             reportError(err);
             setBusy(undefined);
@@ -115,9 +125,9 @@ export function ProductDetailPage() {
         return (
             <div className="grid gap-6">
                 <PageHeader
-                    backHref="/admin/produtos"
-                    backLabel={t('products.detail.backLink')}
-                    title={t('products.list.title')}
+                    backHref={productPath(kind)}
+                    backLabel={t(`productKinds.${kind}.backLink`)}
+                    title={t(`productKinds.${kind}.listTitle`)}
                 />
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>
                     <p>{error}</p>
@@ -130,8 +140,8 @@ export function ProductDetailPage() {
         return (
             <div className="grid gap-6">
                 <PageHeader
-                    backHref="/admin/produtos"
-                    backLabel={t('products.detail.backLink')}
+                    backHref={productPath(kind)}
+                    backLabel={t(`productKinds.${kind}.backLink`)}
                     title={t('products.detail.loading')}
                 />
                 <SkeletonCards label={t('products.detail.loading')} />
@@ -142,9 +152,9 @@ export function ProductDetailPage() {
     return (
         <div className="grid gap-6">
             <PageHeader
-                backHref="/admin/produtos"
-                backLabel={t('products.detail.backLink')}
-                kicker={t('products.detail.kicker')}
+                backHref={productPath(kind)}
+                backLabel={t(`productKinds.${kind}.backLink`)}
+                kicker={t(`productKinds.${kind}.kicker`)}
                 meta={<span className="font-mono">/{product.slug}</span>}
                 title={product.name}
                 badge={
@@ -200,58 +210,102 @@ export function ProductDetailPage() {
                 <SectionCard title={t('products.detail.infoSection')}>
                     <DescriptionList
                         items={[
+                            ...(product.kind === 'STORE'
+                                ? [
+                                      {
+                                          label: t('products.detail.view.sourceType'),
+                                          value: productSourceLabel(product.marketplace),
+                                      },
+                                  ]
+                                : []),
+                            ...(product.kind === 'COIN_SHOP'
+                                ? [
+                                      {
+                                          label: t('products.detail.view.coinPrice'),
+                                          value: t('products.list.coinsValue', { coins: product.coinPrice ?? 0 }),
+                                          numeric: true,
+                                      },
+                                      {
+                                          label: t('products.detail.view.coinLimit'),
+                                          value: product.coinRedeemLimitPerUser ?? t('products.detail.view.noLimit'),
+                                          numeric: true,
+                                      },
+                                  ]
+                                : []),
                             {
-                                label: t('products.detail.view.sourceType'),
-                                value: productSourceLabel(product.marketplace),
-                            },
-                            {
-                                label: t('products.detail.view.basePrice'),
+                                label:
+                                    product.kind === 'COIN_SHOP'
+                                        ? t('products.new.originPrice.referencePrice')
+                                        : t('products.detail.view.basePrice'),
                                 value: `${minorToAmount(product.sourceAmountMinor)} CNY`,
                                 numeric: true,
                             },
-                            {
-                                label: t('products.detail.view.estimatedShipping'),
-                                value: product.estimatedShippingAmountMinor
-                                    ? `${minorToAmount(product.estimatedShippingAmountMinor)} BRL`
-                                    : t('common.dash'),
-                                numeric: true,
-                            },
+                            ...(product.weightGrams
+                                ? [
+                                      {
+                                          label: t('products.new.shippingStock.weight'),
+                                          value: `${product.weightGrams} g`,
+                                          numeric: true,
+                                      },
+                                  ]
+                                : []),
+                            ...(product.kind === 'STORE'
+                                ? [
+                                      {
+                                          label: t('products.detail.view.estimatedShipping'),
+                                          value: product.estimatedShippingAmountMinor
+                                              ? `${minorToAmount(product.estimatedShippingAmountMinor)} BRL`
+                                              : t('common.dash'),
+                                          numeric: true,
+                                      },
+                                  ]
+                                : []),
                             { label: t('products.detail.view.stock'), value: product.stock, numeric: true },
-                            {
-                                label: t('products.detail.view.originUrl'),
-                                value: product.marketplaceUrl ? (
-                                    <a
-                                        className="inline-flex items-center gap-1 break-all text-primary dark:text-night-accent"
-                                        href={product.marketplaceUrl}
-                                        rel="noreferrer"
-                                        target="_blank"
-                                    >
-                                        {product.marketplaceUrl}
-                                        <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                    </a>
-                                ) : (
-                                    t('products.detail.view.noOriginUrl')
-                                ),
-                                wide: true,
-                            },
-                            {
-                                label: t('products.detail.view.categories'),
-                                wide: true,
-                                value:
-                                    product.categories.length === 0 && product.subcategories.length === 0 ? (
-                                        <span className="font-normal text-muted dark:text-night-muted">
-                                            {t('products.detail.view.noCategories')}
-                                        </span>
-                                    ) : (
-                                        <span className="flex flex-wrap gap-1.5">
-                                            {[...product.categories, ...product.subcategories].map((entry) => (
-                                                <StatusPill hideDot key={entry.id} tone="info">
-                                                    {entry.name}
-                                                </StatusPill>
-                                            ))}
-                                        </span>
-                                    ),
-                            },
+                            ...(product.kind === 'STORE'
+                                ? [
+                                      {
+                                          label: t('products.detail.view.originUrl'),
+                                          value: product.marketplaceUrl ? (
+                                              <a
+                                                  className="inline-flex items-center gap-1 break-all text-primary dark:text-night-accent"
+                                                  href={product.marketplaceUrl}
+                                                  rel="noreferrer"
+                                                  target="_blank"
+                                              >
+                                                  {product.marketplaceUrl}
+                                                  <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                              </a>
+                                          ) : (
+                                              t('products.detail.view.noOriginUrl')
+                                          ),
+                                          wide: true,
+                                      },
+                                  ]
+                                : []),
+                            ...(product.kind === 'STORE'
+                                ? [
+                                      {
+                                          label: t('products.detail.view.categories'),
+                                          wide: true,
+                                          value:
+                                              product.categories.length === 0 && product.subcategories.length === 0 ? (
+                                                  <span className="font-normal text-muted dark:text-night-muted">
+                                                      {t('products.detail.view.noCategories')}
+                                                  </span>
+                                              ) : (
+                                                  <span className="flex flex-wrap gap-1.5">
+                                                      {[...product.categories, ...product.subcategories].map(
+                                                          (entry) => (
+                                                              <StatusPill hideDot key={entry.id} tone="info">
+                                                                  {entry.name}
+                                                              </StatusPill>
+                                                          ),
+                                                      )}
+                                                  </span>
+                                              ),
+                                      },
+                                  ]
+                                : []),
                             {
                                 label: t('products.detail.view.description'),
                                 wide: true,

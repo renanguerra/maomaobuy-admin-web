@@ -62,6 +62,8 @@ export interface CarrierQuoteLine {
     } | null;
     apiError: string | null;
     suggestedCostAmountMinor: string | null;
+    /** Frete que o cliente pagaria: custo sugerido mais a margem atual, em fen. */
+    customerAmountMinor: string | null;
 }
 
 export interface CarrierQuote {
@@ -208,3 +210,5 @@ export function carrierMoney(minor: string | number, currency: string) {
 export function kilograms(grams: number) {
     return `${(grams / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} kg`;
 }
+
+export const CARRIER_CARGO_TYPES: CarrierCargoType[] = ['GENERAL', 'BATTERY_INTERNAL', 'BATTERY_STANDALONE'];

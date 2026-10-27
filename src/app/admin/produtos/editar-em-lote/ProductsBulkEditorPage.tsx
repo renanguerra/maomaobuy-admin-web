@@ -122,7 +122,11 @@ export function ProductsBulkEditorPage() {
             const collected: AdminProduct[] = [];
             let page = 1;
             for (;;) {
-                const query = new URLSearchParams({ page: String(page), limit: String(EXPORT_PAGE_LIMIT) });
+                const query = new URLSearchParams({
+                    page: String(page),
+                    limit: String(EXPORT_PAGE_LIMIT),
+                    kind: 'STORE',
+                });
                 if (exportStatus) query.set('status', exportStatus);
                 if (exportCategory) query.set('categoryId', exportCategory);
                 if (exportSubcategory) query.set('subcategoryId', exportSubcategory);
