@@ -25,7 +25,7 @@ const LIMIT = 25;
 /**
  * Histórico de recargas: quem pagou, quanto entrou no saldo e em que deu.
  * Recarga manual (pagamento recebido por fora) aparece com a origem
- * "Manual"; as do Pix, com o provedor.
+ * "Manual"; as do Pix e do cartão, com o provedor e o meio.
  */
 export function TopUpsPage() {
     const { t } = useTranslation();
@@ -58,6 +58,7 @@ export function TopUpsPage() {
             AWAITING_PROVIDER: t('topUps.statuses.AWAITING_PROVIDER'),
             PENDING: t('topUps.statuses.PENDING'),
             CONFIRMED: t('topUps.statuses.CONFIRMED'),
+            FAILED: t('topUps.statuses.FAILED'),
             EXPIRED: t('topUps.statuses.EXPIRED'),
             PARTIALLY_REFUNDED: t('topUps.statuses.PARTIALLY_REFUNDED'),
             REFUNDED: t('topUps.statuses.REFUNDED'),
@@ -86,7 +87,26 @@ export function TopUpsPage() {
         {
             key: 'status',
             header: t('topUps.columns.status'),
-            cell: (row) => <StatusPill tone={topUpStatusTone(row.status)}>{statusLabel(row.status)}</StatusPill>,
+            cell: (row) => (
+                <StatusPill tone={topUpStatusTone(row.status)}>
+                    {/* Cartão sem resposta do provedor: alguém precisa conferir
+                        no painel da AbacatePay se a cobrança passou. */}
+                    {row.paymentMethod === 'CARD' && row.status === 'AWAITING_PROVIDER'
+                        ? t('topUps.cardUnderReview')
+                        : statusLabel(row.status)}
+                </StatusPill>
+            ),
+        },
+        {
+            key: 'method',
+            header: t('topUps.columns.method'),
+            hideBelow: 'md',
+            cell: (row) => (
+                <span className="text-muted dark:text-night-muted">
+                    {t(`topUps.methods.${row.paymentMethod}`)}
+                    {row.cardLastFour && ` · ${row.cardBrand ?? ''} ${row.cardLastFour}`}
+                </span>
+            ),
         },
         {
             key: 'amount',
@@ -179,6 +199,8 @@ export function TopUpsPage() {
                             { value: 'all', label: t('topUps.filters.all') },
                             { value: 'CONFIRMED', label: statusLabel('CONFIRMED') },
                             { value: 'PENDING', label: statusLabel('PENDING') },
+                            { value: 'AWAITING_PROVIDER', label: t('topUps.cardUnderReview') },
+                            { value: 'FAILED', label: statusLabel('FAILED') },
                             { value: 'EXPIRED', label: statusLabel('EXPIRED') },
                             { value: 'CANCELLED', label: statusLabel('CANCELLED') },
                         ]}

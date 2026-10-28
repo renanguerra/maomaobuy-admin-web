@@ -3,6 +3,7 @@ import {
     ChartColumn,
     ClipboardList,
     Coins,
+    CreditCard,
     LayoutDashboard,
     Mail,
     Megaphone,
@@ -68,6 +69,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
         items: [
             { key: 'finance', href: '/admin/financeiro', icon: Wallet, badge: 'finance' },
             { key: 'topUps', href: '/admin/recargas', icon: ArrowDownToLine },
+            { key: 'paymentMethods', href: '/admin/meios-de-pagamento', icon: CreditCard },
             { key: 'coupons', href: '/admin/cupons', icon: TicketPercent },
             { key: 'profit', href: '/admin/lucro', icon: ChartColumn },
         ],

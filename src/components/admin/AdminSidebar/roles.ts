@@ -20,6 +20,7 @@ const WRITE_ROLES: Partial<Record<MenuItemKey, readonly string[]>> = {
     coupons: ['FINANCE'],
     finance: ['FINANCE'],
     topUps: ['FINANCE'],
+    paymentMethods: ['FINANCE'],
     admins: [],
     settings: [],
 };
