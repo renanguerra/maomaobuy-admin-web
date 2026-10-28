@@ -80,6 +80,7 @@ const TOP_UP_STATUS_TONES: Record<string, StatusTone> = {
     AWAITING_PROVIDER: 'warning',
     PENDING: 'warning',
     CONFIRMED: 'success',
+    FAILED: 'danger',
     EXPIRED: 'neutral',
     PARTIALLY_REFUNDED: 'info',
     REFUNDED: 'neutral',

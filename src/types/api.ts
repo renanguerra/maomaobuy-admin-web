@@ -916,6 +916,7 @@ export const TOP_UP_STATUSES = [
     'AWAITING_PROVIDER',
     'PENDING',
     'CONFIRMED',
+    'FAILED',
     'EXPIRED',
     'PARTIALLY_REFUNDED',
     'REFUNDED',
@@ -940,9 +941,32 @@ export interface AdminTopUp {
     pspFeeMinor: string;
     /** `MANUAL` = pagamento recebido por fora e lançado pelo painel. */
     providerName: string | null;
+    paymentMethod: PaymentMethod;
+    cardBrand: string | null;
+    cardLastFour: string | null;
     createdAt: string;
     confirmedAt: string | null;
     expiresAt: string | null;
+}
+
+export type PaymentMethod = 'PIX' | 'CARD';
+
+export const PAYMENT_METHOD_ACCESS_MODES = ['ENABLED', 'DISABLED', 'ONLY_LISTED', 'EXCEPT_LISTED'] as const;
+
+export type PaymentMethodAccessMode = (typeof PAYMENT_METHOD_ACCESS_MODES)[number];
+
+/** `GET /payment-methods`: a chave de um meio de pagamento da recarga. */
+export interface AdminPaymentMethod {
+    method: PaymentMethod;
+    accessMode: PaymentMethodAccessMode;
+    updatedAt: string;
+    /** O sentido da lista depende do modo: liberados em ONLY_LISTED, bloqueados em EXCEPT_LISTED. */
+    users: Array<{ userId: string; name: string; email: string; addedAt: string }>;
+    /** Taxa do processador que o cliente paga neste meio (pontos-base + centavos). */
+    feeBasisPoints: number;
+    feeFixedMinor: string;
+    /** Teto por recarga neste meio, em fen. */
+    maxCreditAmountMinor: string;
 }
 
 export interface AdminTopUpsPage extends Page<AdminTopUp> {
