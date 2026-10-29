@@ -399,11 +399,14 @@ export interface Coupon {
     maxDiscountMinor: string | null;
     minAmountMinor: string | null;
     maxUses: number | null;
-    maxUsesPerUser: number;
+    /** Nulo é sem limite por pessoa (padrão do cupom de influencer). */
+    maxUsesPerUser: number | null;
     usedCount: number;
     startsAt: string | null;
     expiresAt: string | null;
     isActive: boolean;
+    /** Cupom de influencer: só se altera pela tela do influencer. */
+    influencerId?: string | null;
     /** `null` é cupom aberto a todo mundo. */
     user: { id: string; name: string; email: string } | null;
     createdAt: string;
@@ -1357,4 +1360,127 @@ export interface ProfitPackageRow {
     freightCostMinor: string;
     entriesCostMinor: string;
     profitMinor: string;
+}
+
+// ---------------------------------------------------------------------------
+// Influencers
+// ---------------------------------------------------------------------------
+
+export type InfluencerStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'DISABLED';
+export type InfluencerCommissionStatus = 'PENDING' | 'CREDITED' | 'REVERSED' | 'CANCELLED';
+export type InfluencerBenefitKind = 'SHIPPING' | 'GIFT';
+export type InfluencerBenefitStatus = 'PENDING' | 'GRANTED' | 'DISMISSED';
+
+export const INFLUENCER_SOCIAL_NETWORKS = ['INSTAGRAM', 'TIKTOK', 'YOUTUBE', 'KWAI', 'X', 'FACEBOOK', 'OTHER'] as const;
+export type InfluencerSocialNetwork = (typeof INFLUENCER_SOCIAL_NETWORKS)[number];
+
+export interface InfluencerTotals {
+    /** Comissões de pedidos pagos que ainda não saíram do armazém. */
+    pendingMinor: string;
+    creditedMinor: string;
+    reversedMinor: string;
+    /** Estornos que o saldo não cobriu; as próximas comissões pagam. */
+    debtMinor: string;
+}
+
+export interface Influencer {
+    id: string;
+    status: InfluencerStatus;
+    user: { id: string; name: string; email: string };
+    socialHandles: { network: InfluencerSocialNetwork; handle: string }[];
+    appliedAt: string;
+    decisionReason: string | null;
+    reviewedAt: string | null;
+    reviewedBy: { id: string; name: string } | null;
+    approvedAt: string | null;
+    coupon: {
+        id: string;
+        code: string;
+        discountBasisPoints: number;
+        maxUsesPerUser: number | null;
+        usedCount: number;
+        isActive: boolean;
+    } | null;
+    /** Nulo = padrão das configurações. */
+    commissionBasisPoints: number | null;
+    effectiveCommissionBasisPoints: number;
+    level: { id: string; name: string } | null;
+    totals: InfluencerTotals;
+    /** Pedidos com item enviado e não estornado — o que conta para o nível. */
+    qualifiedOrders: number;
+    /** Pedidos pagos com o cupom, enviados ou não. */
+    paidOrders: number;
+    pendingBenefits: number;
+}
+
+export interface InfluencerCommission {
+    id: string;
+    status: InfluencerCommissionStatus;
+    baseAmountMinor: string;
+    commissionBasisPoints: number;
+    amountMinor: string;
+    debtPaidMinor: string;
+    createdAt: string;
+    creditedAt: string | null;
+    reversedAt: string | null;
+    orderId: string;
+    orderItemId: string;
+    productName: string;
+    buyer: { id: string; name: string; email: string };
+    packageId: string | null;
+    reversalReason: string | null;
+    clawbackWalletMinor: string;
+    clawbackDebtMinor: string;
+}
+
+export interface InfluencerBenefit {
+    id: string;
+    kind: InfluencerBenefitKind;
+    status: InfluencerBenefitStatus;
+    /** `AAAA-MM` no frete; `LEVEL` no brinde. */
+    period: string;
+    levelName: string;
+    coupon: { code: string; expiresAt: string | null; usedCount: number; maxUses: number | null } | null;
+    giftOrderId: string | null;
+    createdAt: string;
+    grantedAt: string | null;
+    lastError: string | null;
+    attempts: number;
+    dismissReason: string | null;
+}
+
+export interface InfluencerDetail extends Influencer {
+    commissions: InfluencerCommission[];
+    benefits: InfluencerBenefit[];
+    previousCoupons: { id: string; code: string; usedCount: number }[];
+}
+
+export interface InfluencerLevel {
+    id: string;
+    name: string;
+    minOrders: number;
+    benefitsText: string | null;
+    /** Resumo gerado pelo backend — o mesmo texto que o influencer lê. */
+    benefitsSummary: string;
+    shippingDiscountBasisPoints: number | null;
+    shippingMaxDiscountMinor: string | null;
+    shippingUsesPerMonth: number;
+    gift: { productId: string; productName: string } | null;
+    giftVariantExternalId: string | null;
+    isActive: boolean;
+    influencerCount: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface InfluencerDefaults {
+    discountBasisPoints: number;
+    commissionBasisPoints: number;
+    /** Nulo = sem limite. */
+    maxUsesPerUser: number | null;
+}
+
+/** 500 → "5%"; 1250 → "12,5%". */
+export function basisPointsLabel(basisPoints: number) {
+    return `${(basisPoints / 100).toLocaleString(LOCALE_INTL_TAG[getStoreLocale()], { maximumFractionDigits: 2 })}%`;
 }

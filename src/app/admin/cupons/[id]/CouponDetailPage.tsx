@@ -12,7 +12,7 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { StatusPill } from '@/components/admin/StatusPill';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
@@ -149,10 +149,16 @@ export function CouponDetailPage() {
         <div className="grid gap-6">
             <PageHeader
                 actions={
-                    <Button onClick={() => setEditing(true)} variant="secondary">
-                        <Pencil className="h-4 w-4" aria-hidden="true" />
-                        {t('coupons.edit')}
-                    </Button>
+                    coupon.influencerId ? (
+                        <ButtonLink href={`/admin/influencers/${coupon.influencerId}`} variant="secondary">
+                            {t('coupons.openInfluencer')}
+                        </ButtonLink>
+                    ) : (
+                        <Button onClick={() => setEditing(true)} variant="secondary">
+                            <Pencil className="h-4 w-4" aria-hidden="true" />
+                            {t('coupons.edit')}
+                        </Button>
+                    )
                 }
                 backHref="/admin/cupons"
                 backLabel={t('coupons.detail.back')}
@@ -194,7 +200,10 @@ export function CouponDetailPage() {
                         },
                         {
                             label: t('coupons.detail.fields.maxUsesPerUser'),
-                            value: String(coupon.maxUsesPerUser),
+                            value:
+                                coupon.maxUsesPerUser === null
+                                    ? t('coupons.unlimited')
+                                    : String(coupon.maxUsesPerUser),
                             numeric: true,
                         },
                         { label: t('coupons.detail.fields.usedCount'), value: String(coupon.usedCount), numeric: true },

@@ -15,6 +15,7 @@ import {
     ShieldCheck,
     ShoppingBasket,
     Sparkles,
+    Star,
     Tags,
     TicketPercent,
     Truck,
@@ -51,6 +52,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
         key: 'operations',
         items: [
             { key: 'users', href: '/admin/usuarios', icon: Users },
+            { key: 'influencers', href: '/admin/influencers', icon: Star },
             { key: 'siteNotices', href: '/admin/avisos', icon: Megaphone },
         ],
     },

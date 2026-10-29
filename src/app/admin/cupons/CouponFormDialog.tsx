@@ -459,7 +459,7 @@ function UserPicker({ value, onChange }: { value: Coupon['user']; onChange: (use
     );
 }
 
-interface GiftSelection {
+export interface GiftSelection {
     productId: string;
     productName: string;
     variants: { externalId: string; label: string }[];
@@ -470,7 +470,7 @@ interface GiftSelection {
  * Escolha do brinde: busca só entre os produtos da CoinShop. Produto com
  * variações pede qual delas vai — o cupom guarda uma só.
  */
-function GiftPicker({
+export function GiftPicker({
     value,
     onChange,
 }: {
