@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Pencil, SearchX, TicketPercent } from 'lucide-react';
+import { Megaphone, Pencil, SearchX, TicketPercent } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
 import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -12,7 +12,7 @@ import { Pagination } from '@/components/admin/Pagination';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { StatusPill } from '@/components/admin/StatusPill';
 import { Toolbar } from '@/components/admin/Toolbar';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
@@ -120,6 +120,11 @@ export function CouponsListPage() {
                         {coupon.code}
                     </Link>
                     <span className="mt-0.5 block text-xs text-muted dark:text-night-muted">{coupon.name}</span>
+                    {coupon.influencerId && (
+                        <StatusPill className="mt-1" hideDot tone="info">
+                            {t('coupons.influencerTag')}
+                        </StatusPill>
+                    )}
                 </span>
             ),
         },
@@ -171,7 +176,9 @@ export function CouponsListPage() {
                             : t('coupons.uses', { used: coupon.usedCount, max: coupon.maxUses })}
                     </span>
                     <span className="mt-0.5 block text-[11px] text-muted dark:text-night-muted">
-                        {t('coupons.perUser', { count: coupon.maxUsesPerUser })}
+                        {coupon.maxUsesPerUser === null
+                            ? t('coupons.perUserUnlimited')
+                            : t('coupons.perUser', { count: coupon.maxUsesPerUser })}
                     </span>
                 </span>
             ),
@@ -219,17 +226,30 @@ export function CouponsListPage() {
             key: 'actions',
             header: '',
             card: 'full',
-            cell: (coupon) => (
-                <Button
-                    aria-label={t('coupons.edit')}
-                    iconOnly
-                    onClick={() => setEditing({ coupon })}
-                    size="small"
-                    variant="ghost"
-                >
-                    <Pencil className="h-4 w-4" aria-hidden="true" />
-                </Button>
-            ),
+            cell: (coupon) =>
+                // Cupom de influencer se altera pela tela do influencer: lá a
+                // troca de código e o desconto andam junto com a comissão.
+                coupon.influencerId ? (
+                    <ButtonLink
+                        aria-label={t('coupons.openInfluencer')}
+                        href={`/admin/influencers/${coupon.influencerId}`}
+                        iconOnly
+                        size="small"
+                        variant="ghost"
+                    >
+                        <Megaphone className="h-4 w-4" aria-hidden="true" />
+                    </ButtonLink>
+                ) : (
+                    <Button
+                        aria-label={t('coupons.edit')}
+                        iconOnly
+                        onClick={() => setEditing({ coupon })}
+                        size="small"
+                        variant="ghost"
+                    >
+                        <Pencil className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                ),
         },
     ];
 

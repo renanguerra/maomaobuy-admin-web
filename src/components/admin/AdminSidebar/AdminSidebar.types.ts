@@ -12,6 +12,7 @@ export type MenuItemKey =
     | 'unpacked'
     | 'carriers'
     | 'users'
+    | 'influencers'
     | 'products'
     | 'coinShop'
     | 'checkoutAddons'
