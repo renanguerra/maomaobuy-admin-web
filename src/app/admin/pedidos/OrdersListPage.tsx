@@ -71,10 +71,13 @@ export function OrdersListPage() {
     const search = searchParams.get('busca') ?? '';
     // Cancelados ficam de fora por padrão; um filtro de status manda mais.
     const showCancelled = searchParams.get('cancelados') === '1';
+    // Varejo ou atacado (D16); vazio = os dois.
+    const canal = searchParams.get('canal');
+    const channel = canal === 'RETAIL' || canal === 'WHOLESALE' ? canal : '';
     const statuses = status ? status.split(',') : [...ORDER_QUEUE_TABS[tab].statuses];
     // Fila de trabalho lista o mais parado primeiro; "Todos" é arquivo.
     const sort = tab !== 'all' || status.includes(',') ? 'oldest' : 'newest';
-    const filtered = tab !== 'all' || status !== '' || search !== '' || showCancelled;
+    const filtered = tab !== 'all' || status !== '' || search !== '' || showCancelled || channel !== '';
     const [pageNumber, setPageNumber] = useState(1);
     const [loaded, setLoaded] = useState<LoadedPage>();
     const [failure, setFailure] = useState<Failure>();
@@ -83,7 +86,7 @@ export function OrdersListPage() {
     // A consulta em andamento é identificada pelos filtros: enquanto o que
     // está em tela não corresponder a ela, a lista está carregando.
     const statusParam = statuses.join(',');
-    const queryKey = `${pageNumber}|${statusParam}|${search}|${sort}|${showCancelled}`;
+    const queryKey = `${pageNumber}|${statusParam}|${search}|${sort}|${showCancelled}|${channel}`;
     const result = loaded?.key === queryKey ? loaded.page : undefined;
     const error = failure?.key === queryKey ? failure.message : undefined;
     const loading = !result && !error;
@@ -95,6 +98,7 @@ export function OrdersListPage() {
         if (statusParam) query.set('status', statusParam);
         else if (!showCancelled) query.set('hideCancelled', 'true');
         if (search.length >= 2) query.set('search', search);
+        if (channel) query.set('salesChannel', channel);
 
         api<Page<AdminOrder>>(`/orders?${query.toString()}`)
             .then((page) => {
@@ -107,20 +111,29 @@ export function OrdersListPage() {
         return () => {
             active = false;
         };
-    }, [queryKey, pageNumber, statusParam, search, sort, showCancelled, t]);
+    }, [queryKey, pageNumber, statusParam, search, sort, showCancelled, channel, t]);
 
-    function applyFilters(next: { tab?: OrderQueueTab; status?: string; search?: string; showCancelled?: boolean }) {
+    function applyFilters(next: {
+        tab?: OrderQueueTab;
+        status?: string;
+        search?: string;
+        showCancelled?: boolean;
+        /** Ausente mantém o canal escolhido; `''` limpa. */
+        channel?: string;
+    }) {
         setPageNumber(1);
         const query = new URLSearchParams();
         if (next.tab && next.tab !== 'all') query.set('fila', next.tab);
         if (next.status) query.set('status', next.status);
         if (next.search) query.set('busca', next.search);
         if (next.showCancelled) query.set('cancelados', '1');
+        const nextChannel = 'channel' in next ? next.channel : channel;
+        if (nextChannel) query.set('canal', nextChannel);
         const queryString = query.toString();
         router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
     }
 
-    const clearFilters = () => applyFilters({});
+    const clearFilters = () => applyFilters({ channel: '' });
 
     const tabOptions = (Object.keys(ORDER_QUEUE_TABS) as OrderQueueTab[]).map((value) => {
         const tabDef: { statuses: readonly string[]; counts?: readonly WorkQueueStageKey[] } = ORDER_QUEUE_TABS[value];
@@ -202,7 +215,14 @@ export function OrdersListPage() {
             key: 'status',
             header: t('orders.list.columns.status'),
             cell: (order) => (
-                <StatusPill tone={orderStatusTone(order.status)}>{orderStatusLabel(order.status)}</StatusPill>
+                <span className="flex flex-wrap items-center gap-1.5">
+                    <StatusPill tone={orderStatusTone(order.status)}>{orderStatusLabel(order.status)}</StatusPill>
+                    {order.salesChannel === 'WHOLESALE' && (
+                        <StatusPill hideDot tone="info">
+                            {t('orders.list.wholesaleTag')}
+                        </StatusPill>
+                    )}
+                </span>
             ),
         },
         {
@@ -281,6 +301,19 @@ export function OrdersListPage() {
                                 placeholderOption={t('orders.list.statusAll')}
                                 value={status.includes(',') ? '' : status}
                                 options={ORDER_STATUSES.map((value) => ({ value, label: orderStatusLabel(value) }))}
+                            />
+                            <Select
+                                fieldClassName="w-full max-w-48"
+                                label={t('orders.list.channelLabel')}
+                                onChange={(event) =>
+                                    applyFilters({ tab, status, search, showCancelled, channel: event.target.value })
+                                }
+                                placeholderOption={t('orders.list.channelAll')}
+                                value={channel}
+                                options={[
+                                    { value: 'RETAIL', label: t('orders.list.channels.RETAIL') },
+                                    { value: 'WHOLESALE', label: t('orders.list.channels.WHOLESALE') },
+                                ]}
                             />
                             <Checkbox
                                 checked={showCancelled || status === 'CANCELLED'}

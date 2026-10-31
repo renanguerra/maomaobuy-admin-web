@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import type { AdminProduct, ProductKind } from '@/types/api';
+import type { AdminProduct, ProductKind, ProductSalesChannel } from '@/types/api';
 import { slugify } from '../categorias/slugify';
 
 /** Prazo sugerido ao marcar "sob demanda" — o mesmo padrão do backend. */
@@ -34,6 +34,11 @@ export interface ProductFormValues {
     coinAvailableUntil: string;
     /** Peso embalado em gramas — obrigatório no "Leve junto". */
     weightGrams: string;
+    /** Só na loja. Termos em string porque vêm de inputs; vazio = sem valor. */
+    salesChannel: ProductSalesChannel;
+    wholesaleAmountMinor: string;
+    wholesaleMinQuantity: string;
+    unitsPerPackage: string;
     categoryIds: string[];
     subcategoryIds: string[];
 }
@@ -58,6 +63,10 @@ const EMPTY: ProductFormValues = {
     coinAvailableFrom: '',
     coinAvailableUntil: '',
     weightGrams: '',
+    salesChannel: 'RETAIL_ONLY',
+    wholesaleAmountMinor: '0',
+    wholesaleMinQuantity: '',
+    unitsPerPackage: '',
     categoryIds: [],
     subcategoryIds: [],
 };
@@ -83,6 +92,10 @@ function fromProduct(product: AdminProduct): ProductFormValues {
         coinAvailableFrom: toLocalInput(product.coinAvailableFrom),
         coinAvailableUntil: toLocalInput(product.coinAvailableUntil),
         weightGrams: product.weightGrams ? String(product.weightGrams) : '',
+        salesChannel: product.salesChannel ?? 'RETAIL_ONLY',
+        wholesaleAmountMinor: product.wholesaleAmountMinor ?? '0',
+        wholesaleMinQuantity: product.wholesaleMinQuantity ? String(product.wholesaleMinQuantity) : '',
+        unitsPerPackage: product.unitsPerPackage ? String(product.unitsPerPackage) : '',
         categoryIds: product.categories.map((category) => category.id),
         subcategoryIds: product.subcategories.map((subcategory) => subcategory.id),
     };
@@ -178,6 +191,22 @@ export function toProductPayload(values: ProductFormValues) {
         coinAvailableUntil: isCoinShop ? fromLocalInput(values.coinAvailableUntil) : null,
         // Vazio não apaga um peso que veio da importação em lote.
         weightGrams: values.weightGrams ? Number(values.weightGrams) : undefined,
+        // Canal só na loja (Coin Shop e "Leve junto" são só varejo). Os
+        // termos vão nulos fora do atacado; o backend confere o resto.
+        ...(isStore
+            ? {
+                  salesChannel: values.salesChannel,
+                  wholesaleAmountMinor:
+                      values.salesChannel !== 'RETAIL_ONLY' && values.wholesaleAmountMinor !== '0'
+                          ? values.wholesaleAmountMinor
+                          : null,
+                  wholesaleMinQuantity:
+                      values.salesChannel === 'BOTH' && values.wholesaleMinQuantity
+                          ? Number(values.wholesaleMinQuantity)
+                          : null,
+                  unitsPerPackage: values.unitsPerPackage ? Number(values.unitsPerPackage) : null,
+              }
+            : {}),
         categoryIds: values.categoryIds,
         subcategoryIds: values.subcategoryIds,
     };

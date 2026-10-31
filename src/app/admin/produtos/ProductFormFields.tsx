@@ -4,6 +4,7 @@ import { SectionCard } from '@/components/admin/SectionCard';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { cny, type AdminCategory } from '@/types/api';
@@ -150,6 +151,68 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                     )}
                 </div>
             </SectionCard>
+
+            {isStore && (
+                <SectionCard
+                    description={t('products.new.wholesale.description')}
+                    title={t('products.new.wholesale.title')}
+                >
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Select
+                            hint={t(`products.new.wholesale.channelHints.${values.salesChannel}`)}
+                            label={t('products.new.wholesale.channel')}
+                            onChange={(event) =>
+                                patch({ salesChannel: event.target.value as typeof values.salesChannel })
+                            }
+                            options={[
+                                { value: 'RETAIL_ONLY', label: t('products.new.wholesale.channels.RETAIL_ONLY') },
+                                { value: 'WHOLESALE_ONLY', label: t('products.new.wholesale.channels.WHOLESALE_ONLY') },
+                                { value: 'BOTH', label: t('products.new.wholesale.channels.BOTH') },
+                            ]}
+                            value={values.salesChannel}
+                        />
+                        <Input
+                            hint={t('products.new.wholesale.unitsPerPackageHint')}
+                            label={t('products.new.wholesale.unitsPerPackage')}
+                            min={1}
+                            onChange={(event) => patch({ unitsPerPackage: event.target.value })}
+                            step={1}
+                            type="number"
+                            value={values.unitsPerPackage}
+                        />
+                        {values.salesChannel !== 'RETAIL_ONLY' && (
+                            <CurrencyInput
+                                currency="CNY"
+                                hint={
+                                    values.salesChannel === 'WHOLESALE_ONLY'
+                                        ? t('products.new.wholesale.boxPriceHint')
+                                        : t('products.new.wholesale.unitPriceHint')
+                                }
+                                label={
+                                    values.salesChannel === 'WHOLESALE_ONLY'
+                                        ? t('products.new.wholesale.boxPrice')
+                                        : t('products.new.wholesale.unitPrice')
+                                }
+                                minor={values.wholesaleAmountMinor}
+                                onMinorChange={(minor) => patch({ wholesaleAmountMinor: minor })}
+                                required
+                            />
+                        )}
+                        {values.salesChannel === 'BOTH' && (
+                            <Input
+                                hint={t('products.new.wholesale.minQuantityHint')}
+                                label={t('products.new.wholesale.minQuantity')}
+                                min={1}
+                                onChange={(event) => patch({ wholesaleMinQuantity: event.target.value })}
+                                required
+                                step={1}
+                                type="number"
+                                value={values.wholesaleMinQuantity}
+                            />
+                        )}
+                    </div>
+                </SectionCard>
+            )}
 
             <SectionCard title={t('products.new.shippingStock.title')}>
                 <div className="grid gap-4 sm:grid-cols-2">
