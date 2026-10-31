@@ -883,7 +883,6 @@ export const zhHans: Messages = {
             },
             fields: {
                 total: '商品金额',
-                serviceFee: '其中服务费',
                 coupon: '优惠券 {{code}}',
                 optionalServices: '增值服务',
                 chargeableTotal: '应收总额',
@@ -1822,7 +1821,6 @@ export const zhHans: Messages = {
         revenue: {
             title: '收入',
             merchandise: '商品',
-            serviceFee: '代购服务费',
             optionalServices: '增值服务',
             shipping: '运费收入',
             storage: '仓储费',

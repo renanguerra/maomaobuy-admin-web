@@ -331,7 +331,6 @@ function equivalentBrl(cnyMinor: string, rate: string | null): string | undefine
 function revenueRows(data: ProfitSummary, t: T) {
     return [
         { label: t('profit.revenue.merchandise'), value: cny(data.revenue.merchandiseMinor) },
-        { label: t('profit.revenue.serviceFee'), value: cny(data.revenue.serviceFeeMinor) },
         { label: t('profit.revenue.optionalServices'), value: cny(data.revenue.optionalServicesMinor) },
         { label: t('profit.revenue.shipping'), value: cny(data.revenue.shippingMinor) },
         { label: t('profit.revenue.storage'), value: cny(data.revenue.storageMinor) },

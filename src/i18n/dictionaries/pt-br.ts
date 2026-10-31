@@ -916,7 +916,6 @@ export const ptBR = {
             },
             fields: {
                 total: 'Mercadoria',
-                serviceFee: 'Sendo taxa do serviço',
                 coupon: 'Cupom {{code}}',
                 optionalServices: 'Serviços adicionais',
                 chargeableTotal: 'Total cobrado',
@@ -1878,7 +1877,6 @@ export const ptBR = {
         revenue: {
             title: 'Receita',
             merchandise: 'Mercadoria',
-            serviceFee: 'Taxa de compra',
             optionalServices: 'Serviços adicionais',
             shipping: 'Frete cobrado',
             storage: 'Armazenagem',
