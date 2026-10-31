@@ -1,4 +1,4 @@
-import type { AdminCategory } from '@/types/api';
+import type { AdminCategory, ProductSalesChannel } from '@/types/api';
 import { slugify } from '../../categorias/slugify';
 import {
     resolveCategories,
@@ -34,6 +34,12 @@ export interface BulkImportProductBody {
     lengthMm?: number;
     widthMm?: number;
     heightMm?: number;
+    /** Varejo (padrão), só atacado (caixa master, só lojista vê) ou os dois. */
+    salesChannel?: ProductSalesChannel;
+    /** Em fen: da caixa no só atacado, da unidade nos dois canais. */
+    wholesaleAmountMinor?: string | null;
+    wholesaleMinQuantity?: number | null;
+    unitsPerPackage?: number | null;
     categoryIds?: string[];
     subcategoryIds?: string[];
     variants?: BulkImportVariantInput[];
@@ -77,6 +83,38 @@ function resolveVariants(raw: unknown): BulkImportVariantInput[] | undefined {
         };
     });
     return variants.length > 0 ? variants : undefined;
+}
+
+const SALES_CHANNELS: readonly ProductSalesChannel[] = ['RETAIL_ONLY', 'WHOLESALE_ONLY', 'BOTH'];
+
+/**
+ * Canal e termos de atacado, com as mesmas regras do backend: só varejo não
+ * leva preço de atacado; só atacado é a caixa (sem mínimo); os dois canais
+ * exigem o mínimo. Ausente = varejo.
+ */
+function resolveSalesChannel(
+    record: Record<string, unknown>,
+): Pick<BulkImportProductBody, 'salesChannel' | 'wholesaleAmountMinor' | 'wholesaleMinQuantity' | 'unitsPerPackage'> {
+    const raw = record.salesChannel ?? 'RETAIL_ONLY';
+    if (typeof raw !== 'string' || !SALES_CHANNELS.includes(raw as ProductSalesChannel))
+        throw new Error('Campo "salesChannel" precisa ser RETAIL_ONLY, WHOLESALE_ONLY ou BOTH.');
+    const salesChannel = raw as ProductSalesChannel;
+    const unitsPerPackage = toOptionalInt(record.unitsPerPackage, 'unitsPerPackage', 1) ?? null;
+
+    if (salesChannel === 'RETAIL_ONLY')
+        return { salesChannel, wholesaleAmountMinor: null, wholesaleMinQuantity: null, unitsPerPackage };
+
+    const wholesaleAmountMinor = toOptionalAmountMinor(record.wholesaleAmountMinor, 'wholesaleAmountMinor');
+    if (!wholesaleAmountMinor || wholesaleAmountMinor === '0')
+        throw new Error('Produto vendido no atacado precisa de "wholesaleAmountMinor" maior que zero.');
+
+    if (salesChannel === 'WHOLESALE_ONLY')
+        return { salesChannel, wholesaleAmountMinor, wholesaleMinQuantity: null, unitsPerPackage };
+
+    const wholesaleMinQuantity = toOptionalInt(record.wholesaleMinQuantity, 'wholesaleMinQuantity', 1);
+    if (wholesaleMinQuantity === undefined)
+        throw new Error('Produto nos dois canais precisa de "wholesaleMinQuantity".');
+    return { salesChannel, wholesaleAmountMinor, wholesaleMinQuantity, unitsPerPackage };
 }
 
 function resolveImages(raw: unknown): string[] | undefined {
@@ -127,6 +165,7 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
             lengthMm: toOptionalInt(record.lengthMm, 'lengthMm', 1),
             widthMm: toOptionalInt(record.widthMm, 'widthMm', 1),
             heightMm: toOptionalInt(record.heightMm, 'heightMm', 1),
+            ...resolveSalesChannel(record),
             ...resolveCategories(record.categories, categories),
             variants: resolveVariants(record.variants),
         },
