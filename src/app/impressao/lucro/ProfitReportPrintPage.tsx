@@ -164,7 +164,6 @@ function Report({ data, from, to, generatedAt }: { data: ReportData; from: strin
                     <Lines
                         rows={[
                             [t('profit.revenue.merchandise'), cny(summary.revenue.merchandiseMinor)],
-                            [t('profit.revenue.serviceFee'), cny(summary.revenue.serviceFeeMinor)],
                             [t('profit.revenue.optionalServices'), cny(summary.revenue.optionalServicesMinor)],
                             [t('profit.revenue.shipping'), cny(summary.revenue.shippingMinor)],
                             [t('profit.revenue.storage'), cny(summary.revenue.storageMinor)],

@@ -469,8 +469,6 @@ export interface AdminOrder {
     currency: string;
     /** Valor da mercadoria, sem os adicionais. */
     totalAmountMinor: string;
-    /** Taxa do serviço dentro de `totalAmountMinor`; `'0'` fora do pedido do carrinho. */
-    serviceFeeMinor: string;
     /** Soma dos adicionais contratados. */
     optionalServicesAmountMinor: string;
     /** Cupom aplicado no pagamento e quanto abateu. */
@@ -1283,7 +1281,6 @@ export interface OrderCostSheet {
     customerName: string | null;
     revenue: {
         merchandiseMinor: string;
-        serviceFeeMinor: string;
         optionalServicesMinor: string;
         discountMinor: string;
         totalMinor: string;
@@ -1313,7 +1310,6 @@ export interface ProfitSummary {
     groupBy: 'day' | 'month';
     revenue: {
         merchandiseMinor: string;
-        serviceFeeMinor: string;
         optionalServicesMinor: string;
         shippingMinor: string;
         storageMinor: string;

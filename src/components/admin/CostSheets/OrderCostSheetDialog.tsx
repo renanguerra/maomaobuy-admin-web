@@ -120,10 +120,6 @@ export function OrderCostSheetDialog({ orderId, onClose, onChanged }: OrderCostS
                                             value: cny(current.revenue.merchandiseMinor),
                                         },
                                         {
-                                            label: t('profit.revenue.serviceFee'),
-                                            value: cny(current.revenue.serviceFeeMinor),
-                                        },
-                                        {
                                             label: t('profit.revenue.optionalServices'),
                                             value: cny(current.revenue.optionalServicesMinor),
                                         },
