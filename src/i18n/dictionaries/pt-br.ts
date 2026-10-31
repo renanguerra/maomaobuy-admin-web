@@ -240,6 +240,7 @@ export const ptBR = {
                 pending: 'Pendentes',
                 earned: 'Ganhas (total)',
                 spent: 'Gastas (total)',
+                redeemDeadline: 'Resgate de lojista até',
                 adjustButton: 'Ajustar moedas',
                 adjusted: 'Moedas ajustadas.',
                 empty: 'Nenhum lançamento.',
@@ -2081,6 +2082,16 @@ export const ptBR = {
             SHIPPING: 'Frete',
             GIFT: 'Brinde',
         },
+        audiences: {
+            RETAIL: 'Varejo',
+            WHOLESALE: 'Lojistas',
+            ALL: 'Varejo e lojistas',
+        },
+        audienceHints: {
+            RETAIL: 'Só clientes de varejo usam. É o padrão, e o cupom de influencer é sempre assim.',
+            WHOLESALE: 'Só contas de lojista aprovadas usam.',
+            ALL: 'Vale para qualquer conta.',
+        },
         scopeHints: {
             ORDER: 'Abate a mercadoria (produto + taxa) ao pagar o pedido ou fechar o carrinho.',
             SHIPPING: 'Abate o frete internacional ao pagar o pacote. A armazenagem fica de fora.',
@@ -2167,6 +2178,7 @@ export const ptBR = {
             userChange: 'Trocar',
             userRequired: 'Escolha o cliente ou deixe o cupom aberto.',
             isActive: 'Cupom ativo',
+            audience: 'Público',
             fixedFieldsHint:
                 'Código, onde vale e tipo de desconto não mudam depois de criado — para outro desconto, crie outro cupom.',
             gift: 'Brinde',

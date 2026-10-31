@@ -424,6 +424,7 @@ export interface OptionalService {
 /** `GIFT` é cupom de brinde: sem desconto, dá um produto da CoinShop no checkout. */
 export type CouponScope = 'ORDER' | 'SHIPPING' | 'GIFT';
 export type CouponDiscountType = 'PERCENTAGE' | 'FIXED';
+export type CouponAudience = 'RETAIL' | 'WHOLESALE' | 'ALL';
 
 export interface Coupon {
     id: string;
@@ -446,6 +447,8 @@ export interface Coupon {
     startsAt: string | null;
     expiresAt: string | null;
     isActive: boolean;
+    /** Varejo (padrão), lojista ou todos. Cupom de influencer é sempre varejo. */
+    audience: CouponAudience;
     /** Cupom de influencer: só se altera pela tela do influencer. */
     influencerId?: string | null;
     /** `null` é cupom aberto a todo mundo. */
@@ -1132,7 +1135,7 @@ export function formatDate(value: string | null) {
 
 export interface AdminCoinTransaction {
     id: string;
-    type: 'PURCHASE' | 'REFERRAL' | 'ADMIN_ADJUSTMENT' | 'REDEEM' | 'REDEEM_REFUND' | 'REVERSAL';
+    type: 'PURCHASE' | 'REFERRAL' | 'ADMIN_ADJUSTMENT' | 'REDEEM' | 'REDEEM_REFUND' | 'REVERSAL' | 'EXPIRED';
     status: 'PENDING' | 'AVAILABLE' | 'REVERSED';
     amount: number;
     description: string;
@@ -1144,7 +1147,14 @@ export interface AdminCoinTransaction {
 }
 
 export interface AdminCoinSummary {
-    wallet: { available: number; pending: number; lifetimeEarned: number; lifetimeSpent: number };
+    wallet: {
+        available: number;
+        pending: number;
+        lifetimeEarned: number;
+        lifetimeSpent: number;
+        /** Prazo de resgate de quem virou lojista; no passado, o saldo já expirou. */
+        redeemDeadlineAt: string | null;
+    };
     transactions: AdminCoinTransaction[];
 }
 
