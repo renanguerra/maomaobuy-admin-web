@@ -23,8 +23,6 @@ export interface BulkImportProductBody {
     name: string;
     slug: string;
     description: string;
-    /** Todo produto é estoque próprio; o backend atual ainda exige o campo. */
-    marketplace: 'MAOMAOBUY';
     sourceAmountMinor: string;
     estimatedShippingAmountMinor?: string;
     /** Custo unitário em fen, só no painel. */
@@ -117,7 +115,6 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
             name,
             slug,
             description,
-            marketplace: 'MAOMAOBUY',
             sourceAmountMinor: toAmountMinor(record.sourceAmountMinor, 'sourceAmountMinor'),
             estimatedShippingAmountMinor: toOptionalAmountMinor(
                 record.estimatedShippingAmountMinor,
