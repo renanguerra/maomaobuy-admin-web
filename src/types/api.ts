@@ -247,6 +247,8 @@ export interface AdminProductSubcategoryRef {
 /** Loja, Coin Shop ou "Leve junto" — fixo depois de criado. */
 export type ProductKind = 'STORE' | 'COIN_SHOP' | 'CHECKOUT_ADDON';
 
+export type ProductSalesChannel = 'RETAIL_ONLY' | 'WHOLESALE_ONLY' | 'BOTH';
+
 export interface AdminProduct {
     id: string;
     slug: string;
@@ -281,6 +283,13 @@ export interface AdminProduct {
     coinAvailableUntil: string | null;
     /** Produto adicional do checkout ("Leve junto"). */
     isCheckoutAddon: boolean;
+    /** Varejo, atacado ou os dois. Só produto da loja vende no atacado. */
+    salesChannel: ProductSalesChannel;
+    /** Preço de atacado em fen: da caixa no só atacado, da unidade nos dois canais. */
+    wholesaleAmountMinor: string | null;
+    /** Nos dois canais: a partir de quantas unidades (somando variações) vale o atacado. */
+    wholesaleMinQuantity: number | null;
+    unitsPerPackage: number | null;
     variants: AdminProductVariant[];
     media: AdminProductMedia[];
     categories: AdminProductCategoryRef[];
@@ -509,6 +518,8 @@ export interface AdminOrder {
     origin: string | null;
     /** `IN_STOCK` já está no armazém; `SOURCED` ainda precisa ser comprado. */
     fulfillmentMode: 'IN_STOCK' | 'SOURCED';
+    /** Varejo ou atacado (D16). */
+    salesChannel: 'RETAIL' | 'WHOLESALE';
     status: string;
     currency: string;
     /** Valor da mercadoria, sem os adicionais. */

@@ -67,8 +67,7 @@ export function resolveChinaExclusive(
     if (raw !== undefined && raw !== null && typeof raw !== 'boolean')
         throw new Error('Campo "isChinaExclusive" precisa ser true ou false.');
     const explicit = typeof raw === 'boolean' ? raw : undefined;
-    if (CHINA_PREFIX.test(name))
-        return { name: name.replace(CHINA_PREFIX, ''), isChinaExclusive: explicit ?? true };
+    if (CHINA_PREFIX.test(name)) return { name: name.replace(CHINA_PREFIX, ''), isChinaExclusive: explicit ?? true };
     if (JAPAN_PREFIX.test(name)) return { name: name.replace(JAPAN_PREFIX, ''), isChinaExclusive: explicit };
     return { name, isChinaExclusive: explicit };
 }
