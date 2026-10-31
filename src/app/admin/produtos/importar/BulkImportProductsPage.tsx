@@ -21,8 +21,6 @@ const TEMPLATE = [
         name: 'Camiseta MaoMao',
         slug: 'camiseta-maomao',
         description: 'Descrição completa do produto.',
-        marketplace: 'TAOBAO',
-        marketplaceUrl: 'https://item.taobao.com/item.htm?id=123456',
         sourceAmountMinor: '12990',
         costAmountMinor: '8500',
         estimatedShippingAmountMinor: '4990',
@@ -40,9 +38,8 @@ const TEMPLATE = [
         images: ['https://cdn.exemplo.com/produto/foto-1.jpg', 'https://cdn.exemplo.com/produto/foto-2.jpg'],
     },
     {
-        name: 'Produto de estoque próprio',
-        marketplace: 'MAOMAOBUY',
-        description: 'Vendido direto pela MaoMaoBuy, sem link de origem.',
+        name: 'Chaveiro MaoMao',
+        description: 'Descrição curta também vale.',
         sourceAmountMinor: '5000',
         costAmountMinor: '2800',
         stock: 10,
@@ -198,12 +195,6 @@ export function BulkImportProductsPage() {
             key: 'item',
             header: t('products.bulkImport.columns.item'),
             cell: (row) => <span className="font-semibold text-ink dark:text-night-text">{row.label}</span>,
-        },
-        {
-            key: 'marketplace',
-            header: t('products.bulkImport.columns.marketplace'),
-            hideBelow: 'md',
-            cell: (row) => (row.result.ok ? row.result.payload.product.marketplace : t('common.dash')),
         },
         {
             key: 'price',

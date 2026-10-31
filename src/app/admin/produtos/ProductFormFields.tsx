@@ -1,35 +1,13 @@
 'use client';
 
-import { Globe, Store } from 'lucide-react';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { useTranslation } from '@/i18n/LanguageProvider';
-import { cny, MARKETPLACE_NAMES, type AdminCategory } from '@/types/api';
-import { DEFAULT_ON_DEMAND_LEAD_DAYS, type ProductForm, type ProductSourceType } from './product-form';
-
-const SOURCE_OPTIONS: Array<{
-    value: ProductSourceType;
-    titleKey: 'products.new.sourceType.marketplaceTitle' | 'products.new.sourceType.maomaobuyTitle';
-    descriptionKey: 'products.new.sourceType.marketplaceDescription' | 'products.new.sourceType.maomaobuyDescription';
-    icon: typeof Store;
-}> = [
-    {
-        value: 'MARKETPLACE',
-        titleKey: 'products.new.sourceType.marketplaceTitle',
-        descriptionKey: 'products.new.sourceType.marketplaceDescription',
-        icon: Globe,
-    },
-    {
-        value: 'MAOMAOBUY',
-        titleKey: 'products.new.sourceType.maomaobuyTitle',
-        descriptionKey: 'products.new.sourceType.maomaobuyDescription',
-        icon: Store,
-    },
-];
+import { cny, type AdminCategory } from '@/types/api';
+import { DEFAULT_ON_DEMAND_LEAD_DAYS, type ProductForm } from './product-form';
 
 export interface ProductFormFieldsProps {
     form: ProductForm;
@@ -40,7 +18,7 @@ export interface ProductFormFieldsProps {
 
 /**
  * Campos de produto, usados tanto na criação quanto na edição. Cada bloco é
- * um cartão: o admin percorre origem → identificação → preço →
+ * um cartão: o admin percorre identificação → preço →
  * disponibilidade → classificação sem perder de vista onde está. O tipo do
  * produto decide os blocos: Coin Shop e "Leve junto" são sempre estoque
  * próprio pronto, sem pré-venda, sob demanda nem categorias da vitrine.
@@ -51,53 +29,9 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
     const isStore = values.kind === 'STORE';
     const isCoinShop = values.kind === 'COIN_SHOP';
     const isCheckoutAddon = values.kind === 'CHECKOUT_ADDON';
-    const isOwnStock = !isStore || values.sourceType === 'MAOMAOBUY';
 
     return (
         <>
-            {isStore && (
-                <SectionCard
-                    description={t('products.new.sourceType.description')}
-                    title={t('products.new.sourceType.legend')}
-                >
-                    <fieldset className="m-0 grid gap-3 border-0 p-0 sm:grid-cols-2">
-                        <legend className="sr-only">{t('products.new.sourceType.legend')}</legend>
-                        {SOURCE_OPTIONS.map((option) => {
-                            const Icon = option.icon;
-                            const selected = values.sourceType === option.value;
-                            return (
-                                <label
-                                    className={`flex cursor-pointer flex-col gap-1.5 rounded-xl border p-4 transition ${
-                                        selected
-                                            ? 'border-brand-400 bg-brand-50 dark:border-night-accent/40 dark:bg-night-brand'
-                                            : 'border-line hover:border-brand-300 dark:border-night-line'
-                                    }`}
-                                    key={option.value}
-                                >
-                                    <input
-                                        checked={selected}
-                                        className="sr-only"
-                                        name="sourceType"
-                                        onChange={() => patch({ sourceType: option.value })}
-                                        type="radio"
-                                    />
-                                    <span className="flex items-center gap-2 text-sm font-bold text-ink dark:text-night-text">
-                                        <Icon
-                                            className="h-4 w-4 shrink-0 text-primary dark:text-night-accent"
-                                            aria-hidden="true"
-                                        />
-                                        {t(option.titleKey)}
-                                    </span>
-                                    <span className="text-xs leading-relaxed text-muted dark:text-night-muted">
-                                        {t(option.descriptionKey)}
-                                    </span>
-                                </label>
-                            );
-                        })}
-                    </fieldset>
-                </SectionCard>
-            )}
-
             {isCoinShop && (
                 <SectionCard description={t('products.new.coins.description')} title={t('products.new.coins.title')}>
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -179,39 +113,15 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                 description={
                     isCoinShop
                         ? t('products.new.originPrice.descriptionCoinShop')
-                        : isOwnStock
-                          ? t('products.new.originPrice.descriptionMaoMaoBuy')
-                          : t('products.new.originPrice.descriptionMarketplace')
+                        : t('products.new.originPrice.descriptionMaoMaoBuy')
                 }
                 title={
                     isCoinShop
                         ? t('products.new.originPrice.titleCoinShop')
-                        : isOwnStock
-                          ? t('products.new.originPrice.titleMaoMaoBuy')
-                          : t('products.new.originPrice.titleMarketplace')
+                        : t('products.new.originPrice.titleMaoMaoBuy')
                 }
             >
                 <div className="grid gap-4">
-                    {!isOwnStock && (
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <Select
-                                label={t('products.new.originPrice.marketplace')}
-                                onChange={(event) => patch({ marketplace: event.target.value })}
-                                options={MARKETPLACE_NAMES.map((name) => ({ value: name, label: name }))}
-                                required
-                                value={values.marketplace}
-                            />
-                            <Input
-                                label={t('products.new.originPrice.originUrl')}
-                                onChange={(event) => patch({ marketplaceUrl: event.target.value })}
-                                placeholder="https://item.taobao.com/item.htm?id=123"
-                                required
-                                type="url"
-                                value={values.marketplaceUrl}
-                            />
-                        </div>
-                    )}
-
                     <div className="grid gap-4 sm:grid-cols-2">
                         <CurrencyInput
                             currency="CNY"
@@ -219,9 +129,7 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                             label={
                                 isCoinShop
                                     ? t('products.new.originPrice.referencePrice')
-                                    : isOwnStock
-                                      ? t('products.new.originPrice.salePriceCny')
-                                      : t('products.new.originPrice.basePrice')
+                                    : t('products.new.originPrice.salePriceCny')
                             }
                             minor={values.sourceAmountMinor}
                             onMinorChange={(minor) => patch({ sourceAmountMinor: minor })}

@@ -210,8 +210,6 @@ export interface AdminProduct {
     name: string;
     kind: ProductKind;
     description: string;
-    marketplace: string;
-    marketplaceUrl: string | null;
     sourceCurrency: string;
     sourceAmountMinor: string;
     estimatedShippingAmountMinor: string | null;

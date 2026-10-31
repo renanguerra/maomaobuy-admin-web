@@ -1,23 +1,18 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { MARKETPLACE_NAMES, type AdminProduct, type ProductKind } from '@/types/api';
+import type { AdminProduct, ProductKind } from '@/types/api';
 import { slugify } from '../categorias/slugify';
 
 /** Prazo sugerido ao marcar "sob demanda" — o mesmo padrão do backend. */
 export const DEFAULT_ON_DEMAND_LEAD_DAYS = 4;
 
-export type ProductSourceType = 'MARKETPLACE' | 'MAOMAOBUY';
-
 export interface ProductFormValues {
     /** Fixo: vem da tela (criação) ou do produto (edição). */
     kind: ProductKind;
-    sourceType: ProductSourceType;
     name: string;
     slug: string;
     description: string;
-    marketplace: string;
-    marketplaceUrl: string;
     sourceAmountMinor: string;
     estimatedShippingAmountMinor: string;
     /** Custo unitário em fen; "0" = ainda não cadastrado. */
@@ -45,12 +40,9 @@ export interface ProductFormValues {
 
 const EMPTY: ProductFormValues = {
     kind: 'STORE',
-    sourceType: 'MARKETPLACE',
     name: '',
     slug: '',
     description: '',
-    marketplace: MARKETPLACE_NAMES[0],
-    marketplaceUrl: '',
     sourceAmountMinor: '0',
     estimatedShippingAmountMinor: '0',
     costAmountMinor: '0',
@@ -71,17 +63,11 @@ const EMPTY: ProductFormValues = {
 };
 
 function fromProduct(product: AdminProduct): ProductFormValues {
-    const isOwnStock = product.marketplace === 'MAOMAOBUY';
     return {
         kind: product.kind,
-        sourceType: isOwnStock ? 'MAOMAOBUY' : 'MARKETPLACE',
         name: product.name,
         slug: product.slug,
         description: product.description,
-        marketplace: MARKETPLACE_NAMES.includes(product.marketplace as (typeof MARKETPLACE_NAMES)[number])
-            ? product.marketplace
-            : MARKETPLACE_NAMES[0],
-        marketplaceUrl: product.marketplaceUrl ?? '',
         sourceAmountMinor: product.sourceAmountMinor,
         estimatedShippingAmountMinor: product.estimatedShippingAmountMinor ?? '0',
         costAmountMinor: product.costAmountMinor ?? '0',
@@ -108,10 +94,7 @@ function fromProduct(product: AdminProduct): ProductFormValues {
  * duas telas no passado.
  */
 export function useProductForm(product?: AdminProduct, kind: ProductKind = 'STORE') {
-    // Coin Shop e "Leve junto" são sempre estoque próprio.
-    const [values, setValues] = useState<ProductFormValues>(
-        product ? fromProduct(product) : { ...EMPTY, kind, sourceType: kind === 'STORE' ? 'MARKETPLACE' : 'MAOMAOBUY' },
-    );
+    const [values, setValues] = useState<ProductFormValues>(product ? fromProduct(product) : { ...EMPTY, kind });
     // Enquanto o admin não editar o slug, ele acompanha o nome. Em produto já
     // existente o slug nunca é derivado sozinho: mudá-lo quebra links publicados.
     const [slugTouched, setSlugTouched] = useState(Boolean(product));
@@ -167,13 +150,13 @@ export type ProductForm = ReturnType<typeof useProductForm>;
 export function toProductPayload(values: ProductFormValues) {
     const isStore = values.kind === 'STORE';
     const isCoinShop = values.kind === 'COIN_SHOP';
-    const isOwnStock = !isStore || values.sourceType === 'MAOMAOBUY';
     return {
         name: values.name,
         slug: values.slug,
         description: values.description,
-        marketplace: isOwnStock ? 'MAOMAOBUY' : values.marketplace,
-        marketplaceUrl: isOwnStock ? undefined : values.marketplaceUrl,
+        // Todo produto é estoque próprio. O backend atual ainda exige o
+        // campo; sai daqui quando ele deixar de aceitá-lo.
+        marketplace: 'MAOMAOBUY',
         sourceAmountMinor: values.sourceAmountMinor,
         estimatedShippingAmountMinor: values.estimatedShippingAmountMinor,
         // O campo de valor não fica vazio; zero quer dizer "ainda não sei" e
