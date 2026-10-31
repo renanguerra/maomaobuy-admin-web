@@ -691,9 +691,6 @@ function PreviewSummary({
                     <SummaryList
                         rows={[
                             { label: t('orders.create.products'), value: cny(group.productAmountMinor) },
-                            ...(group.serviceFeeMinor !== '0'
-                                ? [{ label: t('orders.create.serviceFee'), value: cny(group.serviceFeeMinor) }]
-                                : []),
                             { label: t('orders.create.total'), value: cny(group.totalAmountMinor), emphasis: true },
                             ...(group.shippingEstimateAmountMinor
                                 ? [

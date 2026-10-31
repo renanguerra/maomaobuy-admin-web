@@ -522,7 +522,6 @@ export interface AdminOrderPreviewLine {
 export interface AdminOrderPreviewGroup {
     fulfillmentMode: 'IN_STOCK' | 'SOURCED';
     productAmountMinor: string;
-    serviceFeeMinor: string;
     totalAmountMinor: string;
     shippingEstimateAmountMinor: string | null;
     itemCount: number;

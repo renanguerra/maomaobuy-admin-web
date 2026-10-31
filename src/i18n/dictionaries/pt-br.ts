@@ -873,7 +873,6 @@ export const ptBR = {
             splitHint:
                 'Estoque próprio e compra no vendedor viram dois pedidos, cada um com seu e-mail — como no carrinho.',
             products: 'Mercadoria',
-            serviceFee: 'Taxa do serviço',
             total: 'Total',
             grandTotal: 'Total geral (sem frete)',
             shipping: 'Frete estimado (cobrado no pacote)',
