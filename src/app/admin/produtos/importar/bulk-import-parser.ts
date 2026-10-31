@@ -47,6 +47,8 @@ export interface BulkImportProductBody {
 
 export interface BulkImportPayload {
     product: BulkImportProductBody;
+    /** Publicar depois de criado e de as fotos subirem. Ausente = rascunho. */
+    publish: boolean;
     /** URLs https de imagem — baixadas e enviadas ao storage depois que o produto é criado (`POST /products/:id/media/from-url`). */
     images?: string[];
 }
@@ -147,6 +149,8 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
     if (!slug) throw new Error('Não foi possível gerar um slug válido — informe "slug" ou "name".');
 
     const description = toNonEmptyString(record.description, 'description', 20_000);
+    if (record.isPublished !== undefined && typeof record.isPublished !== 'boolean')
+        throw new Error('Campo "isPublished" precisa ser true ou false.');
 
     return {
         product: {
@@ -170,6 +174,7 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
             variants: resolveVariants(record.variants),
         },
         images: resolveImages(record.images),
+        publish: record.isPublished === true,
     };
 }
 

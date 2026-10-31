@@ -473,6 +473,7 @@ export const ptBR = {
             },
             validRow: 'Pronto para importar',
             imagesStatus: '{{imported}}/{{total}} foto(s) enviada(s)',
+            publishFailedStatus: 'Ficou como rascunho — não foi possível publicar',
             importButton: 'Importar {{count}} produtos',
             importingButton: 'Importando…',
             importedStatus: 'Importado',

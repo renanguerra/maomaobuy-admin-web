@@ -458,6 +458,7 @@ export const zhHans: Messages = {
             },
             validRow: '可以导入',
             imagesStatus: '已上传 {{imported}}/{{total}} 张图片',
+            publishFailedStatus: '已保存为草稿 — 上架失败',
             importButton: '导入 {{count}} 件商品',
             importingButton: '导入中…',
             importedStatus: '已导入',
