@@ -573,6 +573,8 @@ export interface AdminOrderPreviewLine {
 
 /** Um dos pedidos que vão nascer — um por modo de atendimento. */
 export interface AdminOrderPreviewGroup {
+    /** Varejo ou atacado: cliente lojista pode receber os dois pedidos. */
+    salesChannel: 'RETAIL' | 'WHOLESALE';
     fulfillmentMode: 'IN_STOCK' | 'SOURCED';
     productAmountMinor: string;
     totalAmountMinor: string;
@@ -1398,6 +1400,7 @@ export interface ProfitOrderRow {
     orderId: string;
     paidAt: string;
     status: string;
+    salesChannel: 'RETAIL' | 'WHOLESALE';
     customerName: string | null;
     itemsSummary: string;
     revenueMinor: string;

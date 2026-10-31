@@ -401,10 +401,17 @@ function ProfitValue({ minor }: { minor: string }) {
 }
 
 /** Carrega uma página de `path` para o período; recarrega quando `version` muda. */
-function usePeriodPage<Row>(path: string, period: Period, version: number, pageNumber: number) {
+function usePeriodPage<Row>(
+    path: string,
+    period: Period,
+    version: number,
+    pageNumber: number,
+    /** Filtro de canal da planilha de pedidos; vazio = os dois. */
+    salesChannel = '',
+) {
     const [loaded, setLoaded] = useState<{ key: string; page: Page<Row> }>();
     const [failure, setFailure] = useState<{ key: string; message: string }>();
-    const key = `${path}|${period.from}|${period.to}|${version}|${pageNumber}`;
+    const key = `${path}|${period.from}|${period.to}|${version}|${pageNumber}|${salesChannel}`;
     useEffect(() => {
         let active = true;
         const query = new URLSearchParams({
@@ -413,6 +420,7 @@ function usePeriodPage<Row>(path: string, period: Period, version: number, pageN
             page: String(pageNumber),
             limit: String(LIMIT),
         });
+        if (salesChannel) query.set('salesChannel', salesChannel);
         api<Page<Row>>(`${path}?${query.toString()}`)
             .then((page) => {
                 if (active) setLoaded({ key, page });
@@ -423,7 +431,7 @@ function usePeriodPage<Row>(path: string, period: Period, version: number, pageN
         return () => {
             active = false;
         };
-    }, [key, path, period.from, period.to, pageNumber]);
+    }, [key, path, period.from, period.to, pageNumber, salesChannel]);
     return {
         page: loaded?.key === key ? loaded.page : undefined,
         error: failure?.key === key ? failure.message : undefined,
@@ -487,7 +495,8 @@ function OrdersTab({ period, version, onChanged }: { period: Period; version: nu
     const { t } = useTranslation();
     const [pageNumber, setPageNumber] = useState(1);
     const [openId, setOpenId] = useState<string | null>(null);
-    const { page, error } = usePeriodPage<ProfitOrderRow>('/costs/report/orders', period, version, pageNumber);
+    const [channel, setChannel] = useState('');
+    const { page, error } = usePeriodPage<ProfitOrderRow>('/costs/report/orders', period, version, pageNumber, channel);
 
     const columns: DataTableColumn<ProfitOrderRow>[] = [
         {
@@ -517,6 +526,7 @@ function OrdersTab({ period, version, onChanged }: { period: Period; version: nu
                     <span className="block">{row.customerName ?? '—'}</span>
                     <span className="block text-muted dark:text-night-muted">
                         {formatDate(row.paidAt)} · {orderStatusLabel(row.status)}
+                        {row.salesChannel === 'WHOLESALE' && ` · ${t('profit.orders.wholesale')}`}
                     </span>
                 </span>
             ),
@@ -562,7 +572,11 @@ function OrdersTab({ period, version, onChanged }: { period: Period; version: nu
     async function exportCsv() {
         const rows = await fetchAllPages<ProfitOrderRow>(
             '/costs/report/orders',
-            new URLSearchParams({ from: period.from, to: period.to }),
+            new URLSearchParams({
+                from: period.from,
+                to: period.to,
+                ...(channel ? { salesChannel: channel } : {}),
+            }),
         );
         downloadCsv(
             `lucro-pedidos-${period.from}-a-${period.to}.csv`,
@@ -570,6 +584,7 @@ function OrdersTab({ period, version, onChanged }: { period: Period; version: nu
                 'Pedido',
                 'Pago em',
                 'Status',
+                'Canal',
                 'Cliente',
                 'Itens',
                 'Receita (¥)',
@@ -582,6 +597,7 @@ function OrdersTab({ period, version, onChanged }: { period: Period; version: nu
                 row.orderId,
                 formatDate(row.paidAt),
                 orderStatusLabel(row.status),
+                row.salesChannel === 'WHOLESALE' ? 'Atacado' : 'Varejo',
                 row.customerName,
                 row.itemsSummary,
                 minorToDecimal(row.revenueMinor),
@@ -597,6 +613,20 @@ function OrdersTab({ period, version, onChanged }: { period: Period; version: nu
         <>
             <Toolbar actions={<ExportButton onExport={exportCsv} />}>
                 <p className="m-0 text-xs text-muted dark:text-night-muted">{t('profit.orders.hint')}</p>
+                <Select
+                    fieldClassName="w-full max-w-48"
+                    label={t('profit.orders.channel')}
+                    onChange={(event) => {
+                        setChannel(event.target.value);
+                        setPageNumber(1);
+                    }}
+                    options={[
+                        { value: 'RETAIL', label: t('profit.orders.channels.RETAIL') },
+                        { value: 'WHOLESALE', label: t('profit.orders.channels.WHOLESALE') },
+                    ]}
+                    placeholderOption={t('profit.orders.channelAll')}
+                    value={channel}
+                />
             </Toolbar>
             {error && <p className="px-4 text-sm text-origin-700">{t('profit.error')}</p>}
             <DataTable

@@ -865,6 +865,7 @@ export const zhHans: Messages = {
             summaryEmpty: '选择客户并添加商品后显示总额。',
             summaryLoading: '计算中…',
             groupInStock: '自有库存订单',
+            groupWholesale: '批发',
             groupSourced: '向卖家采购订单',
             splitHint: '自有库存和向卖家采购会拆成两个订单，各发一封邮件——与购物车相同。',
             products: '商品金额',
@@ -1878,6 +1879,13 @@ export const zhHans: Messages = {
             profit: '利润',
             missing: '{{count}} 件缺成本',
             empty: '本期没有已付款订单。',
+            wholesale: '批发',
+            channel: '渠道',
+            channelAll: '零售和批发',
+            channels: {
+                RETAIL: '零售',
+                WHOLESALE: '批发',
+            },
         },
         packages: {
             hint: '本期已付运费的箱子。包装成本通过箱子的成本记录计入。',

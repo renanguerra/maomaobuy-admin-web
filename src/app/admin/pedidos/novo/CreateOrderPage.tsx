@@ -173,11 +173,15 @@ export function CreateOrderPage({ editOrderId }: { editOrderId?: string } = {}) 
             .filter((line) => line.problem)
             .map((line) => [lineKey(line.productId, line.variantExternalId), line.problem as string]),
     );
-    // Na edição o pedido não troca de modo: a prévia não pode abrir outro grupo.
+    // Na edição o pedido não troca de modo nem de canal: a prévia não pode
+    // abrir outro grupo.
     const modeMismatch =
         editing &&
         Boolean(editOrder) &&
-        (current?.data?.groups ?? []).some((group) => group.fulfillmentMode !== editOrder?.fulfillmentMode);
+        (current?.data?.groups ?? []).some(
+            (group) =>
+                group.fulfillmentMode !== editOrder?.fulfillmentMode || group.salesChannel !== editOrder?.salesChannel,
+        );
     const canSubmit = Boolean(current?.data) && problems.size === 0 && lines.length > 0 && editable && !modeMismatch;
 
     function addLine(product: AdminProduct, variantExternalId: string) {
@@ -680,9 +684,10 @@ function PreviewSummary({
     return (
         <div className="grid gap-5">
             {preview.groups.map((group) => (
-                <div key={group.fulfillmentMode}>
-                    {preview.groups.length > 1 && (
+                <div key={`${group.salesChannel}:${group.fulfillmentMode}`}>
+                    {(preview.groups.length > 1 || group.salesChannel === 'WHOLESALE') && (
                         <p className="m-0 mb-2 text-sm font-semibold text-ink dark:text-night-text">
+                            {group.salesChannel === 'WHOLESALE' && `${t('orders.create.groupWholesale')} · `}
                             {group.fulfillmentMode === 'IN_STOCK'
                                 ? t('orders.create.groupInStock')
                                 : t('orders.create.groupSourced')}

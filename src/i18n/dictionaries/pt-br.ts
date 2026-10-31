@@ -895,6 +895,7 @@ export const ptBR = {
             summaryEmpty: 'Escolha o cliente e adicione produtos para ver o total.',
             summaryLoading: 'Calculando…',
             groupInStock: 'Pedido de estoque próprio',
+            groupWholesale: 'Atacado',
             groupSourced: 'Pedido de compra no vendedor',
             splitHint:
                 'Estoque próprio e compra no vendedor viram dois pedidos, cada um com seu e-mail — como no carrinho.',
@@ -1933,6 +1934,13 @@ export const ptBR = {
             profit: 'Lucro',
             missing: '{{count}} sem custo',
             empty: 'Nenhum pedido pago neste período.',
+            wholesale: 'Atacado',
+            channel: 'Canal',
+            channelAll: 'Varejo e atacado',
+            channels: {
+                RETAIL: 'Varejo',
+                WHOLESALE: 'Atacado',
+            },
         },
         packages: {
             hint: 'Caixas com frete pago no período. Embalagem entra pelos lançamentos da caixa.',
