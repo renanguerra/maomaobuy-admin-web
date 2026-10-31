@@ -1,7 +1,6 @@
 import type { AdminCategory } from '@/types/api';
 import { slugify } from '../../categorias/slugify';
 import {
-    MARKETPLACE_VALUES,
     resolveCategories,
     resolveChinaExclusive,
     toAmountMinor,
@@ -10,7 +9,6 @@ import {
     toOptionalAmountMinor,
     toNullableAmountMinor,
     toOptionalInt,
-    type MarketplaceValue,
 } from '../product-bulk-shared';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -30,8 +28,6 @@ export interface BulkEditProductBody {
     name: string;
     slug: string;
     description: string;
-    marketplace: MarketplaceValue;
-    marketplaceUrl?: string;
     sourceAmountMinor: string;
     estimatedShippingAmountMinor?: string;
     /** `undefined` = não mexe; `null` apaga o custo. */
@@ -111,18 +107,6 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
 
     const description = toNonEmptyString(record.description, 'description', 20_000);
 
-    if (typeof record.marketplace !== 'string' || !MARKETPLACE_VALUES.includes(record.marketplace as never))
-        throw new Error('Campo "marketplace" precisa ser TAOBAO, XIANYU, ALIBABA ou MAOMAOBUY.');
-    const marketplace = record.marketplace as MarketplaceValue;
-    const isOwnStock = marketplace === 'MAOMAOBUY';
-
-    let marketplaceUrl: string | undefined;
-    if (!isOwnStock) {
-        marketplaceUrl = toNonEmptyString(record.marketplaceUrl, 'marketplaceUrl', 2048);
-        if (!/^https:\/\//.test(marketplaceUrl))
-            throw new Error('Campo "marketplaceUrl" precisa começar com https:// (obrigatório fora de MAOMAOBUY).');
-    }
-
     const isPreSale = Boolean(record.isPreSale);
     let releaseDate: string | undefined;
     if (isPreSale) {
@@ -143,8 +127,6 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
         name,
         slug,
         description,
-        marketplace,
-        marketplaceUrl,
         sourceAmountMinor: toAmountMinor(record.sourceAmountMinor, 'sourceAmountMinor'),
         estimatedShippingAmountMinor: toOptionalAmountMinor(
             record.estimatedShippingAmountMinor,

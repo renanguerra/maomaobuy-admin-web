@@ -48,8 +48,6 @@ function exportRow(product: AdminProduct) {
         name: product.name,
         slug: product.slug,
         description: product.description,
-        marketplace: product.marketplace,
-        marketplaceUrl: product.marketplaceUrl ?? undefined,
         sourceAmountMinor: product.sourceAmountMinor,
         estimatedShippingAmountMinor: product.estimatedShippingAmountMinor ?? '',
         costAmountMinor: product.costAmountMinor,
@@ -176,8 +174,8 @@ export function ProductsBulkEditorPage() {
                     name: edit.name,
                     slug: edit.slug,
                     description: edit.description,
-                    marketplace: edit.marketplace,
-                    marketplaceUrl: edit.marketplace === 'MAOMAOBUY' ? undefined : edit.marketplaceUrl,
+                    // O backend atual ainda aceita o campo; sai quando ele parar.
+                    marketplace: 'MAOMAOBUY',
                     sourceAmountMinor: edit.sourceAmountMinor,
                     estimatedShippingAmountMinor: edit.estimatedShippingAmountMinor,
                     costAmountMinor: edit.costAmountMinor,
@@ -306,12 +304,6 @@ export function ProductsBulkEditorPage() {
             key: 'item',
             header: t('products.bulkEditor.columns.item'),
             cell: (row) => <span className="font-semibold text-ink dark:text-night-text">{row.label}</span>,
-        },
-        {
-            key: 'marketplace',
-            header: t('products.bulkEditor.columns.marketplace'),
-            hideBelow: 'md',
-            cell: (row) => (row.result.ok ? row.result.edit.marketplace : t('common.dash')),
         },
         {
             key: 'price',

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ExternalLink, Pencil, Trash2, X } from 'lucide-react';
+import { Pencil, Trash2, X } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
 import { DescriptionList } from '@/components/admin/DescriptionList';
 import { PageHeader } from '@/components/admin/PageHeader';
@@ -14,7 +14,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
-import { productSourceLabel, type AdminCategory, type AdminProduct, type ProductKind } from '@/types/api';
+import type { AdminCategory, AdminProduct, ProductKind } from '@/types/api';
 import { ProductFormFields } from '../ProductFormFields';
 import { ProductMediaManager } from '../ProductMediaManager';
 import { productPath } from '../product-kind';
@@ -210,14 +210,6 @@ export function ProductDetailPage({ kind = 'STORE' }: { kind?: ProductKind }) {
                 <SectionCard title={t('products.detail.infoSection')}>
                     <DescriptionList
                         items={[
-                            ...(product.kind === 'STORE'
-                                ? [
-                                      {
-                                          label: t('products.detail.view.sourceType'),
-                                          value: productSourceLabel(product.marketplace),
-                                      },
-                                  ]
-                                : []),
                             ...(product.kind === 'COIN_SHOP'
                                 ? [
                                       {
@@ -261,27 +253,6 @@ export function ProductDetailPage({ kind = 'STORE' }: { kind?: ProductKind }) {
                                   ]
                                 : []),
                             { label: t('products.detail.view.stock'), value: product.stock, numeric: true },
-                            ...(product.kind === 'STORE'
-                                ? [
-                                      {
-                                          label: t('products.detail.view.originUrl'),
-                                          value: product.marketplaceUrl ? (
-                                              <a
-                                                  className="inline-flex items-center gap-1 break-all text-primary dark:text-night-accent"
-                                                  href={product.marketplaceUrl}
-                                                  rel="noreferrer"
-                                                  target="_blank"
-                                              >
-                                                  {product.marketplaceUrl}
-                                                  <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                              </a>
-                                          ) : (
-                                              t('products.detail.view.noOriginUrl')
-                                          ),
-                                          wide: true,
-                                      },
-                                  ]
-                                : []),
                             ...(product.kind === 'STORE'
                                 ? [
                                       {

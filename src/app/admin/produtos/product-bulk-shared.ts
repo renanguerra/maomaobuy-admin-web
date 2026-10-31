@@ -2,8 +2,6 @@ import type { AdminCategory } from '@/types/api';
 import { slugify } from '../categorias/slugify';
 
 export const AMOUNT_PATTERN = /^(0|[1-9]\d{0,17})$/;
-export const MARKETPLACE_VALUES = ['TAOBAO', 'XIANYU', 'ALIBABA', 'MAOMAOBUY'] as const;
-export type MarketplaceValue = (typeof MARKETPLACE_VALUES)[number];
 
 /**
  * Validações e resolução de categoria compartilhadas entre a importação em

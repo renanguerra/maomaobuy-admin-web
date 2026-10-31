@@ -1,7 +1,6 @@
 import type { AdminCategory } from '@/types/api';
 import { slugify } from '../../categorias/slugify';
 import {
-    MARKETPLACE_VALUES,
     resolveCategories,
     resolveChinaExclusive,
     toAmountMinor,
@@ -24,8 +23,8 @@ export interface BulkImportProductBody {
     name: string;
     slug: string;
     description: string;
-    marketplace: (typeof MARKETPLACE_VALUES)[number];
-    marketplaceUrl?: string;
+    /** Todo produto é estoque próprio; o backend atual ainda exige o campo. */
+    marketplace: 'MAOMAOBUY';
     sourceAmountMinor: string;
     estimatedShippingAmountMinor?: string;
     /** Custo unitário em fen, só no painel. */
@@ -113,25 +112,12 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
 
     const description = toNonEmptyString(record.description, 'description', 20_000);
 
-    if (typeof record.marketplace !== 'string' || !MARKETPLACE_VALUES.includes(record.marketplace as never))
-        throw new Error('Campo "marketplace" precisa ser TAOBAO, XIANYU, ALIBABA ou MAOMAOBUY.');
-    const marketplace = record.marketplace as (typeof MARKETPLACE_VALUES)[number];
-    const isOwnStock = marketplace === 'MAOMAOBUY';
-
-    let marketplaceUrl: string | undefined;
-    if (!isOwnStock) {
-        marketplaceUrl = toNonEmptyString(record.marketplaceUrl, 'marketplaceUrl', 2048);
-        if (!/^https:\/\//.test(marketplaceUrl))
-            throw new Error('Campo "marketplaceUrl" precisa começar com https:// (obrigatório fora de MAOMAOBUY).');
-    }
-
     return {
         product: {
             name,
             slug,
             description,
-            marketplace,
-            marketplaceUrl,
+            marketplace: 'MAOMAOBUY',
             sourceAmountMinor: toAmountMinor(record.sourceAmountMinor, 'sourceAmountMinor'),
             estimatedShippingAmountMinor: toOptionalAmountMinor(
                 record.estimatedShippingAmountMinor,

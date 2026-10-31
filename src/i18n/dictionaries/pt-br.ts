@@ -337,8 +337,7 @@ export const ptBR = {
         STORE: {
             kicker: 'Loja',
             listTitle: 'Produtos da loja',
-            listDescription:
-                'O que aparece na vitrine, na busca e no carrinho: estoque próprio e anúncios dos marketplaces.',
+            listDescription: 'O que aparece na vitrine, na busca e no carrinho. Todo produto é estoque próprio.',
             newButton: 'Novo produto da loja',
             newTitle: 'Novo produto da loja',
             newDescription:
@@ -395,7 +394,6 @@ export const ptBR = {
             columns: {
                 product: 'Produto',
                 category: 'Categoria',
-                marketplace: 'Marketplace',
                 basePrice: 'Preço base',
                 coinPrice: 'Preço em moedas',
                 variants: 'Variantes',
@@ -405,7 +403,7 @@ export const ptBR = {
             onDemand: 'sob demanda',
             empty: 'Nenhum produto encontrado para este filtro.',
             countUnit: '{{count}} produtos',
-            description: 'Catálogo próprio e itens replicados dos marketplaces.',
+            description: 'Catálogo de estoque próprio.',
             tableCaption: 'Lista de produtos',
             emptyFiltered: 'Nenhum produto nesse filtro',
             emptyFilteredDescription: 'Ajuste os filtros para ver outros produtos.',
@@ -452,7 +450,6 @@ export const ptBR = {
             previewCaption: 'Lista de produtos do arquivo',
             columns: {
                 item: 'Item',
-                marketplace: 'Marketplace',
                 price: 'Preço (CNY)',
                 stock: 'Estoque',
                 status: 'Status',
@@ -501,7 +498,6 @@ export const ptBR = {
             previewCaption: 'Lista de produtos do arquivo',
             columns: {
                 item: 'Item',
-                marketplace: 'Marketplace',
                 price: 'Preço (CNY)',
                 stock: 'Estoque',
                 published: 'Publicação',
@@ -540,15 +536,12 @@ export const ptBR = {
                 slugPublishedHint: 'O produto já está publicado: mudar o slug quebra os links compartilhados.',
             },
             view: {
-                sourceType: 'Tipo de produto',
                 basePrice: 'Preço base',
                 coinPrice: 'Preço em moedas',
                 coinLimit: 'Limite por cliente',
                 noLimit: 'Sem limite',
                 estimatedShipping: 'Frete estimado',
                 stock: 'Estoque',
-                originUrl: 'URL de origem',
-                noOriginUrl: '— (estoque próprio, sem link de origem)',
                 description: 'Descrição',
                 categories: 'Categorias',
                 noCategories: 'Nenhuma categoria vinculada.',
@@ -595,16 +588,6 @@ export const ptBR = {
             },
             stepHintInfo: 'Preencha os dados do produto para criar o rascunho.',
             stepHintMedia: 'Envie ao menos uma imagem antes de concluir.',
-            sourceType: {
-                legend: 'Tipo de produto',
-                marketplaceTitle: 'Marketplace',
-                marketplaceDescription:
-                    'Comprado sob encomenda em Taobao, Xianyu ou Alibaba — precisa do link do anúncio de origem.',
-                maomaobuyTitle: 'MaoMaoBuy',
-                maomaobuyDescription:
-                    'Estoque próprio, vendido direto pela MaoMaoBuy — sem link de origem nem conversão de moeda.',
-                description: 'Define quais campos de preço e origem o produto usa.',
-            },
             basicInfo: {
                 title: 'Informações básicas',
                 name: 'Nome',
@@ -616,17 +599,12 @@ export const ptBR = {
             },
             originPrice: {
                 titleMaoMaoBuy: 'Preço',
-                titleMarketplace: 'Origem e preço',
                 titleCoinShop: 'Valor e custo',
                 descriptionCoinShop:
                     'O cliente paga em moedas. O valor em yuan é só referência; o custo entra no relatório de lucro.',
                 referencePrice: 'Valor de referência (CNY)',
                 referenceHint: 'Não é cobrado. Pode ficar zerado.',
-                descriptionMaoMaoBuy: 'Sem link de origem — preço final já em reais, cobrado do cliente sem conversão.',
-                descriptionMarketplace: 'Dados do anúncio comprado sob encomenda no marketplace de origem.',
-                marketplace: 'Marketplace de origem',
-                originUrl: 'URL do produto de origem',
-                basePrice: 'Preço do anúncio (CNY)',
+                descriptionMaoMaoBuy: 'Preço de venda em yuan, debitado do saldo do cliente.',
                 salePriceCny: 'Preço de venda (CNY)',
                 cost: 'Custo unitário (CNY)',
                 costHint: 'Quanto pagamos por uma unidade. Só o painel vê. Deixe 0,00 se ainda não souber.',
