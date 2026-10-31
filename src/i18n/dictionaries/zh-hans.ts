@@ -841,7 +841,6 @@ export const zhHans: Messages = {
             groupSourced: '向卖家采购订单',
             splitHint: '自有库存和向卖家采购会拆成两个订单，各发一封邮件——与购物车相同。',
             products: '商品金额',
-            serviceFee: '服务费',
             total: '总额',
             grandTotal: '合计（不含运费）',
             shipping: '预估运费（在包裹中收取）',
