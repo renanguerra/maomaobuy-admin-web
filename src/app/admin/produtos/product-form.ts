@@ -154,9 +154,6 @@ export function toProductPayload(values: ProductFormValues) {
         name: values.name,
         slug: values.slug,
         description: values.description,
-        // Todo produto é estoque próprio. O backend atual ainda exige o
-        // campo; sai daqui quando ele deixar de aceitá-lo.
-        marketplace: 'MAOMAOBUY',
         sourceAmountMinor: values.sourceAmountMinor,
         estimatedShippingAmountMinor: values.estimatedShippingAmountMinor,
         // O campo de valor não fica vazio; zero quer dizer "ainda não sei" e

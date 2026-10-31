@@ -174,8 +174,6 @@ export function ProductsBulkEditorPage() {
                     name: edit.name,
                     slug: edit.slug,
                     description: edit.description,
-                    // O backend atual ainda aceita o campo; sai quando ele parar.
-                    marketplace: 'MAOMAOBUY',
                     sourceAmountMinor: edit.sourceAmountMinor,
                     estimatedShippingAmountMinor: edit.estimatedShippingAmountMinor,
                     costAmountMinor: edit.costAmountMinor,
