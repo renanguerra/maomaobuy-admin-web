@@ -50,8 +50,51 @@ export interface AdminUser {
     email: string;
     emailVerifiedAt: string | null;
     status: string;
+    /** Varejo, lojista ou lojista em análise (não compra). */
+    accountType: AccountType;
     createdAt: string;
     passwordResetRequiredAt: string | null;
+}
+
+export type AccountType = 'RETAIL' | 'WHOLESALE' | 'WHOLESALE_APPLICANT';
+
+export type WholesaleApplicationStatus = 'PENDING' | 'NEEDS_INFO' | 'APPROVED' | 'REJECTED' | 'REVOKED' | 'CANCELLED';
+
+/** Solicitação de conta de lojista, como o painel vê. */
+export interface WholesaleApplication {
+    id: string;
+    origin: 'SIGNUP' | 'UPGRADE';
+    status: WholesaleApplicationStatus;
+    cnpj: string;
+    legalName: string;
+    tradeName: string | null;
+    stateRegistration: string | null;
+    postalCode: string;
+    administrativeArea: string;
+    locality: string;
+    district: string | null;
+    addressLine1: string;
+    addressLine2: string | null;
+    phoneE164: string;
+    contactName: string;
+    submittedAt: string;
+    reviewedAt: string | null;
+    rejectionReason: string | null;
+    infoRequest: string | null;
+    user: { id: string; name: string; username: string; email: string; accountType: AccountType };
+    /** Consulta de situação cadastral: só avisa. Nulo = ainda não consultado. */
+    cnpjLookupStatus: 'OK' | 'ALERT' | 'UNAVAILABLE' | null;
+    cnpjLookupAt: string | null;
+    cnpjLookup: Record<string, unknown> | null;
+    reviewedBy: { id: string; name: string } | null;
+    /** Vínculo de influencer: pendente ou aprovado impede aprovar (influencer é só varejo). */
+    influencerStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'DISABLED' | null;
+}
+
+/** `12ABC34501DE35` → `12.ABC.345/01DE-35`. */
+export function formatCnpj(value: string) {
+    if (value.length !== 14) return value;
+    return `${value.slice(0, 2)}.${value.slice(2, 5)}.${value.slice(5, 8)}/${value.slice(8, 12)}-${value.slice(12)}`;
 }
 
 export interface AdminUserAddress {
