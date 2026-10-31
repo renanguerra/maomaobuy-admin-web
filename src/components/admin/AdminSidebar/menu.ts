@@ -16,6 +16,7 @@ import {
     ShoppingBasket,
     Sparkles,
     Star,
+    Store,
     Tags,
     TicketPercent,
     Truck,
@@ -53,6 +54,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
         items: [
             { key: 'users', href: '/admin/usuarios', icon: Users },
             { key: 'influencers', href: '/admin/influencers', icon: Star },
+            { key: 'wholesale', href: '/admin/lojistas', icon: Store },
             { key: 'siteNotices', href: '/admin/avisos', icon: Megaphone },
         ],
     },

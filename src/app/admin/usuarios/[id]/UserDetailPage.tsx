@@ -11,6 +11,7 @@ import {
     ShieldOff,
     ShieldCheck,
     ShoppingBag,
+    Store,
 } from 'lucide-react';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
@@ -40,7 +41,7 @@ import { CreatePackageDialog } from './CreatePackageDialog';
 import { UserCoinsCard } from './UserCoinsCard';
 import { UserWalletCard } from './UserWalletCard';
 
-type DialogKind = 'suspend' | 'reactivate' | 'request-password-reset' | 'create-package' | null;
+type DialogKind = 'suspend' | 'reactivate' | 'request-password-reset' | 'create-package' | 'revoke-wholesale' | null;
 
 export function UserDetailPage() {
     const { t } = useTranslation();
@@ -77,6 +78,14 @@ export function UserDetailPage() {
     async function handleConfirm(values: { totpCode: string; reason: string }) {
         const action = dialog;
         if (!action || action === 'create-package') return;
+        if (action === 'revoke-wholesale') {
+            // A resposta é a solicitação; a conta é relida para o selo mudar.
+            await api(`/users/${params.id}/revoke-wholesale`, { method: 'POST', body: JSON.stringify(values) });
+            setUser(await api<AdminUser>(`/users/${params.id}`));
+            setDialog(null);
+            notify({ tone: 'success', title: t('users.detail.feedback.wholesaleRevoked') });
+            return;
+        }
 
         try {
             const updated = await api<AdminUser>(`/users/${params.id}/${action}`, {
@@ -134,7 +143,16 @@ export function UserDetailPage() {
             <PageHeader
                 backHref="/admin/usuarios"
                 backLabel={t('users.detail.backLink')}
-                badge={<StatusPill tone={userStatusTone(user.status)}>{userStatusLabel(user.status)}</StatusPill>}
+                badge={
+                    <span className="flex flex-wrap gap-1.5">
+                        <StatusPill tone={userStatusTone(user.status)}>{userStatusLabel(user.status)}</StatusPill>
+                        {user.accountType !== 'RETAIL' && (
+                            <StatusPill hideDot tone={user.accountType === 'WHOLESALE' ? 'info' : 'warning'}>
+                                {t(`users.accountTypes.${user.accountType}`)}
+                            </StatusPill>
+                        )}
+                    </span>
+                }
                 kicker={t('users.detail.kicker')}
                 meta={`@${user.username} · ${user.email}`}
                 title={user.name}
@@ -156,6 +174,15 @@ export function UserDetailPage() {
                         >
                             {t('users.createPackage.title')}
                         </Button>
+                        {user.accountType === 'WHOLESALE' && (
+                            <Button
+                                leadingIcon={<Store className="h-4 w-4" aria-hidden="true" />}
+                                onClick={() => setDialog('revoke-wholesale')}
+                                variant="secondary"
+                            >
+                                {t('users.detail.revokeWholesaleButton')}
+                            </Button>
+                        )}
                         {!user.passwordResetRequiredAt && (
                             <Button
                                 leadingIcon={<KeyRound className="h-4 w-4" aria-hidden="true" />}
@@ -213,6 +240,22 @@ export function UserDetailPage() {
                                 <StatusPill tone={userStatusTone(user.status)}>
                                     {userStatusLabel(user.status)}
                                 </StatusPill>
+                            ),
+                        },
+                        {
+                            label: t('users.detail.fields.accountType'),
+                            value: (
+                                <span className="flex flex-wrap items-center gap-2">
+                                    {t(`users.accountTypes.${user.accountType}`)}
+                                    {user.accountType !== 'RETAIL' && (
+                                        <a
+                                            className="text-sm text-primary no-underline hover:underline dark:text-night-accent"
+                                            href={`/admin/lojistas?busca=${encodeURIComponent(user.email)}`}
+                                        >
+                                            {t('users.detail.wholesaleLink')}
+                                        </a>
+                                    )}
+                                </span>
                             ),
                         },
                         { label: t('users.detail.fields.createdAt'), value: formatDate(user.createdAt), numeric: true },
@@ -354,6 +397,16 @@ export function UserDetailPage() {
                 onConfirm={handleConfirm}
                 open={dialog === 'request-password-reset'}
                 title={t('users.detail.dialogs.requestPasswordReset.title')}
+                variant="danger"
+            />
+            <ActionDialog
+                confirmLabel={t('users.detail.dialogs.revokeWholesale.confirmLabel')}
+                description={t('users.detail.dialogs.revokeWholesale.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleConfirm}
+                open={dialog === 'revoke-wholesale'}
+                requireReason
+                title={t('users.detail.dialogs.revokeWholesale.title')}
                 variant="danger"
             />
             <CreatePackageDialog onClose={() => setDialog(null)} open={dialog === 'create-package'} userId={user.id} />
