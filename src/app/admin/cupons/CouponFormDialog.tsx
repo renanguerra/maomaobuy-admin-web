@@ -14,7 +14,15 @@ import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
-import type { AdminProduct, AdminUser, Coupon, CouponDiscountType, CouponScope, Page } from '@/types/api';
+import type {
+    AdminProduct,
+    AdminUser,
+    Coupon,
+    CouponAudience,
+    CouponDiscountType,
+    CouponScope,
+    Page,
+} from '@/types/api';
 import { basisPointsFromPercent, fromDateTimeLocal, percentFromBasisPoints, toDateTimeLocal } from './coupon-format';
 
 const FORM_ID = 'coupon-form';
@@ -39,6 +47,7 @@ export interface CouponFormValues {
     expiresAt: string | null;
     userId: string | null;
     isActive: boolean;
+    audience: CouponAudience;
     totpCode: string;
 }
 
@@ -115,6 +124,7 @@ function CouponForm({
     const [target, setTarget] = useState<Target>(coupon?.user ? 'user' : 'open');
     const [user, setUser] = useState<Coupon['user']>(coupon?.user ?? null);
     const [isActive, setIsActive] = useState(coupon?.isActive ?? true);
+    const [audience, setAudience] = useState<CouponAudience>(coupon?.audience ?? 'RETAIL');
     const [gift, setGift] = useState<GiftSelection | null>(null);
     const [error, setError] = useState<string>();
     const isGift = scope === 'GIFT';
@@ -168,6 +178,7 @@ function CouponForm({
                 expiresAt: fromDateTimeLocal(String(data.get('expiresAt') ?? '')),
                 userId: target === 'user' ? (user?.id ?? null) : null,
                 isActive,
+                audience,
                 totpCode: String(data.get('totpCode') ?? ''),
             });
         } catch (err) {
@@ -339,6 +350,19 @@ function CouponForm({
                 />
                 {target === 'user' && <UserPicker onChange={setUser} value={user} />}
             </div>
+
+            <Select
+                className="sm:col-span-2"
+                hint={t(`coupons.audienceHints.${audience}`)}
+                label={t('coupons.form.audience')}
+                onChange={(event) => setAudience(event.target.value as CouponAudience)}
+                options={[
+                    { value: 'RETAIL', label: t('coupons.audiences.RETAIL') },
+                    { value: 'WHOLESALE', label: t('coupons.audiences.WHOLESALE') },
+                    { value: 'ALL', label: t('coupons.audiences.ALL') },
+                ]}
+                value={audience}
+            />
 
             <Checkbox
                 checked={isActive}

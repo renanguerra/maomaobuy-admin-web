@@ -236,6 +236,7 @@ export const zhHans: Messages = {
                 pending: '待发放',
                 earned: '累计获得',
                 spent: '累计使用',
+                redeemDeadline: '批发商兑换截止',
                 adjustButton: '调整积分',
                 adjusted: '积分已调整。',
                 empty: '暂无记录。',
@@ -2024,6 +2025,16 @@ export const zhHans: Messages = {
             SHIPPING: '运费',
             GIFT: '赠品',
         },
+        audiences: {
+            RETAIL: '零售',
+            WHOLESALE: '批发商',
+            ALL: '零售和批发商',
+        },
+        audienceHints: {
+            RETAIL: '仅零售客户可用。这是默认值，达人优惠券始终如此。',
+            WHOLESALE: '仅已批准的批发商账号可用。',
+            ALL: '所有账号均可使用。',
+        },
         scopeHints: {
             ORDER: '支付订单或购物车结账时抵扣商品金额（商品 + 服务费）。',
             SHIPPING: '支付包裹时抵扣国际运费，不含仓储费。',
@@ -2109,6 +2120,7 @@ export const zhHans: Messages = {
             userChange: '更换',
             userRequired: '请选择客户，或将优惠券设为所有人可用。',
             isActive: '优惠券启用',
+            audience: '适用对象',
             fixedFieldsHint: '代码、适用范围和折扣类型创建后不可更改——如需其他折扣，请新建优惠券。',
             gift: '赠品',
             giftSearch: '积分商城商品',
