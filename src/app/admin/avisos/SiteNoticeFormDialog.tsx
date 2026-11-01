@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useTotpEnrollmentGate } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
 import { TotpEnrollmentDialog } from '@/components/admin/TotpEnrollmentDialog';
@@ -11,17 +11,28 @@ import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { useTranslation } from '@/i18n/LanguageProvider';
-import type { SiteNotice, SiteNoticeFrequency } from '@/types/api';
+import { api, uploadToPresignedUrl } from '@/services/api';
+import type { PresignedUpload, SiteNotice, SiteNoticeFrequency } from '@/types/api';
 import { fromDateTimeLocal, toDateTimeLocal } from '../cupons/coupon-format';
 
 const FORM_ID = 'site-notice-form';
 
+/** Os mesmos limites do backend: arte pronta, sem SVG e sem conversão. */
+const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
+type ContentKind = 'TEXT' | 'IMAGE';
+
 /** O corpo que o backend espera; `null` limpa um campo opcional na edição. */
 export interface SiteNoticeFormValues {
     title: string;
-    body: string;
+    /** Aviso é texto **ou** imagem: o lado que não vale vai como `null`. */
+    body: string | null;
     ctaLabel: string | null;
     ctaUrl: string | null;
+    imageKey: string | null;
+    imageAlt: string | null;
+    imageLinkUrl: string | null;
     displayFrequency: SiteNoticeFrequency;
     isActive: boolean;
     startsAt: string | null;
@@ -88,16 +99,70 @@ function SiteNoticeForm({
     const [body, setBody] = useState(notice?.body ?? '');
     const [ctaLabel, setCtaLabel] = useState(notice?.ctaLabel ?? '');
     const [ctaUrl, setCtaUrl] = useState(notice?.ctaUrl ?? '');
+    const [kind, setKind] = useState<ContentKind>(notice?.imageKey ? 'IMAGE' : 'TEXT');
+    const [imageKey, setImageKey] = useState(notice?.imageKey ?? null);
+    const [imagePreviewUrl, setImagePreviewUrl] = useState(notice?.image?.url ?? null);
+    const [imageAlt, setImageAlt] = useState(notice?.image?.alt ?? '');
+    const [imageLinkUrl, setImageLinkUrl] = useState(notice?.image?.linkUrl ?? '');
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [frequency, setFrequency] = useState<SiteNoticeFrequency>(notice?.displayFrequency ?? 'ONCE');
     const [isActive, setIsActive] = useState(notice?.isActive ?? true);
     const [error, setError] = useState<string>();
 
+    // A prévia local é um `blob:`; solta a memória ao trocar de arquivo ou fechar.
+    useEffect(() => {
+        if (!imagePreviewUrl?.startsWith('blob:')) return;
+        return () => URL.revokeObjectURL(imagePreviewUrl);
+    }, [imagePreviewUrl]);
+
+    /**
+     * Envia na hora da escolha, direto para o storage. O arquivo só chega ao
+     * site quando o aviso é salvo (com TOTP); até lá é só um rascunho.
+     */
+    async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        if (!IMAGE_MIME_TYPES.includes(file.type)) {
+            setError(t('siteNotices.form.imageUnsupported'));
+            return;
+        }
+        if (file.size > IMAGE_MAX_BYTES) {
+            setError(t('siteNotices.form.imageTooLarge'));
+            return;
+        }
+        setUploading(true);
+        onSubmittingChange(true);
+        setError(undefined);
+        try {
+            const presigned = await api<PresignedUpload>('/site-notices/image/upload-url', {
+                method: 'POST',
+                body: JSON.stringify({ mimeType: file.type, sizeBytes: file.size }),
+            });
+            const response = await uploadToPresignedUrl(presigned, file);
+            if (!response.ok) throw new Error(t('siteNotices.form.imageUploadFailed'));
+            setImageKey(presigned.key);
+            setImagePreviewUrl(URL.createObjectURL(file));
+        } catch (err) {
+            setError(err instanceof Error ? err.message : t('siteNotices.form.imageUploadFailed'));
+        } finally {
+            setUploading(false);
+            onSubmittingChange(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    }
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
-        const label = ctaLabel.trim();
-        const url = ctaUrl.trim();
+        const isImage = kind === 'IMAGE';
+        const label = isImage ? '' : ctaLabel.trim();
+        const url = isImage ? '' : ctaUrl.trim();
 
+        if (isImage && !imageKey) {
+            setError(t('siteNotices.form.imageRequired'));
+            return;
+        }
         if (Boolean(label) !== Boolean(url)) {
             setError(t('siteNotices.form.ctaPairRequired'));
             return;
@@ -108,9 +173,12 @@ function SiteNoticeForm({
         try {
             await onSubmit({
                 title: title.trim(),
-                body: body.trim(),
+                body: isImage ? null : body.trim(),
                 ctaLabel: label || null,
                 ctaUrl: url || null,
+                imageKey: isImage ? imageKey : null,
+                imageAlt: isImage ? imageAlt.trim() : null,
+                imageLinkUrl: isImage ? imageLinkUrl.trim() || null : null,
                 displayFrequency: frequency,
                 isActive,
                 startsAt: fromDateTimeLocal(String(data.get('startsAt') ?? '')),
@@ -136,32 +204,94 @@ function SiteNoticeForm({
                     required
                     value={title}
                 />
-                <Textarea
+                <Select
                     fieldClassName="sm:col-span-2"
-                    hint={t('siteNotices.form.bodyHint')}
-                    label={t('siteNotices.form.body')}
-                    maxLength={2000}
-                    onChange={(event) => setBody(event.target.value)}
-                    required
-                    rows={5}
-                    value={body}
+                    hint={t(`siteNotices.form.contentHints.${kind}`)}
+                    label={t('siteNotices.form.content')}
+                    onChange={(event) => setKind(event.target.value as ContentKind)}
+                    options={[
+                        { value: 'TEXT', label: t('siteNotices.form.contentKinds.TEXT') },
+                        { value: 'IMAGE', label: t('siteNotices.form.contentKinds.IMAGE') },
+                    ]}
+                    value={kind}
                 />
 
-                <Input
-                    hint={t('siteNotices.form.ctaLabelHint')}
-                    label={t('siteNotices.form.ctaLabel')}
-                    maxLength={40}
-                    onChange={(event) => setCtaLabel(event.target.value)}
-                    value={ctaLabel}
-                />
-                <Input
-                    hint={t('siteNotices.form.ctaUrlHint')}
-                    label={t('siteNotices.form.ctaUrl')}
-                    maxLength={500}
-                    onChange={(event) => setCtaUrl(event.target.value)}
-                    placeholder="/loja"
-                    value={ctaUrl}
-                />
+                {kind === 'TEXT' ? (
+                    <>
+                        <Textarea
+                            fieldClassName="sm:col-span-2"
+                            hint={t('siteNotices.form.bodyHint')}
+                            label={t('siteNotices.form.body')}
+                            maxLength={2000}
+                            onChange={(event) => setBody(event.target.value)}
+                            required
+                            rows={5}
+                            value={body}
+                        />
+
+                        <Input
+                            hint={t('siteNotices.form.ctaLabelHint')}
+                            label={t('siteNotices.form.ctaLabel')}
+                            maxLength={40}
+                            onChange={(event) => setCtaLabel(event.target.value)}
+                            value={ctaLabel}
+                        />
+                        <Input
+                            hint={t('siteNotices.form.ctaUrlHint')}
+                            label={t('siteNotices.form.ctaUrl')}
+                            maxLength={500}
+                            onChange={(event) => setCtaUrl(event.target.value)}
+                            placeholder="/loja"
+                            value={ctaUrl}
+                        />
+                    </>
+                ) : (
+                    <>
+                        <div className="grid gap-2 sm:col-span-2">
+                            <span className="text-sm font-semibold text-ink dark:text-night-text">
+                                {t('siteNotices.form.image')}
+                            </span>
+                            <input
+                                accept={IMAGE_MIME_TYPES.join(',')}
+                                className="sr-only"
+                                onChange={handleImageChange}
+                                ref={fileInputRef}
+                                type="file"
+                            />
+                            <div className="flex flex-wrap items-center gap-3">
+                                <Button
+                                    loading={uploading}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    type="button"
+                                    variant="secondary"
+                                >
+                                    {imageKey ? t('siteNotices.form.imageReplace') : t('siteNotices.form.imageChoose')}
+                                </Button>
+                                <span className="text-xs text-muted dark:text-night-muted">
+                                    {t('siteNotices.form.imageHint')}
+                                </span>
+                            </div>
+                        </div>
+                        <Input
+                            fieldClassName="sm:col-span-2"
+                            hint={t('siteNotices.form.imageAltHint')}
+                            label={t('siteNotices.form.imageAlt')}
+                            maxLength={300}
+                            onChange={(event) => setImageAlt(event.target.value)}
+                            required
+                            value={imageAlt}
+                        />
+                        <Input
+                            fieldClassName="sm:col-span-2"
+                            hint={t('siteNotices.form.imageLinkUrlHint')}
+                            label={t('siteNotices.form.imageLinkUrl')}
+                            maxLength={500}
+                            onChange={(event) => setImageLinkUrl(event.target.value)}
+                            placeholder="/loja"
+                            value={imageLinkUrl}
+                        />
+                    </>
+                )}
 
                 <Select
                     fieldClassName="sm:col-span-2"
@@ -214,7 +344,11 @@ function SiteNoticeForm({
                 )}
             </form>
 
-            <Preview body={body} ctaLabel={ctaLabel.trim()} title={title} />
+            {kind === 'IMAGE' ? (
+                <ImagePreview alt={imageAlt} url={imagePreviewUrl} />
+            ) : (
+                <Preview body={body} ctaLabel={ctaLabel.trim()} title={title} />
+            )}
         </div>
     );
 }
@@ -245,6 +379,32 @@ function Preview({ title, body, ctaLabel }: { title: string; body: string; ctaLa
                     )}
                 </div>
             </div>
+        </aside>
+    );
+}
+
+/** Como o site mostra: só a imagem, sem título, texto nem botões. */
+function ImagePreview({ url, alt }: { url: string | null; alt: string }) {
+    const { t } = useTranslation();
+    return (
+        <aside aria-label={t('siteNotices.form.preview')} className="grid content-start gap-2">
+            <span className="text-xs font-semibold text-muted dark:text-night-muted">
+                {t('siteNotices.form.preview')}
+            </span>
+            {url ? (
+                // Prévia de arquivo local (`blob:`) ou do bucket público: o
+                // otimizador do Next não serve nenhum dos dois.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                    alt={alt}
+                    className="block h-auto w-full rounded-lg border border-line shadow-sm dark:border-night-line"
+                    src={url}
+                />
+            ) : (
+                <div className="grid aspect-[4/5] place-items-center rounded-lg border border-dashed border-line p-5 text-center text-sm text-muted dark:border-night-line dark:text-night-muted">
+                    {t('siteNotices.form.previewImage')}
+                </div>
+            )}
         </aside>
     );
 }
