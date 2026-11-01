@@ -109,7 +109,7 @@ export function SiteNoticesListPage() {
                         {notice.title}
                     </button>
                     <span className="mt-0.5 line-clamp-2 block max-w-xl text-xs text-muted dark:text-night-muted">
-                        {notice.body}
+                        {notice.body ?? t('siteNotices.imageOnly', { alt: notice.image?.alt ?? '' })}
                     </span>
                 </span>
             ),

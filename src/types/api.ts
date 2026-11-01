@@ -1175,10 +1175,15 @@ export interface AdminCoinSummary {
 export interface SiteNotice {
     id: string;
     title: string;
-    body: string;
+    /** Nulo no aviso só com imagem. */
+    body: string | null;
     /** Rótulo e destino do botão vêm juntos ou nenhum dos dois. */
     ctaLabel: string | null;
     ctaUrl: string | null;
+    /** Aviso só com imagem: o site mostra a arte e nada mais. */
+    image: SiteNoticeImage | null;
+    /** Chave da imagem no storage; volta no salvar para manter a arte. */
+    imageKey: string | null;
     displayFrequency: SiteNoticeFrequency;
     revision: string;
     isActive: boolean;
@@ -1192,6 +1197,13 @@ export interface SiteNotice {
 }
 
 export type SiteNoticeFrequency = 'ONCE' | 'EVERY_VISIT';
+
+export interface SiteNoticeImage {
+    url: string;
+    alt: string;
+    /** Destino ao clicar; mesmas regras do destino do botão. */
+    linkUrl: string | null;
+}
 
 /**
  * `LIVE` é o que o site mostra agora. `OVERRIDDEN` está ativo e dentro da
