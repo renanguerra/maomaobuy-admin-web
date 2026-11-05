@@ -48,7 +48,7 @@ const TEMPLATE = [
 
 type Outcome =
     | { status: 'pending' }
-    | { status: 'success'; productId: string; imagesTotal: number; imagesImported: number }
+    | { status: 'success'; productId: string; imagesTotal: number; imagesImported: number; publishFailed?: boolean }
     | { status: 'error'; message: string };
 
 function downloadJson(filename: string, data: unknown) {
@@ -67,8 +67,9 @@ function downloadJson(filename: string, data: unknown) {
  * que categorias/subcategorias são referenciadas por slug, não por UUID, já
  * que ninguém escreve um JSON à mão sabendo o ID de uma categoria.
  *
- * Produtos entram sempre como rascunho — sem mídia no lote, publicar de
- * primeira deixaria itens sem foto na loja.
+ * Produtos são criados como rascunho; os marcados com `isPublished` no
+ * arquivo só são publicados depois que as fotos sobem, para não aparecerem
+ * sem foto na loja durante a importação.
  */
 export function BulkImportProductsPage() {
     const { t } = useTranslation();
@@ -128,7 +129,7 @@ export function BulkImportProductsPage() {
 
         for (const row of pending) {
             if (!row.result.ok) continue;
-            const { product, images = [] } = row.result.payload;
+            const { product, images = [], publish } = row.result.payload;
             try {
                 const created = await api<AdminProduct>('/products', {
                     method: 'POST',
@@ -157,6 +158,21 @@ export function BulkImportProductsPage() {
                         // foi criado; o admin sobe a foto manualmente depois.
                     }
                     setOutcomes((current) => ({ ...current, [row.index]: { ...current[row.index], imagesImported } }));
+                }
+
+                if (publish) {
+                    try {
+                        await api(`/products/${created.id}`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({ isPublished: true }),
+                        });
+                    } catch {
+                        // O produto já existe; fica como rascunho e o admin publica depois.
+                        setOutcomes((current) => ({
+                            ...current,
+                            [row.index]: { ...current[row.index], publishFailed: true },
+                        }));
+                    }
                 }
             } catch (err) {
                 setOutcomes((current) => ({
@@ -236,6 +252,11 @@ export function BulkImportProductsPage() {
                                         imported: outcome.imagesImported,
                                         total: outcome.imagesTotal,
                                     })}
+                                </span>
+                            )}
+                            {outcome.publishFailed && (
+                                <span className="text-xs text-muted dark:text-night-muted">
+                                    {t('products.bulkImport.publishFailedStatus')}
                                 </span>
                             )}
                             <Link
