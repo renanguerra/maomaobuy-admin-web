@@ -29,6 +29,7 @@ import { PackageCostSheetDialog } from '@/components/admin/CostSheets';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { CarrierQuoteDialog, CarrierShipmentSection } from '@/components/admin/CarrierShipments';
 import { Alert } from '@/components/admin/Alert';
+import { CommercialInvoiceDialog } from '@/components/admin/CommercialInvoice';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
 import { MediaGrid, MediaTile } from '@/components/admin/MediaGrid';
@@ -174,6 +175,7 @@ export function PackageDetailPage() {
     }>();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const attachmentInputRef = useRef<HTMLInputElement>(null);
+    const [invoiceOpen, setInvoiceOpen] = useState(false);
 
     const load = useCallback(() => {
         api<AdminPackage>(`/packages/${params.id}`)
@@ -855,6 +857,14 @@ export function PackageDetailPage() {
                         />
                     )}
 
+                    {invoiceOpen && (
+                        <CommercialInvoiceDialog
+                            onAttach={(file) => uploadAttachments([file])}
+                            onClose={() => setInvoiceOpen(false)}
+                            pkg={pkg}
+                        />
+                    )}
+
                     <SectionCard
                         description={t('packages.detail.attachmentsSection.description')}
                         flush={pkg.attachments.length > 0}
@@ -873,6 +883,15 @@ export function PackageDetailPage() {
                                     ref={attachmentInputRef}
                                     type="file"
                                 />
+                                <Button
+                                    leadingIcon={<FileText className="h-4 w-4" aria-hidden="true" />}
+                                    onClick={() => setInvoiceOpen(true)}
+                                    size="small"
+                                    type="button"
+                                    variant="secondary"
+                                >
+                                    {t('packages.detail.invoice.openButton')}
+                                </Button>
                                 <Button
                                     leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
                                     loading={attaching}

@@ -729,8 +729,11 @@ export function packageStatusLabel(status: string) {
 export interface AddressSnapshot {
     recipientFullName: string;
     phoneE164: string;
-    /** CPF em dígitos; nulo nos pacotes montados antes do campo existir. */
+    /** CPF em dígitos ou, no pacote de lojista, o CNPJ; nulo nos pacotes montados antes do campo existir. */
     recipientTaxId?: string | null;
+    recipientTaxIdType?: 'CPF' | 'CNPJ';
+    /** Razão social, só no pacote de lojista. */
+    recipientCompanyName?: string | null;
     countryCode: string;
     postalCode: string;
     administrativeArea: string;
