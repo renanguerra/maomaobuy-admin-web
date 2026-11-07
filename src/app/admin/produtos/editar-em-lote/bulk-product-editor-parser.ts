@@ -1,8 +1,12 @@
 import type { AdminCategory } from '@/types/api';
 import { slugify } from '../../categorias/slugify';
 import {
+    assertWholesaleCategoryRules,
+    inWholesaleOnlyCategory,
     resolveCategories,
     resolveChinaExclusive,
+    resolveSalesChannel,
+    type SalesChannelFields,
     toAmountMinor,
     toInt,
     toNonEmptyString,
@@ -23,7 +27,7 @@ export interface BulkEditVariantInput {
 }
 
 /** Corpo aceito por `PATCH /products/:id` — mesmo formato de `toProductPayload`, mais o `id` do produto a editar. */
-export interface BulkEditProductBody {
+export interface BulkEditProductBody extends Partial<SalesChannelFields> {
     id: string;
     name: string;
     slug: string;
@@ -122,6 +126,13 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
     if (onDemandLeadDays !== undefined && onDemandLeadDays > 60)
         throw new Error('Campo "onDemandLeadDays" precisa ficar entre 1 e 60.');
 
+    // Sem canal no arquivo, o canal e os termos gravados não mudam.
+    const channel = record.salesChannel === undefined ? undefined : resolveSalesChannel(record, 'RETAIL_ONLY');
+    const taxonomy = resolveCategories(record.categories, categories);
+    const weightGrams = toOptionalInt(record.weightGrams, 'weightGrams', 1);
+    if (inWholesaleOnlyCategory(taxonomy.categoryIds, categories))
+        assertWholesaleCategoryRules(channel?.salesChannel, weightGrams);
+
     return {
         id,
         name,
@@ -134,7 +145,7 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
         ),
         costAmountMinor: toNullableAmountMinor(record.costAmountMinor, 'costAmountMinor'),
         stock: toInt(record.stock, 'stock', 0),
-        weightGrams: toOptionalInt(record.weightGrams, 'weightGrams', 1),
+        weightGrams,
         lengthMm: toOptionalInt(record.lengthMm, 'lengthMm', 1),
         widthMm: toOptionalInt(record.widthMm, 'widthMm', 1),
         heightMm: toOptionalInt(record.heightMm, 'heightMm', 1),
@@ -144,7 +155,8 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
         releaseDate,
         isOnDemand,
         onDemandLeadDays,
-        ...resolveCategories(record.categories, categories),
+        ...channel,
+        ...taxonomy,
         variants: resolveEditVariants(record.variants),
     };
 }

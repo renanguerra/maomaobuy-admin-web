@@ -461,7 +461,7 @@ export const ptBR = {
             schemaHelp: {
                 title: 'Formato esperado',
                 description:
-                    'Cada produto aceita os mesmos campos do formulário de novo produto. Categorias e subcategorias são referenciadas pelo slug, não pelo ID. O campo opcional "images" aceita URLs https de fotos — elas são baixadas e enviadas ao nosso armazenamento automaticamente. Produtos são sempre criados como rascunho — publicar continua sendo feito produto a produto depois da importação.',
+                    'Cada produto aceita os mesmos campos do formulário de novo produto. Categorias e subcategorias são referenciadas pelo slug, não pelo ID. O campo opcional "images" aceita URLs https de fotos — elas são baixadas e enviadas ao nosso armazenamento automaticamente. Produtos são sempre criados como rascunho — publicar continua sendo feito produto a produto depois da importação. Para PJ, use "salesChannel" (RETAIL_ONLY, WHOLESALE_ONLY ou BOTH), "wholesaleAmountMinor", "wholesaleMinQuantity" (só em BOTH) e "unitsPerPackage". Produto na categoria "caixa-master" entra como WHOLESALE_ONLY quando o canal não é informado e precisa de "weightGrams".',
             },
             previewTitle: 'Produtos encontrados',
             previewCaption: 'Lista de produtos do arquivo',
@@ -501,7 +501,7 @@ export const ptBR = {
             schemaHelp: {
                 title: 'Como funciona',
                 description:
-                    'Cada produto do arquivo aceita os mesmos campos do formulário de edição, mais o "id" (não remova — é ele que diz qual produto atualizar). Categorias e subcategorias são referenciadas pelo slug, como na importação. Variações omitidas do arquivo não são alteradas; para mudar uma existente, mantenha o "externalId" e edite os outros campos; para criar uma nova, use um "externalId" novo; para remover uma existente, envie só { "externalId": "...", "remove": true }. Mídia (fotos) não faz parte deste editor — continue trocando produto a produto.',
+                    'Cada produto do arquivo aceita os mesmos campos do formulário de edição, mais o "id" (não remova — é ele que diz qual produto atualizar). Categorias e subcategorias são referenciadas pelo slug, como na importação. Variações omitidas do arquivo não são alteradas; para mudar uma existente, mantenha o "externalId" e edite os outros campos; para criar uma nova, use um "externalId" novo; para remover uma existente, envie só { "externalId": "...", "remove": true }. Sem "salesChannel" no arquivo, o canal e os termos de atacado gravados não mudam. Mídia (fotos) não faz parte deste editor — continue trocando produto a produto.',
             },
             uploadButton: 'Selecionar arquivo JSON',
             textareaLabel: 'JSON dos produtos editados',
@@ -765,7 +765,11 @@ export const ptBR = {
             slugPlaceholder: 'roupas',
             slugHint: 'Usado na URL pública. Gerado automaticamente a partir do nome.',
             submitButton: 'Criar categoria',
+            wholesaleOnlyLabel: 'Exibir só para PJ',
+            wholesaleOnlyHint:
+                'A categoria aparece só na vitrine de atacado. Onde cada produto aparece continua definido pelo canal de venda dele.',
         },
+        wholesaleOnlyBadge: 'Só PJ',
         deleteCategoryConfirm: 'Remover esta categoria e suas subcategorias?',
         deleteSubcategoryConfirm: 'Remover esta subcategoria?',
         subcategories: {
@@ -1312,6 +1316,31 @@ export const ptBR = {
                 removeWholeLine: 'O item sai inteiro do pacote.',
                 decreaseAria: 'Diminuir quantidade',
                 increaseAria: 'Aumentar quantidade',
+            },
+            declarationSection: {
+                title: 'Envio PJ',
+                description: 'Envio por FedEx ou DHL. Escolha a transportadora ao cotar o frete.',
+                modeLabel: 'Declaração',
+                modeFull: 'Declaração total',
+                modeCustom: 'Declaração personalizada',
+                customText: 'Como o cliente quer declarar',
+                riskAccepted: 'Custos de bloqueio aceitos em',
+            },
+            attachmentsSection: {
+                title: 'Anexos',
+                description: 'PDFs e documentos do pacote. O cliente vê e baixa pela página do pacote.',
+                uploadButton: 'Anexar documento',
+                uploadingButton: 'Enviando…',
+                empty: 'Nenhum documento anexado.',
+                uploadFailed: 'Falha ao enviar o documento para o armazenamento.',
+                unsupported: 'Esse tipo de arquivo não pode ser anexado. Use PDF, Word, Excel, CSV, TXT ou XML.',
+                uploadedToast: 'Documento anexado.',
+                removeTitle: 'Remover anexo',
+                removeConfirm: 'Remover “{name}”? O cliente deixa de ver o documento.',
+                removedToast: 'Anexo removido.',
+                removeAria: 'Remover {name}',
+                sizeKilobytes: '{size} KB',
+                sizeMegabytes: '{size} MB',
             },
             photosSection: {
                 title: 'Fotos',

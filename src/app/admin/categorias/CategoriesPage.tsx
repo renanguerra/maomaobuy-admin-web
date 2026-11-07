@@ -177,7 +177,11 @@ export function CategoriesPage() {
                 <div className="grid gap-4">
                     {categories.map((category) => (
                         <SectionCard
-                            description={`/${category.slug}`}
+                            description={
+                                category.wholesaleOnly
+                                    ? `/${category.slug} · ${t('categories.wholesaleOnlyBadge')}`
+                                    : `/${category.slug}`
+                            }
                             flush
                             key={category.id}
                             title={category.name}
@@ -270,6 +274,7 @@ export function CategoriesPage() {
                 onSubmit={submitDialog}
                 open={dialog !== null}
                 title={dialogTitle}
+                showWholesaleOnly={dialog?.kind === 'create-category' || dialog?.kind === 'edit-category'}
                 description={
                     dialog?.kind === 'create-category' || dialog?.kind === 'edit-category'
                         ? t('categories.newCategory.description')
@@ -282,7 +287,11 @@ export function CategoriesPage() {
                 }
                 initialValues={
                     dialog?.kind === 'edit-category'
-                        ? { name: dialog.category.name, slug: dialog.category.slug }
+                        ? {
+                              name: dialog.category.name,
+                              slug: dialog.category.slug,
+                              wholesaleOnly: dialog.category.wholesaleOnly,
+                          }
                         : dialog?.kind === 'edit-subcategory'
                           ? { name: dialog.subcategory.name, slug: dialog.subcategory.slug }
                           : undefined

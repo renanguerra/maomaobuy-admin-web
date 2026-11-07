@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { Alert } from '@/components/admin/Alert';
 import { Button } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui/Checkbox';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { useTranslation } from '@/i18n/LanguageProvider';
@@ -13,6 +14,8 @@ const FORM_ID = 'category-form';
 export interface CategoryFormValues {
     name: string;
     slug: string;
+    /** Só categoria: subcategoria segue a visibilidade da categoria. */
+    wholesaleOnly?: boolean;
 }
 
 interface CategoryFormDialogProps {
@@ -21,6 +24,7 @@ interface CategoryFormDialogProps {
     description?: string;
     submitLabel: string;
     initialValues?: CategoryFormValues;
+    showWholesaleOnly?: boolean;
     onClose: () => void;
     onSubmit: (values: CategoryFormValues) => Promise<void>;
 }
@@ -36,6 +40,7 @@ export function CategoryFormDialog({
     description,
     submitLabel,
     initialValues,
+    showWholesaleOnly = false,
     onClose,
     onSubmit,
 }: CategoryFormDialogProps) {
@@ -62,7 +67,12 @@ export function CategoryFormDialog({
         >
             {/* Montado só enquanto aberto, para que criar depois de editar não
                 herde o nome e o slug do registro anterior. */}
-            <CategoryForm initialValues={initialValues} onSubmit={onSubmit} onSubmittingChange={setSubmitting} />
+            <CategoryForm
+                initialValues={initialValues}
+                onSubmit={onSubmit}
+                onSubmittingChange={setSubmitting}
+                showWholesaleOnly={showWholesaleOnly}
+            />
         </Modal>
     );
 }
@@ -71,8 +81,10 @@ function CategoryForm({
     initialValues,
     onSubmit,
     onSubmittingChange,
+    showWholesaleOnly,
 }: {
     initialValues?: CategoryFormValues;
+    showWholesaleOnly: boolean;
     onSubmit: (values: CategoryFormValues) => Promise<void>;
     onSubmittingChange: (submitting: boolean) => void;
 }) {
@@ -80,6 +92,7 @@ function CategoryForm({
     const [name, setName] = useState(initialValues?.name ?? '');
     const [slug, setSlug] = useState(initialValues?.slug ?? '');
     const [slugTouched, setSlugTouched] = useState(Boolean(initialValues));
+    const [wholesaleOnly, setWholesaleOnly] = useState(initialValues?.wholesaleOnly ?? false);
     const [error, setError] = useState<string>();
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -87,7 +100,7 @@ function CategoryForm({
         onSubmittingChange(true);
         setError(undefined);
         try {
-            await onSubmit({ name: name.trim(), slug });
+            await onSubmit({ name: name.trim(), slug, ...(showWholesaleOnly && { wholesaleOnly }) });
         } catch (err) {
             setError(err instanceof Error ? err.message : t('categories.actionError'));
         } finally {
@@ -120,6 +133,14 @@ function CategoryForm({
                 required
                 value={slug}
             />
+            {showWholesaleOnly && (
+                <Checkbox
+                    checked={wholesaleOnly}
+                    description={t('categories.newCategory.wholesaleOnlyHint')}
+                    label={t('categories.newCategory.wholesaleOnlyLabel')}
+                    onChange={(event) => setWholesaleOnly(event.target.checked)}
+                />
+            )}
 
             {error && (
                 <Alert tone="danger">

@@ -7,11 +7,13 @@ import {
     ArrowUpRight,
     CheckCircle2,
     ClipboardList,
+    FileText,
     Images,
     ListRestart,
     MessageSquare,
     OctagonAlert,
     Package as PackageIcon,
+    Paperclip,
     Pencil,
     Plus,
     Ruler,
@@ -52,6 +54,7 @@ import {
     packageStatusLabel,
     totalUnits,
     type AdminPackage,
+    type AdminPackageAttachment,
     type AdminPackageItem,
     type PresignedUpload,
 } from '@/types/api';
@@ -73,6 +76,26 @@ type DialogKind =
     | null;
 
 /** Situações finais do pacote — nada mais é anexado depois delas. */
+/** Tipos aceitos pela API; alguns sistemas não informam o MIME de `.doc` e `.csv`. */
+const ATTACHMENT_MIME_BY_EXTENSION: Record<string, string> = {
+    pdf: 'application/pdf',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    csv: 'text/csv',
+    txt: 'text/plain',
+    xml: 'application/xml',
+};
+const ATTACHMENT_ACCEPT = Object.keys(ATTACHMENT_MIME_BY_EXTENSION)
+    .map((extension) => `.${extension}`)
+    .join(',');
+
+function attachmentMimeType(file: File): string | undefined {
+    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+    return ATTACHMENT_MIME_BY_EXTENSION[extension];
+}
+
 const CLOSED_STATUSES = ['DELIVERED', 'RETURNED', 'SHIPPING_FAILED', 'CANCELLED'];
 
 /**
@@ -140,6 +163,7 @@ export function PackageDetailPage() {
     const [removingItem, setRemovingItem] = useState<AdminPackageItem>();
     const [busy, setBusy] = useState<string>();
     const [uploading, setUploading] = useState(false);
+    const [attaching, setAttaching] = useState(false);
     // Linha e custo escolhidos na cotação Westlink: preenchem a cotação do
     // pacote e, depois do pagamento, a linha do envio.
     const [hasCarrierShipment, setHasCarrierShipment] = useState(false);
@@ -149,6 +173,7 @@ export function PackageDetailPage() {
         channelCode: string;
     }>();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const attachmentInputRef = useRef<HTMLInputElement>(null);
 
     const load = useCallback(() => {
         api<AdminPackage>(`/packages/${params.id}`)
@@ -345,6 +370,63 @@ export function PackageDetailPage() {
         }
     }
 
+    async function uploadAttachments(files: File[]) {
+        setAttaching(true);
+        try {
+            let updated: AdminPackage | undefined;
+            for (const file of files) {
+                const mimeType = attachmentMimeType(file);
+                if (!mimeType) throw new Error(t('packages.detail.attachmentsSection.unsupported'));
+                const presigned = await api<PresignedUpload>(`/packages/${params.id}/attachments/upload-url`, {
+                    method: 'POST',
+                    body: JSON.stringify({ mimeType, sizeBytes: file.size }),
+                });
+                const typed = new File([file], file.name, { type: mimeType });
+                const uploadResponse = await uploadToPresignedUrl(presigned, typed);
+                if (!uploadResponse.ok) throw new Error(t('packages.detail.attachmentsSection.uploadFailed'));
+                updated = await api<AdminPackage>(`/packages/${params.id}/attachments`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        key: presigned.key,
+                        fileName: file.name,
+                        mimeType,
+                        sizeBytes: file.size,
+                    }),
+                });
+            }
+            if (updated) setPkg(updated);
+            notify({ tone: 'success', title: t('packages.detail.attachmentsSection.uploadedToast') });
+        } catch (err) {
+            reportError(err);
+        } finally {
+            setAttaching(false);
+            if (attachmentInputRef.current) attachmentInputRef.current.value = '';
+        }
+    }
+
+    async function removeAttachment(attachment: AdminPackageAttachment) {
+        const confirmed = await confirm({
+            title: t('packages.detail.attachmentsSection.removeTitle'),
+            description: t('packages.detail.attachmentsSection.removeConfirm', { name: attachment.fileName }),
+            confirmLabel: t('common.actions.remove'),
+            tone: 'danger',
+        });
+        if (!confirmed) return;
+
+        setBusy(`remove-attachment:${attachment.id}`);
+        try {
+            const updated = await api<AdminPackage>(`/packages/${params.id}/attachments/${attachment.id}`, {
+                method: 'DELETE',
+            });
+            setPkg(updated);
+            notify({ tone: 'success', title: t('packages.detail.attachmentsSection.removedToast') });
+        } catch (err) {
+            reportError(err);
+        } finally {
+            setBusy(undefined);
+        }
+    }
+
     if (error) {
         return (
             <div className="grid gap-6">
@@ -457,7 +539,11 @@ export function PackageDetailPage() {
                     tone="danger"
                     title={t('packages.detail.replacement.replacedTitle')}
                     action={
-                        <ButtonLink href={`/admin/pacotes/${pkg.replacedByPackage.id}`} size="small" variant="secondary">
+                        <ButtonLink
+                            href={`/admin/pacotes/${pkg.replacedByPackage.id}`}
+                            size="small"
+                            variant="secondary"
+                        >
                             {t('packages.detail.replacement.open', { code: pkg.replacedByPackage.packageCode })}
                         </ButtonLink>
                     }
@@ -720,6 +806,42 @@ export function PackageDetailPage() {
                         )}
                     </SectionCard>
 
+                    {pkg.declaration && (
+                        <SectionCard
+                            description={t('packages.detail.declarationSection.description')}
+                            icon={<FileText aria-hidden="true" />}
+                            title={t('packages.detail.declarationSection.title')}
+                        >
+                            <SummaryList
+                                rows={[
+                                    {
+                                        label: t('packages.detail.declarationSection.modeLabel'),
+                                        value:
+                                            pkg.declaration.mode === 'CUSTOM'
+                                                ? t('packages.detail.declarationSection.modeCustom')
+                                                : t('packages.detail.declarationSection.modeFull'),
+                                    },
+                                    ...(pkg.declaration.description
+                                        ? [
+                                              {
+                                                  label: t('packages.detail.declarationSection.customText'),
+                                                  value: pkg.declaration.description,
+                                              },
+                                          ]
+                                        : []),
+                                    ...(pkg.declaration.riskAcceptedAt
+                                        ? [
+                                              {
+                                                  label: t('packages.detail.declarationSection.riskAccepted'),
+                                                  value: formatDate(pkg.declaration.riskAcceptedAt),
+                                              },
+                                          ]
+                                        : []),
+                                ]}
+                            />
+                        </SectionCard>
+                    )}
+
                     {(pkg.status === 'READY_FOR_DISPATCH' || pkg.shippedAt) && (
                         <CarrierShipmentSection
                             onPackageChanged={(updated) => {
@@ -732,6 +854,82 @@ export function PackageDetailPage() {
                             preferredChannelCode={carrierSelection?.channelCode}
                         />
                     )}
+
+                    <SectionCard
+                        description={t('packages.detail.attachmentsSection.description')}
+                        flush={pkg.attachments.length > 0}
+                        icon={<Paperclip aria-hidden="true" />}
+                        title={t('packages.detail.attachmentsSection.title')}
+                        action={
+                            <>
+                                <input
+                                    accept={ATTACHMENT_ACCEPT}
+                                    className="sr-only"
+                                    multiple
+                                    onChange={(event) => {
+                                        const files = Array.from(event.target.files ?? []);
+                                        if (files.length > 0) void uploadAttachments(files);
+                                    }}
+                                    ref={attachmentInputRef}
+                                    type="file"
+                                />
+                                <Button
+                                    leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
+                                    loading={attaching}
+                                    onClick={() => attachmentInputRef.current?.click()}
+                                    size="small"
+                                    type="button"
+                                    variant="secondary"
+                                >
+                                    {attaching
+                                        ? t('packages.detail.attachmentsSection.uploadingButton')
+                                        : t('packages.detail.attachmentsSection.uploadButton')}
+                                </Button>
+                            </>
+                        }
+                    >
+                        {pkg.attachments.length === 0 ? (
+                            <EmptyState icon={Paperclip} title={t('packages.detail.attachmentsSection.empty')} />
+                        ) : (
+                            <ListRows>
+                                {pkg.attachments.map((attachment) => (
+                                    <li key={attachment.id}>
+                                        <ListRow
+                                            leading={<FileText className="h-4 w-4" aria-hidden="true" />}
+                                            title={
+                                                <a className="hover:underline" href={attachment.url}>
+                                                    {attachment.fileName}
+                                                </a>
+                                            }
+                                            meta={
+                                                attachment.sizeBytes < 1024 * 1024
+                                                    ? t('packages.detail.attachmentsSection.sizeKilobytes', {
+                                                          size: Math.max(1, Math.round(attachment.sizeBytes / 1024)),
+                                                      })
+                                                    : t('packages.detail.attachmentsSection.sizeMegabytes', {
+                                                          size: (attachment.sizeBytes / (1024 * 1024)).toFixed(1),
+                                                      })
+                                            }
+                                            actions={
+                                                <Button
+                                                    aria-label={t('packages.detail.attachmentsSection.removeAria', {
+                                                        name: attachment.fileName,
+                                                    })}
+                                                    iconOnly
+                                                    loading={busy === `remove-attachment:${attachment.id}`}
+                                                    onClick={() => removeAttachment(attachment)}
+                                                    size="small"
+                                                    variant="dangerGhost"
+                                                >
+                                                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                                </Button>
+                                            }
+                                        />
+                                    </li>
+                                ))}
+                            </ListRows>
+                        )}
+                    </SectionCard>
 
                     <SectionCard
                         description={t('packages.detail.photosSection.description')}

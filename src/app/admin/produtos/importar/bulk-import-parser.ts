@@ -1,8 +1,11 @@
 import type { AdminCategory, ProductSalesChannel } from '@/types/api';
 import { slugify } from '../../categorias/slugify';
 import {
+    assertWholesaleCategoryRules,
+    inWholesaleOnlyCategory,
     resolveCategories,
     resolveChinaExclusive,
+    resolveSalesChannel,
     toAmountMinor,
     toInt,
     toNonEmptyString,
@@ -87,38 +90,6 @@ function resolveVariants(raw: unknown): BulkImportVariantInput[] | undefined {
     return variants.length > 0 ? variants : undefined;
 }
 
-const SALES_CHANNELS: readonly ProductSalesChannel[] = ['RETAIL_ONLY', 'WHOLESALE_ONLY', 'BOTH'];
-
-/**
- * Canal e termos de atacado, com as mesmas regras do backend: só varejo não
- * leva preço de atacado; só atacado é a caixa (sem mínimo); os dois canais
- * exigem o mínimo. Ausente = varejo.
- */
-function resolveSalesChannel(
-    record: Record<string, unknown>,
-): Pick<BulkImportProductBody, 'salesChannel' | 'wholesaleAmountMinor' | 'wholesaleMinQuantity' | 'unitsPerPackage'> {
-    const raw = record.salesChannel ?? 'RETAIL_ONLY';
-    if (typeof raw !== 'string' || !SALES_CHANNELS.includes(raw as ProductSalesChannel))
-        throw new Error('Campo "salesChannel" precisa ser RETAIL_ONLY, WHOLESALE_ONLY ou BOTH.');
-    const salesChannel = raw as ProductSalesChannel;
-    const unitsPerPackage = toOptionalInt(record.unitsPerPackage, 'unitsPerPackage', 1) ?? null;
-
-    if (salesChannel === 'RETAIL_ONLY')
-        return { salesChannel, wholesaleAmountMinor: null, wholesaleMinQuantity: null, unitsPerPackage };
-
-    const wholesaleAmountMinor = toOptionalAmountMinor(record.wholesaleAmountMinor, 'wholesaleAmountMinor');
-    if (!wholesaleAmountMinor || wholesaleAmountMinor === '0')
-        throw new Error('Produto vendido no atacado precisa de "wholesaleAmountMinor" maior que zero.');
-
-    if (salesChannel === 'WHOLESALE_ONLY')
-        return { salesChannel, wholesaleAmountMinor, wholesaleMinQuantity: null, unitsPerPackage };
-
-    const wholesaleMinQuantity = toOptionalInt(record.wholesaleMinQuantity, 'wholesaleMinQuantity', 1);
-    if (wholesaleMinQuantity === undefined)
-        throw new Error('Produto nos dois canais precisa de "wholesaleMinQuantity".');
-    return { salesChannel, wholesaleAmountMinor, wholesaleMinQuantity, unitsPerPackage };
-}
-
 function resolveImages(raw: unknown): string[] | undefined {
     if (raw === undefined || raw === null) return undefined;
     if (!Array.isArray(raw)) throw new Error('Campo "images" precisa ser uma lista de URLs.');
@@ -152,6 +123,13 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
     if (record.isPublished !== undefined && typeof record.isPublished !== 'boolean')
         throw new Error('Campo "isPublished" precisa ser true ou false.');
 
+    const taxonomy = resolveCategories(record.categories, categories);
+    const wholesaleCategory = inWholesaleOnlyCategory(taxonomy.categoryIds, categories);
+    // Sem canal no arquivo, item da Caixa Master não pode nascer no varejo.
+    const channel = resolveSalesChannel(record, wholesaleCategory ? 'WHOLESALE_ONLY' : 'RETAIL_ONLY');
+    const weightGrams = toOptionalInt(record.weightGrams, 'weightGrams', 1);
+    if (wholesaleCategory) assertWholesaleCategoryRules(channel.salesChannel, weightGrams);
+
     return {
         product: {
             name,
@@ -165,12 +143,12 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
             costAmountMinor: toNullableAmountMinor(record.costAmountMinor, 'costAmountMinor'),
             stock: toInt(record.stock, 'stock', 0),
             isChinaExclusive: isChinaExclusive ?? false,
-            weightGrams: toOptionalInt(record.weightGrams, 'weightGrams', 1),
+            weightGrams,
             lengthMm: toOptionalInt(record.lengthMm, 'lengthMm', 1),
             widthMm: toOptionalInt(record.widthMm, 'widthMm', 1),
             heightMm: toOptionalInt(record.heightMm, 'heightMm', 1),
-            ...resolveSalesChannel(record),
-            ...resolveCategories(record.categories, categories),
+            ...channel,
+            ...taxonomy,
             variants: resolveVariants(record.variants),
         },
         images: resolveImages(record.images),

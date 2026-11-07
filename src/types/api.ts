@@ -747,6 +747,21 @@ export interface AdminPackageItem {
     orderItem: AdminOrderItem;
 }
 
+export interface AdminPackageAttachment {
+    id: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    url: string;
+    createdAt: string;
+}
+
+export interface AdminPackageDeclaration {
+    mode: 'FULL' | 'CUSTOM';
+    description: string | null;
+    riskAcceptedAt: string | null;
+}
+
 export interface AdminPackage {
     id: string;
     packageCode: string;
@@ -785,6 +800,9 @@ export interface AdminPackage {
     photoUrls: string[];
     /** Chaves do bucket paralelas a `photoUrls` (mesmo índice) — usadas para remover uma foto. */
     photoKeys: string[];
+    attachments: AdminPackageAttachment[];
+    /** Só pacote de lojista; `null` no varejo e em pacote antigo. */
+    declaration: AdminPackageDeclaration | null;
     createdAt: string;
     /** Última alteração; a listagem ordena por ela. */
     updatedAt: string;
@@ -860,6 +878,7 @@ export interface AdminCategory {
     id: string;
     name: string;
     slug: string;
+    wholesaleOnly: boolean;
     subcategories: AdminSubcategory[];
 }
 
