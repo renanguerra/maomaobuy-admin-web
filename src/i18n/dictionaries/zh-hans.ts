@@ -194,6 +194,9 @@ export const zhHans: Messages = {
             reactivateButton: '恢复用户',
             requestPasswordResetButton: '申请重置密码',
             revokeWholesaleButton: '终止批发商账号',
+            internalAccount: '内部账号',
+            markInternalButton: '标记为内部账号',
+            unmarkInternalButton: '取消内部账号标记',
             wholesaleLink: '查看申请',
             fields: {
                 username: '用户名',
@@ -202,6 +205,9 @@ export const zhHans: Messages = {
                 notVerified: '未验证',
                 status: '状态',
                 accountType: '账号类型',
+                reports: '财务报表',
+                reportsIncluded: '计入报表',
+                reportsExcluded: '不计入报表',
                 createdAt: '创建时间',
                 id: 'ID',
                 passwordResetPendingSince: '自 {{date}} 起待处理',
@@ -301,6 +307,17 @@ export const zhHans: Messages = {
                     description: '用户将收到一封重置密码的邮件，在完成重置前无法登录，其当前登录会话也将全部失效。',
                     confirmLabel: '申请重置',
                 },
+                markInternal: {
+                    title: '标记为内部账号',
+                    description:
+                        '该账号在所有时段都不再计入成本与利润、明细表和充值合计。其充值、余额、流水和订单不变。',
+                    confirmLabel: '标记',
+                },
+                unmarkInternal: {
+                    title: '取消内部账号标记',
+                    description: '该账号在所有时段重新计入成本与利润、明细表和充值合计。',
+                    confirmLabel: '取消标记',
+                },
                 revokeWholesale: {
                     title: '终止批发商账号',
                     description: '账号立即恢复为零售。已付款的订单保持不变。客户会通过邮件收到原因。',
@@ -312,6 +329,8 @@ export const zhHans: Messages = {
                 reactivated: '用户已成功恢复。',
                 passwordResetRequested: '已申请重置密码，用户在完成重置前无法登录。',
                 wholesaleRevoked: '批发商账号已终止，客户已恢复为零售。',
+                markedInternal: '账号已标记为内部账号。',
+                unmarkedInternal: '账号已重新计入报表。',
             },
             accountSection: '账号信息',
         },
@@ -1554,7 +1573,7 @@ export const zhHans: Messages = {
     topUps: {
         kicker: '财务',
         title: '充值记录',
-        description: '余额充值历史：客户支付了多少、钱包到账多少以及处理结果。',
+        description: '余额充值历史：客户支付了多少、钱包到账多少以及处理结果。内部账号显示在列表中，但不计入合计。',
         sectionTitle: '历史记录',
         error: '无法加载充值记录。',
         loading: '正在加载充值记录…',
@@ -1566,6 +1585,7 @@ export const zhHans: Messages = {
         emptyDescription: 'Pix 充值、信用卡充值和手动入账都会显示在这里。',
         countUnit: '{{count}} 笔充值',
         manual: '手动',
+        internalAccount: '内部账号',
         cardUnderReview: '信用卡核对中',
         methods: {
             PIX: 'Pix',
@@ -1868,7 +1888,7 @@ export const zhHans: Messages = {
     profit: {
         kicker: '财务',
         title: '成本与利润',
-        description: '本期收入、支出与结余。金额以人民币计；雷亚尔等值按今日汇率换算。',
+        description: '本期收入、支出与结余。金额以人民币计；雷亚尔等值按今日汇率换算。不含内部账号。',
         error: '无法加载报表。',
         exportError: '无法生成表格。',
         actions: {
@@ -2068,6 +2088,7 @@ export const zhHans: Messages = {
             back: '返回',
             print: '打印 / 保存为 PDF',
             generatedAt: '生成于 {{date}}',
+            internalAccounts: '不含内部账号',
             loading: '正在生成报表…',
             missingPeriod: '请从“成本与利润”页面打开报表。',
             summary: '摘要',

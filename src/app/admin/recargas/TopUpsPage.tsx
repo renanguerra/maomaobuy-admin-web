@@ -76,12 +76,19 @@ export function TopUpsPage() {
             key: 'customer',
             header: t('topUps.columns.customer'),
             cell: (row) => (
-                <Link
-                    className="text-primary no-underline hover:underline dark:text-night-accent"
-                    href={`/admin/usuarios/${row.userId}`}
-                >
-                    {row.userName || row.userId.slice(0, 8)}
-                </Link>
+                <span className="inline-flex flex-wrap items-center gap-1.5">
+                    <Link
+                        className="text-primary no-underline hover:underline dark:text-night-accent"
+                        href={`/admin/usuarios/${row.userId}`}
+                    >
+                        {row.userName || row.userId.slice(0, 8)}
+                    </Link>
+                    {row.internalAccount && (
+                        <StatusPill hideDot tone="warning">
+                            {t('topUps.internalAccount')}
+                        </StatusPill>
+                    )}
+                </span>
             ),
         },
         {
@@ -182,7 +189,7 @@ export function TopUpsPage() {
                     icon={Wallet}
                     label={t('topUps.kpi.count')}
                     loading={!result && !error}
-                    value={result ? String(result.total) : '—'}
+                    value={result ? String(result.reportableTotal) : '—'}
                 />
             </div>
 

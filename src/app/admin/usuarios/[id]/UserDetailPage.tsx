@@ -27,6 +27,7 @@ import { Button, ButtonLink } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
+import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import type { AdminOrder, AdminPackage, AdminUser, AdminUserAddress, Page } from '@/types/api';
 import {
     formatCpf,
@@ -41,7 +42,14 @@ import { CreatePackageDialog } from './CreatePackageDialog';
 import { UserCoinsCard } from './UserCoinsCard';
 import { UserWalletCard } from './UserWalletCard';
 
-type DialogKind = 'suspend' | 'reactivate' | 'request-password-reset' | 'create-package' | 'revoke-wholesale' | null;
+type DialogKind =
+    | 'suspend'
+    | 'reactivate'
+    | 'request-password-reset'
+    | 'create-package'
+    | 'revoke-wholesale'
+    | 'report-exclusion'
+    | null;
 
 export function UserDetailPage() {
     const { t } = useTranslation();
@@ -52,6 +60,8 @@ export function UserDetailPage() {
     // `?acao=pacote` chega da tela "Sem pacote": abre direto o "Montar pacote".
     const searchParams = useSearchParams();
     const [dialog, setDialog] = useState<DialogKind>(searchParams.get('acao') === 'pacote' ? 'create-package' : null);
+    const { admin } = useAdminAccountAuth();
+    const canMarkInternal = admin?.role === 'FINANCE' || admin?.role === 'SUPERADMIN';
 
     useEffect(() => {
         let active = true;
@@ -75,9 +85,29 @@ export function UserDetailPage() {
         [t],
     );
 
+    async function setReportExclusion(values: { totpCode: string; reason: string }) {
+        const excluded = !user?.excludedFromReports;
+        try {
+            await api(`/finance/users/${params.id}/report-exclusion`, {
+                method: 'POST',
+                body: JSON.stringify({ ...values, excluded }),
+            });
+            setUser((current) => current && { ...current, excludedFromReports: excluded });
+            setDialog(null);
+            notify({
+                tone: 'success',
+                title: excluded
+                    ? t('users.detail.feedback.markedInternal')
+                    : t('users.detail.feedback.unmarkedInternal'),
+            });
+        } catch (err) {
+            throw err instanceof ApiError ? err : new Error(t('common.errors.generic'));
+        }
+    }
+
     async function handleConfirm(values: { totpCode: string; reason: string }) {
         const action = dialog;
-        if (!action || action === 'create-package') return;
+        if (!action || action === 'create-package' || action === 'report-exclusion') return;
         if (action === 'revoke-wholesale') {
             // A resposta é a solicitação; a conta é relida para o selo mudar.
             await api(`/users/${params.id}/revoke-wholesale`, { method: 'POST', body: JSON.stringify(values) });
@@ -149,6 +179,11 @@ export function UserDetailPage() {
                         {user.accountType !== 'RETAIL' && (
                             <StatusPill hideDot tone={user.accountType === 'WHOLESALE' ? 'info' : 'warning'}>
                                 {t(`users.accountTypes.${user.accountType}`)}
+                            </StatusPill>
+                        )}
+                        {user.excludedFromReports && (
+                            <StatusPill hideDot tone="warning">
+                                {t('users.detail.internalAccount')}
                             </StatusPill>
                         )}
                     </span>
@@ -254,6 +289,27 @@ export function UserDetailPage() {
                                         >
                                             {t('users.detail.wholesaleLink')}
                                         </a>
+                                    )}
+                                </span>
+                            ),
+                        },
+                        {
+                            label: t('users.detail.fields.reports'),
+                            value: (
+                                <span className="flex flex-wrap items-center gap-2">
+                                    {user.excludedFromReports
+                                        ? t('users.detail.fields.reportsExcluded')
+                                        : t('users.detail.fields.reportsIncluded')}
+                                    {canMarkInternal && (
+                                        <button
+                                            className="cursor-pointer border-0 bg-transparent p-0 text-sm text-primary hover:underline dark:text-night-accent"
+                                            onClick={() => setDialog('report-exclusion')}
+                                            type="button"
+                                        >
+                                            {user.excludedFromReports
+                                                ? t('users.detail.unmarkInternalButton')
+                                                : t('users.detail.markInternalButton')}
+                                        </button>
                                     )}
                                 </span>
                             ),
@@ -408,6 +464,26 @@ export function UserDetailPage() {
                 requireReason
                 title={t('users.detail.dialogs.revokeWholesale.title')}
                 variant="danger"
+            />
+            <ActionDialog
+                confirmLabel={
+                    user.excludedFromReports
+                        ? t('users.detail.dialogs.unmarkInternal.confirmLabel')
+                        : t('users.detail.dialogs.markInternal.confirmLabel')
+                }
+                description={
+                    user.excludedFromReports
+                        ? t('users.detail.dialogs.unmarkInternal.description')
+                        : t('users.detail.dialogs.markInternal.description')
+                }
+                onCancel={() => setDialog(null)}
+                onConfirm={setReportExclusion}
+                open={dialog === 'report-exclusion'}
+                title={
+                    user.excludedFromReports
+                        ? t('users.detail.dialogs.unmarkInternal.title')
+                        : t('users.detail.dialogs.markInternal.title')
+                }
             />
             <CreatePackageDialog onClose={() => setDialog(null)} open={dialog === 'create-package'} userId={user.id} />
         </div>

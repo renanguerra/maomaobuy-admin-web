@@ -197,6 +197,9 @@ export const ptBR = {
             reactivateButton: 'Reativar usuário',
             requestPasswordResetButton: 'Solicitar redefinição de senha',
             revokeWholesaleButton: 'Encerrar conta de lojista',
+            internalAccount: 'Conta interna',
+            markInternalButton: 'Marcar como interna',
+            unmarkInternalButton: 'Desmarcar conta interna',
             wholesaleLink: 'Ver solicitações',
             fields: {
                 username: 'Nome de usuário',
@@ -205,6 +208,9 @@ export const ptBR = {
                 notVerified: 'Não verificado',
                 status: 'Status',
                 accountType: 'Tipo de conta',
+                reports: 'Relatórios financeiros',
+                reportsIncluded: 'Entra nos relatórios',
+                reportsExcluded: 'Fora dos relatórios',
                 createdAt: 'Criado em',
                 id: 'ID',
                 passwordResetPendingSince: 'Pendente desde {{date}}',
@@ -308,6 +314,18 @@ export const ptBR = {
                         'O usuário receberá um e-mail para redefinir a senha e não conseguirá entrar até concluir o processo. As sessões ativas dele serão encerradas.',
                     confirmLabel: 'Solicitar redefinição',
                 },
+                markInternal: {
+                    title: 'Marcar como conta interna',
+                    description:
+                        'A conta sai de Custos e lucro, das planilhas e dos totais de Recargas, em todo o período. Recargas, saldo, extrato e pedidos dela não mudam.',
+                    confirmLabel: 'Marcar',
+                },
+                unmarkInternal: {
+                    title: 'Desmarcar conta interna',
+                    description:
+                        'A conta volta a Custos e lucro, às planilhas e aos totais de Recargas, em todo o período.',
+                    confirmLabel: 'Desmarcar',
+                },
                 revokeWholesale: {
                     title: 'Encerrar conta de lojista',
                     description:
@@ -320,6 +338,8 @@ export const ptBR = {
                 reactivated: 'Usuário reativado com sucesso.',
                 passwordResetRequested: 'Redefinição de senha solicitada. O usuário não poderá entrar até concluí-la.',
                 wholesaleRevoked: 'Conta de lojista encerrada. O cliente voltou ao varejo.',
+                markedInternal: 'Conta marcada como interna.',
+                unmarkedInternal: 'A conta voltou aos relatórios.',
             },
             accountSection: 'Dados da conta',
         },
@@ -1601,7 +1621,8 @@ export const ptBR = {
     topUps: {
         kicker: 'Financeiro',
         title: 'Recargas',
-        description: 'Histórico de recargas de saldo: quanto o cliente pagou, quanto entrou na carteira e em que deu.',
+        description:
+            'Histórico de recargas de saldo: quanto o cliente pagou, quanto entrou na carteira e em que deu. Contas internas aparecem na lista, mas ficam fora dos totais.',
         sectionTitle: 'Histórico',
         error: 'Não foi possível carregar as recargas.',
         loading: 'Carregando recargas…',
@@ -1613,6 +1634,7 @@ export const ptBR = {
         emptyDescription: 'Recargas por Pix, por cartão e créditos manuais aparecem aqui.',
         countUnit: '{{count}} recargas',
         manual: 'Manual',
+        internalAccount: 'Conta interna',
         cardUnderReview: 'Cartão em conferência',
         methods: {
             PIX: 'Pix',
@@ -1924,7 +1946,7 @@ export const ptBR = {
         kicker: 'Financeiro',
         title: 'Custos e lucro',
         description:
-            'Quanto entrou, quanto saiu e quanto sobrou no período. Valores em yuan; o equivalente em reais usa a cotação de hoje.',
+            'Quanto entrou, quanto saiu e quanto sobrou no período. Valores em yuan; o equivalente em reais usa a cotação de hoje. Contas internas ficam de fora.',
         error: 'Não foi possível carregar o relatório.',
         exportError: 'Não foi possível gerar a planilha.',
         actions: {
@@ -2127,6 +2149,7 @@ export const ptBR = {
             back: 'Voltar',
             print: 'Imprimir / salvar PDF',
             generatedAt: 'Gerado em {{date}}',
+            internalAccounts: 'Sem contas internas',
             loading: 'Montando o relatório…',
             missingPeriod: 'Abra o relatório pela tela de Custos e lucro.',
             summary: 'Resumo',
