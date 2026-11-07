@@ -1,4 +1,4 @@
-import type { AdminCategory } from '@/types/api';
+import type { AdminCategory, ProductSalesChannel } from '@/types/api';
 import { slugify } from '../categorias/slugify';
 
 export const AMOUNT_PATTERN = /^(0|[1-9]\d{0,17})$/;
@@ -70,6 +70,68 @@ export function resolveChinaExclusive(
     if (CHINA_PREFIX.test(name)) return { name: name.replace(CHINA_PREFIX, ''), isChinaExclusive: explicit ?? true };
     if (JAPAN_PREFIX.test(name)) return { name: name.replace(JAPAN_PREFIX, ''), isChinaExclusive: explicit };
     return { name, isChinaExclusive: explicit };
+}
+
+const SALES_CHANNELS: readonly ProductSalesChannel[] = ['RETAIL_ONLY', 'WHOLESALE_ONLY', 'BOTH'];
+
+export interface SalesChannelFields {
+    salesChannel: ProductSalesChannel;
+    wholesaleAmountMinor: string | null;
+    wholesaleMinQuantity: number | null;
+    unitsPerPackage: number | null;
+}
+
+/**
+ * Canal e termos de atacado, com as mesmas regras do backend: só varejo não
+ * leva preço de atacado; só atacado é a caixa (sem mínimo); os dois canais
+ * exigem o mínimo. `fallback` vale quando o arquivo não traz o canal.
+ */
+export function resolveSalesChannel(
+    record: Record<string, unknown>,
+    fallback: ProductSalesChannel,
+): SalesChannelFields {
+    const raw = record.salesChannel ?? fallback;
+    if (typeof raw !== 'string' || !SALES_CHANNELS.includes(raw as ProductSalesChannel))
+        throw new Error('Campo "salesChannel" precisa ser RETAIL_ONLY, WHOLESALE_ONLY ou BOTH.');
+    const salesChannel = raw as ProductSalesChannel;
+    const unitsPerPackage = toOptionalInt(record.unitsPerPackage, 'unitsPerPackage', 1) ?? null;
+
+    if (salesChannel === 'RETAIL_ONLY')
+        return { salesChannel, wholesaleAmountMinor: null, wholesaleMinQuantity: null, unitsPerPackage };
+
+    const wholesaleAmountMinor = toOptionalAmountMinor(record.wholesaleAmountMinor, 'wholesaleAmountMinor');
+    if (!wholesaleAmountMinor || wholesaleAmountMinor === '0')
+        throw new Error('Produto vendido no atacado precisa de "wholesaleAmountMinor" maior que zero.');
+
+    if (salesChannel === 'WHOLESALE_ONLY')
+        return { salesChannel, wholesaleAmountMinor, wholesaleMinQuantity: null, unitsPerPackage };
+
+    const wholesaleMinQuantity = toOptionalInt(record.wholesaleMinQuantity, 'wholesaleMinQuantity', 1);
+    if (wholesaleMinQuantity === undefined)
+        throw new Error('Produto nos dois canais precisa de "wholesaleMinQuantity".');
+    return { salesChannel, wholesaleAmountMinor, wholesaleMinQuantity, unitsPerPackage };
+}
+
+export function inWholesaleOnlyCategory(
+    categoryIds: readonly string[] | undefined,
+    categories: readonly AdminCategory[],
+): boolean {
+    return categories.some((category) => category.wholesaleOnly && categoryIds?.includes(category.id));
+}
+
+/**
+ * Produto em categoria só de PJ: precisa ser vendido no atacado, e o peso é o
+ * que conta para o mínimo do pacote do lojista.
+ */
+export function assertWholesaleCategoryRules(
+    salesChannel: ProductSalesChannel | undefined,
+    weightGrams: number | undefined,
+): void {
+    if (salesChannel === undefined) throw new Error('Produto em categoria só de PJ precisa de "salesChannel".');
+    if (salesChannel === 'RETAIL_ONLY')
+        throw new Error('Produto em categoria só de PJ não pode ter "salesChannel" RETAIL_ONLY.');
+    if (weightGrams === undefined)
+        throw new Error('Produto em categoria só de PJ precisa de "weightGrams": ele conta para o mínimo do pacote.');
 }
 
 export function resolveCategories(

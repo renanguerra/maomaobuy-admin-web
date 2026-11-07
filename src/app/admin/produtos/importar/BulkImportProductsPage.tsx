@@ -44,6 +44,21 @@ const TEMPLATE = [
         costAmountMinor: '2800',
         stock: 10,
     },
+    {
+        name: 'Caixa Master Coleção Exemplo (20 boosters)',
+        description: 'Caixa master fechada, só para contas PJ.',
+        sourceAmountMinor: '120000',
+        costAmountMinor: '90000',
+        stock: 12,
+        weightGrams: 3400,
+        lengthMm: 400,
+        widthMm: 300,
+        heightMm: 250,
+        salesChannel: 'WHOLESALE_ONLY',
+        wholesaleAmountMinor: '100000',
+        unitsPerPackage: 20,
+        categories: ['caixa-master'],
+    },
 ];
 
 type Outcome =

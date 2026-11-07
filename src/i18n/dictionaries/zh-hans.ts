@@ -446,7 +446,7 @@ export const zhHans: Messages = {
             schemaHelp: {
                 title: '预期格式',
                 description:
-                    '每个商品接受与「新增商品」表单相同的字段。分类和子分类用 slug 引用，而不是 ID。可选字段「images」接受图片的 https 链接 —— 系统会自动下载并上传到我们的存储。商品始终以草稿状态创建 —— 发布仍需在导入后逐个商品完成。',
+                    '每个商品接受与「新增商品」表单相同的字段。分类和子分类用 slug 引用，而不是 ID。可选字段「images」接受图片的 https 链接 —— 系统会自动下载并上传到我们的存储。商品始终以草稿状态创建 —— 发布仍需在导入后逐个商品完成。企业账户商品使用「salesChannel」（RETAIL_ONLY、WHOLESALE_ONLY 或 BOTH）、「wholesaleAmountMinor」、「wholesaleMinQuantity」（仅 BOTH）和「unitsPerPackage」。「caixa-master」分类的商品未填写渠道时按 WHOLESALE_ONLY 处理，并且必须填写「weightGrams」。',
             },
             previewTitle: '文件中的商品',
             previewCaption: '文件中的商品列表',
@@ -485,7 +485,7 @@ export const zhHans: Messages = {
             schemaHelp: {
                 title: '使用说明',
                 description:
-                    '每个商品接受与编辑表单相同的字段，外加「id」（不要删除——它决定要更新哪个商品）。分类和子分类同导入一样用 slug 引用。文件中省略的变体不会被修改；要修改现有变体，保留其「externalId」并编辑其他字段；要新增变体，使用一个新的「externalId」；要删除现有变体，只需发送 { "externalId": "...", "remove": true }。素材（图片）不在此编辑器范围内，仍需逐个商品处理。',
+                    '每个商品接受与编辑表单相同的字段，外加「id」（不要删除——它决定要更新哪个商品）。分类和子分类同导入一样用 slug 引用。文件中省略的变体不会被修改；要修改现有变体，保留其「externalId」并编辑其他字段；要新增变体，使用一个新的「externalId」；要删除现有变体，只需发送 { "externalId": "...", "remove": true }。文件中没有「salesChannel」时，已保存的渠道和批发条款不变。素材（图片）不在此编辑器范围内，仍需逐个商品处理。',
             },
             uploadButton: '选择 JSON 文件',
             textareaLabel: '编辑后的商品 JSON',
@@ -741,7 +741,10 @@ export const zhHans: Messages = {
             slugPlaceholder: 'roupas',
             slugHint: '用于公开访问的链接地址，根据名称自动生成。',
             submitButton: '创建分类',
+            wholesaleOnlyLabel: '仅对企业账户显示',
+            wholesaleOnlyHint: '此分类只在批发页面显示。商品在哪里显示仍由其销售渠道决定。',
         },
+        wholesaleOnlyBadge: '仅企业账户',
         deleteCategoryConfirm: '确定要删除该分类及其所有子分类吗？',
         deleteSubcategoryConfirm: '确定要删除该子分类吗？',
         subcategories: {
@@ -1273,6 +1276,31 @@ export const zhHans: Messages = {
                 removeWholeLine: '该商品将整行移出包裹。',
                 decreaseAria: '减少数量',
                 increaseAria: '增加数量',
+            },
+            declarationSection: {
+                title: '企业账户发货',
+                description: '通过 FedEx 或 DHL 发货。报运费时选择承运商。',
+                modeLabel: '申报方式',
+                modeFull: '全额申报',
+                modeCustom: '自定义申报',
+                customText: '客户要求的申报内容',
+                riskAccepted: '客户接受扣货费用的时间',
+            },
+            attachmentsSection: {
+                title: '附件',
+                description: '包裹的 PDF 和文档。客户可在包裹页面查看和下载。',
+                uploadButton: '添加文档',
+                uploadingButton: '上传中…',
+                empty: '暂无附件。',
+                uploadFailed: '文档上传到存储服务失败。',
+                unsupported: '不支持此文件类型。请使用 PDF、Word、Excel、CSV、TXT 或 XML。',
+                uploadedToast: '文档已添加。',
+                removeTitle: '移除附件',
+                removeConfirm: '确定移除“{name}”吗？客户将无法再查看此文档。',
+                removedToast: '附件已移除。',
+                removeAria: '移除 {name}',
+                sizeKilobytes: '{size} KB',
+                sizeMegabytes: '{size} MB',
             },
             photosSection: {
                 title: '照片',
