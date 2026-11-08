@@ -137,7 +137,8 @@ function Report({ data, from, to, generatedAt }: { data: ReportData; from: strin
                 <h1 className="mm-display m-0 mt-1 text-2xl leading-none">{t('profit.print.title')}</h1>
                 <p className="m-0 mt-1.5 text-xs text-warm-700">
                     {t('profit.period.range', { from: formatIsoDay(from), to: formatIsoDay(to) })} ·{' '}
-                    {t('profit.print.generatedAt', { date: formatDate(generatedAt) })}
+                    {t('profit.print.generatedAt', { date: formatDate(generatedAt) })} ·{' '}
+                    {t('profit.print.internalAccounts')}
                 </p>
             </header>
 

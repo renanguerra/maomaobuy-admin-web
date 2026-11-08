@@ -54,6 +54,8 @@ export interface AdminUser {
     accountType: AccountType;
     createdAt: string;
     passwordResetRequiredAt: string | null;
+    /** Conta interna: fora dos relatórios financeiros. */
+    excludedFromReports: boolean;
 }
 
 export type AccountType = 'RETAIL' | 'WHOLESALE' | 'WHOLESALE_APPLICANT';
@@ -1010,6 +1012,8 @@ export interface AdminTopUp {
     id: string;
     userId: string;
     userName: string;
+    /** Conta interna: a linha aparece, mas não entra nos totais. */
+    internalAccount: boolean;
     status: string;
     /** O que o cliente pagou, em centavos de real. */
     amountMinor: string;
@@ -1049,7 +1053,9 @@ export interface AdminPaymentMethod {
 }
 
 export interface AdminTopUpsPage extends Page<AdminTopUp> {
-    /** Soma das confirmadas no filtro: pago (centavos) e creditado (fen). */
+    /** `total` sem as recargas de contas internas; `total` segue valendo para a paginação. */
+    reportableTotal: number;
+    /** Soma das confirmadas no filtro, sem contas internas: pago (centavos) e creditado (fen). */
     confirmedAmountMinor: string;
     confirmedCreditMinor: string;
 }
