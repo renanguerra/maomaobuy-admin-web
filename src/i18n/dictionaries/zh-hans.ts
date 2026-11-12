@@ -1237,6 +1237,7 @@ export const zhHans: Messages = {
                 markDelivered: '标记为已签收',
                 quoteFreight: '录入重量和运费',
                 requoteFreight: '修改运费',
+                editMeasurements: '修正重量和尺寸',
                 dispatch: '发货',
                 correctDispatch: '修正物流信息',
                 overrideStatus: '修改状态',
@@ -1377,6 +1378,7 @@ export const zhHans: Messages = {
                 reject: '包裹已拒绝并关闭；商品已重新可用。',
                 cancel: '包裹已取消；商品已重新可用。',
                 shipment: '运费信息已更新。',
+                measurements: '重量和尺寸已更新。',
                 dispatch: '包裹已发货。',
                 correctDispatch: '物流信息已修正。',
                 statusOverridden: '包裹状态已修改。',
@@ -1415,6 +1417,12 @@ export const zhHans: Messages = {
                     currency: '货币（BRL 或 CNY）',
                     amount: '承运商成本',
                     amountHint: '表价成本，不含加价。客户支付该成本加上配置的加价。',
+                },
+                measurements: {
+                    title: '修正重量和尺寸',
+                    description:
+                        '更新包裹登记的重量和尺寸。已报价或已支付的运费不会改变，也不会通知客户——如需重新报价，请在运费未支付前使用"修改运费"。',
+                    confirmLabel: '保存',
                 },
                 overrideStatus: {
                     title: '修改包裹状态',
