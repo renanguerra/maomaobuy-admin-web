@@ -28,6 +28,7 @@ export type MenuItemKey =
     | 'profit'
     | 'productRequests'
     | 'siteNotices'
+    | 'storefront'
     | 'settings';
 
 /** Sufixos válidos em `sidebar.groups.*`. */

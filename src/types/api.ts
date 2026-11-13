@@ -280,6 +280,9 @@ export interface AdminProduct {
     isCoinExclusive: boolean;
     /** Selo "Exclusivo da China" no card da loja. */
     isChinaExclusive: boolean;
+    language?: string | null;
+    condition?: 'SEALED' | 'LOOSE' | null;
+    contents?: string | null;
     coinRedeemLimitPerUser: number | null;
     coinAvailableFrom: string | null;
     coinAvailableUntil: string | null;

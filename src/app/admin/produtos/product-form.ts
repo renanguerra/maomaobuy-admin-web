@@ -20,6 +20,12 @@ export interface ProductFormValues {
     stock: string;
     isPublished: boolean;
     isChinaExclusive: boolean;
+    /** Idioma do produto (`ZH`, `JA`...); vazio = não informado. */
+    language: string;
+    /** `SEALED` ou `LOOSE`; vazio = não informado. */
+    condition: string;
+    /** O que vem na caixa, em uma linha. */
+    contents: string;
     isPreSale: boolean;
     /** `YYYY-MM-DD`, como o `<input type="date">` entrega e o backend espera. */
     releaseDate: string;
@@ -54,6 +60,9 @@ const EMPTY: ProductFormValues = {
     stock: '0',
     isPublished: false,
     isChinaExclusive: false,
+    language: '',
+    condition: '',
+    contents: '',
     isPreSale: false,
     releaseDate: '',
     isOnDemand: false,
@@ -83,6 +92,9 @@ function fromProduct(product: AdminProduct): ProductFormValues {
         stock: String(product.stock),
         isPublished: product.isPublished,
         isChinaExclusive: product.isChinaExclusive ?? false,
+        language: product.language ?? '',
+        condition: product.condition ?? '',
+        contents: product.contents ?? '',
         isPreSale: product.isPreSale,
         releaseDate: product.releaseDate ?? '',
         isOnDemand: product.isOnDemand,
@@ -175,6 +187,9 @@ export function toProductPayload(values: ProductFormValues) {
         stock: Number(values.stock),
         isPublished: values.isPublished,
         isChinaExclusive: values.isChinaExclusive,
+        language: values.language || null,
+        condition: values.condition || null,
+        contents: values.contents.trim() || null,
         // Pré-venda e sob demanda são só da loja: Coin Shop e "Leve junto"
         // precisam do item pronto no armazém.
         isPreSale: isStore && values.isPreSale,
