@@ -1277,6 +1277,7 @@ export const ptBR = {
                 markDelivered: 'Marcar como entregue',
                 quoteFreight: 'Informar peso e frete',
                 requoteFreight: 'Editar frete',
+                editMeasurements: 'Corrigir peso e medidas',
                 dispatch: 'Despachar',
                 correctDispatch: 'Corrigir rastreio',
                 overrideStatus: 'Alterar status',
@@ -1419,6 +1420,7 @@ export const ptBR = {
                 reject: 'Pacote rejeitado e encerrado; os itens voltaram a ficar disponíveis.',
                 cancel: 'Pacote cancelado; os itens voltaram a ficar disponíveis.',
                 shipment: 'Dados de frete atualizados.',
+                measurements: 'Peso e medidas atualizados.',
                 dispatch: 'Pacote despachado.',
                 correctDispatch: 'Dados de rastreio corrigidos.',
                 statusOverridden: 'Status do pacote alterado.',
@@ -1459,6 +1461,12 @@ export const ptBR = {
                     currency: 'Moeda',
                     amount: 'Custo da transportadora',
                     amountHint: 'Valor de tabela, sem margem. O cliente paga este custo mais a margem configurada.',
+                },
+                measurements: {
+                    title: 'Corrigir peso e medidas',
+                    description:
+                        'Atualiza o peso e as dimensões registrados do pacote. O frete já cotado ou pago não muda e o cliente não é avisado — para recotar, use "Editar frete" enquanto o frete não foi pago.',
+                    confirmLabel: 'Salvar',
                 },
                 overrideStatus: {
                     title: 'Alterar status do pacote',

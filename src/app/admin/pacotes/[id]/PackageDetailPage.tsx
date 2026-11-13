@@ -70,6 +70,7 @@ type DialogKind =
     | 'dispatch'
     | 'correct-dispatch'
     | 'shipment'
+    | 'measurements'
     | 'add-items'
     | 'override-status'
     | 'carrier-quote'
@@ -234,6 +235,16 @@ export function PackageDetailPage() {
             notify({ tone: 'success', title: t('packages.detail.feedback.shippingFailure') });
             void refreshPendingCounts();
             router.push(`/admin/pacotes/${replacement.id}`);
+            return;
+        }
+
+        if (action === 'measurements') {
+            // Só peso e medidas, em qualquer status: o frete não é recotado.
+            const updated = await api<AdminPackage>(`/packages/${params.id}/measurements`, {
+                method: 'PATCH',
+                body: JSON.stringify(values),
+            });
+            applyUpdate(updated, t('packages.detail.feedback.measurements'));
             return;
         }
 
@@ -487,7 +498,11 @@ export function PackageDetailPage() {
     const canCorrectDispatch = pkg.shippedAt !== null && !CLOSED_STATUSES.includes(pkg.status);
     const statusTargets = isDraft || CLOSED_STATUSES.includes(pkg.status) ? [] : overrideTargets(pkg);
     const canOverrideStatus = statusTargets.length > 0;
+    // Peso e medidas podem ser corrigidos a qualquer momento, em qualquer
+    // status: a rota própria não recota o frete nem avisa o cliente.
+    const canEditMeasurements = true;
     const hasActions =
+        canEditMeasurements ||
         canEditItems ||
         canQuoteCarrier ||
         canCancel ||
@@ -655,6 +670,16 @@ export function PackageDetailPage() {
                             variant="secondary"
                         >
                             {t('packages.detail.actions.requoteFreight')}
+                        </Button>
+                    )}
+                    {canEditMeasurements && (
+                        <Button
+                            leadingIcon={<Ruler className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('measurements')}
+                            size="small"
+                            variant="secondary"
+                        >
+                            {t('packages.detail.actions.editMeasurements')}
                         </Button>
                     )}
                     {canCancel && !isAwaitingApproval && (
@@ -1165,6 +1190,52 @@ export function PackageDetailPage() {
                 requireReason
                 title={t('packages.detail.dialogs.cancel.title')}
                 variant="danger"
+            />
+            <ActionDialog
+                confirmLabel={t('packages.detail.dialogs.measurements.confirmLabel')}
+                description={t('packages.detail.dialogs.measurements.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleActionConfirm}
+                open={dialog === 'measurements'}
+                title={t('packages.detail.dialogs.measurements.title')}
+                fields={[
+                    {
+                        name: 'weightGrams',
+                        label: t('packages.detail.dialogs.shipment.weight'),
+                        kind: 'number',
+                        min: 1,
+                        suffix: 'g',
+                        defaultValue: pkg.weightGrams ? String(pkg.weightGrams) : undefined,
+                        placeholder: '1500',
+                    },
+                    {
+                        name: 'lengthMillimeters',
+                        label: t('packages.detail.dialogs.shipment.length'),
+                        kind: 'number',
+                        min: 1,
+                        suffix: 'mm',
+                        defaultValue: pkg.lengthMillimeters ? String(pkg.lengthMillimeters) : undefined,
+                        placeholder: '300',
+                    },
+                    {
+                        name: 'widthMillimeters',
+                        label: t('packages.detail.dialogs.shipment.width'),
+                        kind: 'number',
+                        min: 1,
+                        suffix: 'mm',
+                        defaultValue: pkg.widthMillimeters ? String(pkg.widthMillimeters) : undefined,
+                        placeholder: '200',
+                    },
+                    {
+                        name: 'heightMillimeters',
+                        label: t('packages.detail.dialogs.shipment.height'),
+                        kind: 'number',
+                        min: 1,
+                        suffix: 'mm',
+                        defaultValue: pkg.heightMillimeters ? String(pkg.heightMillimeters) : undefined,
+                        placeholder: '150',
+                    },
+                ]}
             />
             <ActionDialog
                 confirmLabel={t('packages.detail.dialogs.shipment.confirmLabel')}
