@@ -2600,12 +2600,15 @@ export const ptBR = {
             origin: 'Origem',
             submittedAt: 'Enviada em',
             lookup: 'Situação cadastral',
+            lookupAt: 'Consultado em',
             reviewedBy: 'Decidida por',
         },
         actions: {
             approve: 'Aprovar',
             reject: 'Recusar',
             requestInfo: 'Pedir correção',
+            refreshLookup: 'Consultar de novo',
+            lookingUp: 'Consultando…',
         },
         dialogs: {
             approveTitle: 'Aprovar conta de lojista',
@@ -2622,6 +2625,7 @@ export const ptBR = {
             approved: 'Conta de lojista aprovada.',
             rejected: 'Solicitação recusada.',
             infoRequested: 'Correção pedida ao cliente.',
+            lookupRefreshed: 'Consulta do CNPJ atualizada.',
         },
         detail: {
             kicker: 'Lojista',
@@ -2637,10 +2641,25 @@ export const ptBR = {
             lookupAlertBody:
                 'Confira a situação cadastral na Receita antes de decidir. A consulta só avisa, não bloqueia.',
             lookupManual:
-                'O provedor de consulta ainda não está configurado: confira a situação cadastral no site da Receita.',
+                'A BrasilAPI não conseguiu consultar este CNPJ: confira a situação cadastral no site da Receita.',
             infoRequested: 'Correção pedida',
             rejectedReason: 'Motivo da recusa',
             revokedReason: 'Motivo do encerramento',
+        },
+        receita: {
+            title: 'Dados na Receita',
+            description: 'Consulta pela BrasilAPI, com a base aberta da Receita (atualizada uma vez por mês).',
+            situation: 'Situação',
+            since: 'desde {{date}}',
+            openedAt: 'Abertura',
+            size: 'Porte',
+            taxRegime: 'Regime',
+            simples: 'Simples',
+            yes: 'sim',
+            no: 'não',
+            cnae: 'Atividade principal (CNAE)',
+            legalNature: 'Natureza jurídica',
+            partners: 'Sócios',
         },
     },
     siteNotices: {
