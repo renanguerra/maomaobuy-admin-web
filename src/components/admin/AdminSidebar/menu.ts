@@ -8,6 +8,7 @@ import {
     LayoutTemplate,
     Mail,
     Megaphone,
+    MessageSquareQuote,
     ArrowDownToLine,
     Package,
     PackageOpen,
@@ -51,13 +52,21 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
         ],
     },
     {
+        // A vitrine do site em páginas próprias, como na exploração (14/11/2026).
+        key: 'storefront',
+        items: [
+            { key: 'storefront', href: '/admin/vitrine', icon: LayoutTemplate },
+            { key: 'categories', href: '/admin/categorias', icon: Tags },
+            { key: 'storefrontFeedbacks', href: '/admin/vitrine/feedbacks', icon: MessageSquareQuote },
+            { key: 'siteNotices', href: '/admin/avisos', icon: Megaphone },
+        ],
+    },
+    {
         key: 'operations',
         items: [
             { key: 'users', href: '/admin/usuarios', icon: Users },
             { key: 'influencers', href: '/admin/influencers', icon: Star },
             { key: 'wholesale', href: '/admin/lojistas', icon: Store },
-            { key: 'storefront', href: '/admin/vitrine', icon: LayoutTemplate },
-            { key: 'siteNotices', href: '/admin/avisos', icon: Megaphone },
         ],
     },
     {
@@ -66,7 +75,6 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
             { key: 'products', href: '/admin/produtos', icon: Package },
             { key: 'coinShop', href: '/admin/coin-shop', icon: Coins },
             { key: 'checkoutAddons', href: '/admin/leve-junto', icon: ShoppingBasket },
-            { key: 'categories', href: '/admin/categorias', icon: Tags },
             { key: 'optionalServices', href: '/admin/servicos-adicionais', icon: Sparkles },
         ],
     },
@@ -95,7 +103,10 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
  * detalhe (`/admin/pedidos/<id>`).
  */
 export function isMenuItemActive(href: string, pathname: string) {
-    return href === '/admin' ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+    if (href === '/admin') return pathname === href;
+    // "Destaques" (/admin/vitrine) não acende junto com "Feedbacks" (/admin/vitrine/feedbacks).
+    if (href === '/admin/vitrine') return pathname === href;
+    return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 /** Iniciais do admin logado para o avatar do rodapé. */

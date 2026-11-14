@@ -72,6 +72,7 @@ export const ptBR = {
         brandTagline: 'Painel administrativo',
         areasLabel: 'Áreas administrativas',
         groups: {
+            storefront: 'Vitrine do site',
             operations: 'Operação',
             catalog: 'Catálogo',
             logistics: 'Logística',
@@ -94,8 +95,9 @@ export const ptBR = {
             admins: 'Administradores',
             dashboard: 'Visão geral',
             productRequests: 'Pedidos de produto',
-            storefront: 'Vitrine da home',
-            siteNotices: 'Avisos do site',
+            storefront: 'Destaques da home',
+            storefrontFeedbacks: 'Feedbacks',
+            siteNotices: 'Avisos',
             optionalServices: 'Serviços adicionais',
             coupons: 'Cupons',
             topUps: 'Recargas',
@@ -2679,7 +2681,12 @@ export const ptBR = {
         },
     },
     storefront: {
-        kicker: 'Site',
+        kicker: 'Vitrine do site',
+        highlightsTitle: 'Destaques da home',
+        highlightsDescription:
+            'O que aparece no banner e nas prateleiras da página inicial, e em que ordem. Salvar pede o código TOTP; o site atualiza em até 30 segundos.',
+        feedbacksDescription:
+            'Posts de unboxing do Instagram para o bloco “Quem comprou, mostrou”. Só vai ao site o post com a autorização do cliente marcada.',
         title: 'Vitrine da home',
         description:
             'Banner principal, ordem e conteúdo dos blocos, fotos dos atalhos de categoria e posts de feedback. Tudo aparece para todo cliente, por isso salvar pede o código TOTP. O site atualiza em até 30 segundos.',

@@ -29,10 +29,11 @@ export type MenuItemKey =
     | 'productRequests'
     | 'siteNotices'
     | 'storefront'
+    | 'storefrontFeedbacks'
     | 'settings';
 
 /** Sufixos válidos em `sidebar.groups.*`. */
-export type MenuGroupKey = 'operations' | 'catalog' | 'logistics' | 'finance' | 'system';
+export type MenuGroupKey = 'operations' | 'storefront' | 'catalog' | 'logistics' | 'finance' | 'system';
 
 export interface MenuItem {
     key: MenuItemKey;

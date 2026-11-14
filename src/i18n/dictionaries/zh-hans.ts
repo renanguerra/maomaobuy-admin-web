@@ -70,6 +70,7 @@ export const zhHans: Messages = {
         brandTagline: '管理后台',
         areasLabel: '管理区域',
         groups: {
+            storefront: '网站橱窗',
             operations: '运营',
             catalog: '商品目录',
             logistics: '物流',
@@ -92,7 +93,8 @@ export const zhHans: Messages = {
             admins: '管理员',
             dashboard: '总览',
             productRequests: '商品请求',
-            storefront: '首页橱窗',
+            storefront: '首页推荐',
+            storefrontFeedbacks: '晒单',
             siteNotices: '网站公告',
             optionalServices: '增值服务',
             coupons: '优惠券',
@@ -2593,7 +2595,10 @@ export const zhHans: Messages = {
         },
     },
     storefront: {
-        kicker: '网站',
+        kicker: '网站橱窗',
+        highlightsTitle: '首页推荐',
+        highlightsDescription: '首页横幅和商品栏展示的内容及顺序。保存需要 TOTP 验证码，网站最多 30 秒后更新。',
+        feedbacksDescription: '首页“买家晒单”区块使用的 Instagram 开箱帖子。只有勾选了客户授权的帖子才会显示在网站上。',
         title: '首页橱窗',
         description:
             '首页主横幅、区块顺序与内容、分类入口图片以及买家晒单。所有客户都会看到，保存需要 TOTP 验证码。网站最多 30 秒后更新。',

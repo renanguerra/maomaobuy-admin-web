@@ -6,6 +6,7 @@ import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
 import { PageHeader } from '@/components/admin/PageHeader';
+import { CategoriesTab } from '../vitrine/CategoriesTab';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { Button } from '@/components/ui/Button';
@@ -297,6 +298,8 @@ export function CategoriesPage() {
                           : undefined
                 }
             />
+            {/* Foto e ordem dos atalhos da home, na mesma página das categorias (exploração). */}
+            <CategoriesTab />
         </div>
     );
 }
