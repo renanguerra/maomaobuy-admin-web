@@ -270,6 +270,41 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                         onChange={(event) => patch({ isChinaExclusive: event.target.checked })}
                     />
                 )}
+                {isStore && (
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <Select
+                            hint={t('products.new.languageHint')}
+                            label={t('products.new.language')}
+                            onChange={(event) => patch({ language: event.target.value })}
+                            options={[
+                                { value: '', label: t('products.new.notInformed') },
+                                ...(['ZH', 'JA', 'EN', 'KO', 'PT', 'MULTI'] as const).map((code) => ({
+                                    value: code,
+                                    label: t(`products.new.languages.${code}`),
+                                })),
+                            ]}
+                            value={values.language}
+                        />
+                        <Select
+                            label={t('products.new.condition')}
+                            onChange={(event) => patch({ condition: event.target.value })}
+                            options={[
+                                { value: '', label: t('products.new.notInformed') },
+                                { value: 'SEALED', label: t('products.new.conditions.SEALED') },
+                                { value: 'LOOSE', label: t('products.new.conditions.LOOSE') },
+                            ]}
+                            value={values.condition}
+                        />
+                        <Input
+                            fieldClassName="sm:col-span-2"
+                            hint={t('products.new.contentsHint')}
+                            label={t('products.new.contents')}
+                            maxLength={500}
+                            onChange={(event) => patch({ contents: event.target.value })}
+                            value={values.contents}
+                        />
+                    </div>
+                )}
             </SectionCard>
 
             {isStore && (
