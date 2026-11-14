@@ -3,11 +3,10 @@
 import { PageHeader } from '@/components/admin/PageHeader';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { BannersTab } from './BannersTab';
-import { SectionsTab } from './SectionsTab';
 
 /**
- * Destaques da home (exploração de 14/11/2026): a estrutura da home (ordem e
- * conteúdo dos blocos) e, abaixo, o banner principal, numa página só.
+ * Destaques da home: o banner principal. A ordem dos blocos da home é fixa
+ * no código do site (14/11/2026), sem escolha aqui.
  * Categorias, Feedbacks e Avisos têm páginas próprias no grupo "Vitrine do
  * site" do menu. O site lê com até 30 s de atraso.
  */
@@ -20,7 +19,6 @@ export function StorefrontPage() {
                 kicker={t('storefront.kicker')}
                 title={t('storefront.highlightsTitle')}
             />
-            <SectionsTab />
             <BannersTab />
         </div>
     );
