@@ -32,31 +32,6 @@ export interface HomeBanner {
     status: BannerStatus;
 }
 
-export type HomeSectionKind =
-    | 'BEST_SELLING'
-    | 'NEWEST'
-    | 'CATEGORY'
-    | 'HAND_PICKED'
-    | 'CATEGORY_SHORTCUTS'
-    | 'FEEDBACKS'
-    | 'COIN_SHOP'
-    | 'STORE_CTA';
-
-export interface HomeSection {
-    /** Ausente numa prateleira nova, ainda não salva. */
-    id?: string;
-    kind: HomeSectionKind;
-    fixed: boolean;
-    title: string | null;
-    subtitle: string | null;
-    linkUrl: string | null;
-    categories: Array<{ id: string; name: string; slug: string }>;
-    products: StorefrontProductRef[];
-    itemLimit: number;
-    onlyReady: boolean;
-    isVisible: boolean;
-}
-
 export type FeedbackStatus = 'LIVE' | 'AWAITING_AUTHORIZATION' | 'HIDDEN';
 
 export interface FeedbackPost {
@@ -76,8 +51,6 @@ export interface CategoryShortcut {
     name: string;
     slug: string;
     image: StorefrontImage | null;
-    showOnHome: boolean;
-    homePosition: number | null;
     productCount: number;
 }
 
