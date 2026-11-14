@@ -195,6 +195,7 @@ function MethodCard({
                 <div className="grid gap-1 text-sm text-muted dark:text-night-muted">
                     <p className="m-0">{fee ? t('paymentMethods.fee', { fee }) : t('paymentMethods.noFee')}</p>
                     <p className="m-0">{t('paymentMethods.max', { max: cny(method.maxCreditAmountMinor) })}</p>
+                    {method.method === 'CARD' && <InstallmentFees method={method} />}
                     <p className="m-0">
                         <Link
                             className="text-primary no-underline hover:underline dark:text-night-accent"
@@ -276,5 +277,31 @@ function MethodCard({
                 </div>
             </div>
         </SectionCard>
+    );
+}
+
+const PERCENT = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
+
+/** A taxa de cada parcela que o cliente paga no cartão, só para leitura. */
+function InstallmentFees({ method }: { method: AdminPaymentMethod }) {
+    const { t } = useTranslation();
+    if (method.installmentFees.length <= 1) return <p className="m-0">{t('paymentMethods.installmentsOnlyCash')}</p>;
+    return (
+        <div className="mt-2 grid gap-1.5">
+            <p className="m-0 font-semibold text-ink dark:text-night-text">{t('paymentMethods.installmentsTitle')}</p>
+            <ul className="m-0 grid list-none grid-cols-3 gap-x-4 gap-y-1 p-0 max-[520px]:grid-cols-2">
+                {method.installmentFees.map((fee) => (
+                    <li className="flex justify-between gap-2 tabular-nums" key={fee.installmentCount}>
+                        <span>{fee.installmentCount}x</span>
+                        <span className="text-ink dark:text-night-text">
+                            {PERCENT.format(fee.feeBasisPoints / 100)}%
+                        </span>
+                    </li>
+                ))}
+            </ul>
+            <p className="m-0 text-xs">
+                {t('paymentMethods.installmentsHint', { min: brl(method.minInstallmentMinor) })}
+            </p>
+        </div>
     );
 }

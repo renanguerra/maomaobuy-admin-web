@@ -1728,6 +1728,9 @@ export const ptBR = {
         noFee: 'Sem taxa do processador.',
         max: 'Recarga máxima neste meio: {{max}}.',
         feeSource: 'Taxas e tetos mudam em Configurações.',
+        installmentsTitle: 'Parcelas (taxa repassada ao cliente)',
+        installmentsHint: 'Mais a parte fixa em cada cobrança. Parcela mínima: {{min}}.',
+        installmentsOnlyCash: 'Só à vista. Para parcelar, aumente topup_card_max_installments em Configurações.',
         cardKeyNote:
             'O cartão só aparece no site com a variável ABACATEPAY_PUBLIC_KEY configurada no app público, seja qual for a chave daqui.',
         listTitleOnly: 'Clientes liberados',

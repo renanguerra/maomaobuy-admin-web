@@ -1053,6 +1053,10 @@ export interface AdminPaymentMethod {
     feeFixedMinor: string;
     /** Teto por recarga neste meio, em fen. */
     maxCreditAmountMinor: string;
+    /** Só no cartão: taxa repassada ao cliente em cada número de parcelas (1 = à vista). */
+    installmentFees: Array<{ installmentCount: number; feeBasisPoints: number }>;
+    /** Menor parcela aceita, em centavos de BRL. */
+    minInstallmentMinor: string;
 }
 
 export interface AdminTopUpsPage extends Page<AdminTopUp> {
