@@ -262,20 +262,26 @@ function MethodCard({
                     onRemove={(userId) => void run(() => onRemove(userId))}
                 />
 
-                <ProviderSection method={method} busy={busy} onProvider={onProvider} />
+                {/* Backend sem a fase 0 da Airwallex não manda o provedor:
+                    a tela continua só com a chave do meio. */}
+                {method.providerName && (
+                    <>
+                        <ProviderSection method={method} busy={busy} onProvider={onProvider} />
 
-                <UserList
-                    active={method.pilotProviderName !== null}
-                    busy={busy}
-                    title={
-                        method.pilotProviderName
-                            ? t('paymentMethods.provider.pilotListTitle')
-                            : t('paymentMethods.provider.pilotListInactive')
-                    }
-                    users={method.pilotUsers}
-                    onAdd={(email) => run(() => onAddPilot(email))}
-                    onRemove={(userId) => void run(() => onRemovePilot(userId))}
-                />
+                        <UserList
+                            active={method.pilotProviderName !== null}
+                            busy={busy}
+                            title={
+                                method.pilotProviderName
+                                    ? t('paymentMethods.provider.pilotListTitle')
+                                    : t('paymentMethods.provider.pilotListInactive')
+                            }
+                            users={method.pilotUsers}
+                            onAdd={(email) => run(() => onAddPilot(email))}
+                            onRemove={(userId) => void run(() => onRemovePilot(userId))}
+                        />
+                    </>
+                )}
             </div>
         </SectionCard>
     );
