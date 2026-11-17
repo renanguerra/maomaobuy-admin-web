@@ -388,7 +388,7 @@ function ItemRow({ index, item, order }: ItemRowProps) {
         <tr className="border-b border-warm-300 align-top print:break-inside-avoid">
             <td className="py-2 pr-2">
                 <span
-                    className="grid h-5 w-5 place-items-center rounded border-2 border-warm-950 text-[9px] font-bold text-warm-500"
+                    className="grid h-5 w-5 place-items-center rounded border-2 border-warm-950 text-[9px] font-bold text-warm-600"
                     aria-hidden="true"
                 >
                     {index}
@@ -400,7 +400,7 @@ function ItemRow({ index, item, order }: ItemRowProps) {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img alt="" className="h-full w-full object-cover" loading="eager" src={order.thumbnailUrl} />
                     ) : (
-                        <ImageOff className="h-4 w-4 text-warm-500" aria-hidden="true" />
+                        <ImageOff className="h-4 w-4 text-warm-600" aria-hidden="true" />
                     )}
                 </span>
             </td>
@@ -419,7 +419,7 @@ function ItemRow({ index, item, order }: ItemRowProps) {
                         .join(' · ')}
                 </span>
                 {orderItem.marketplaceUrl && (
-                    <span className="mm-data mt-0.5 block break-all text-[9px] text-warm-500">
+                    <span className="mm-data mt-0.5 block break-all text-[9px] text-warm-600">
                         {orderItem.marketplaceUrl}
                     </span>
                 )}
@@ -459,7 +459,7 @@ function OrderBlock({ order }: { order: AdminPackageAssemblyOrder }) {
                     {shortOrderId(order.id)}
                 </Link>
                 <span className="text-warm-700">{orderStatusLabel(order.status)}</span>
-                <span className="text-warm-500">· {t(`packages.assembly.order.mode.${order.fulfillmentMode}`)}</span>
+                <span className="text-warm-600">· {t(`packages.assembly.order.mode.${order.fulfillmentMode}`)}</span>
             </div>
             {order.adminDescription && (
                 <p className="m-0 mt-1 whitespace-pre-line text-warm-800">
@@ -468,7 +468,7 @@ function OrderBlock({ order }: { order: AdminPackageAssemblyOrder }) {
                 </p>
             )}
             {services.length === 0 ? (
-                <p className="m-0 mt-1 text-warm-500">{t('packages.assembly.order.noServices')}</p>
+                <p className="m-0 mt-1 text-warm-600">{t('packages.assembly.order.noServices')}</p>
             ) : (
                 <ul className="m-0 mt-1.5 grid list-none gap-1 p-0">
                     {services.map((service) => (

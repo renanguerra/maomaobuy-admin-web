@@ -65,7 +65,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
                 </span>
                 <div className="min-w-0">
                     <strong className="block truncate text-sm">{t('sidebar.brandName')}</strong>
-                    <span className="mt-0.5 block truncate text-xs text-white/60">{t('sidebar.brandTagline')}</span>
+                    <span className="mt-0.5 block truncate text-xs text-white/70">{t('sidebar.brandTagline')}</span>
                 </div>
             </div>
 
@@ -76,7 +76,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
                 {visibleGroups.map((group, index) => (
                     <section className="mb-4 last:mb-0" key={group.key ?? `group-${index}`}>
                         {group.key && (
-                            <h2 className="mt-3 mb-1.5 px-2.5 text-[0.65rem] font-bold tracking-[.12em] text-white/40 uppercase">
+                            <h2 className="mt-3 mb-1.5 px-2.5 text-[0.65rem] font-bold tracking-[.12em] text-white/70 uppercase">
                                 {t(`sidebar.groups.${group.key}`)}
                             </h2>
                         )}
@@ -108,7 +108,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
                     </span>
                     <div className="min-w-0 flex-1">
                         <strong className="block truncate text-sm">{name}</strong>
-                        <span className="block truncate text-xs text-white/55">{admin?.email ?? t('common.dash')}</span>
+                        <span className="block truncate text-xs text-white/70">{admin?.email ?? t('common.dash')}</span>
                     </div>
                 </div>
 
@@ -171,7 +171,7 @@ function MenuLink({
                 {count > 0 && (
                     <span
                         className={`mm-data grid h-5 min-w-5 shrink-0 place-items-center rounded-full px-1.5 text-[0.65rem] leading-none font-bold ${
-                            overdue > 0 ? 'bg-origin-500 text-white' : 'bg-amber-300 text-amber-950'
+                            overdue > 0 ? 'bg-origin-700 text-white' : 'bg-amber-300 text-amber-950'
                         }`}
                     >
                         {count}

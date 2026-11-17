@@ -76,7 +76,7 @@
     --color-night-line: #3b4a50;
     --color-night-text: #edf2f1;
     --color-night-muted: #b7c2c4;
-    --color-night-subtle: #94a2a5;
+    --color-night-subtle: #a8b4b7;
     --color-night-brand: #17383d;
     --color-night-brand-hover: #20484d;
     --color-night-deep: #102427;
@@ -99,9 +99,11 @@
     --color-ink: #172226;
     --color-muted: #5f6d70;
     --color-line: #d6e0e2;
-    --color-success: var(--color-jade-600);
-    --color-warning: var(--color-amber-500);
-    --color-secondary: var(--color-origin-600);
+    --color-success: var(--color-jade-700);
+    --color-warning: var(--color-amber-700);
+    /* Borda de campo editável: a line é decorativa e some no cartão branco. */
+    --color-control: var(--color-warm-600);
+    --color-secondary: var(--color-origin-700);
     --color-highlight: var(--color-origin-400);
     /* Chinês de nome de produto aparece em qualquer idioma: cai na Noto Sans SC. */
     --font-sans: 'Inter Variable', Inter, 'Noto Sans SC Variable', system-ui, sans-serif;
@@ -121,6 +123,7 @@
     --color-line: var(--color-night-line);
     --color-success: var(--color-night-success);
     --color-warning: var(--color-night-warning);
+    --color-control: var(--color-night-subtle);
     --color-secondary: var(--color-night-coral);
     --color-highlight: var(--color-origin-300);
 }
@@ -316,7 +319,7 @@ html:lang(zh-Hans) {
     .mm-field {
         width: 100%;
         min-height: 2.5rem;
-        border: 1px solid var(--color-line);
+        border: 1px solid var(--color-control);
         border-radius: 0.5rem;
         background: var(--color-surface);
         padding: 0.5rem 0.75rem;
@@ -329,11 +332,11 @@ html:lang(zh-Hans) {
     }
 
     .mm-field::placeholder {
-        color: color-mix(in srgb, var(--color-muted) 80%, transparent);
+        color: var(--color-muted);
     }
 
     .mm-field:hover:not(:disabled, :read-only) {
-        border-color: var(--color-brand-300);
+        border-color: var(--color-brand-500);
     }
 
     .mm-field:focus-visible,

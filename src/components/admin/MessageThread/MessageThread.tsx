@@ -128,7 +128,7 @@ export function MessageThread({ endpoint }: { endpoint: string }) {
             >
                 <textarea
                     aria-label={t('messages.placeholder')}
-                    className="min-h-11 flex-1 resize-none rounded-lg border border-line bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand-400 focus:outline-none dark:border-night-line dark:bg-night-canvas dark:text-night-text"
+                    className="min-h-11 flex-1 resize-none rounded-lg border border-control bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand-400 focus:outline-none dark:border-night-subtle dark:bg-night-canvas dark:text-night-text"
                     maxLength={MAX_LENGTH}
                     onChange={(event) => setText(event.target.value)}
                     placeholder={t('messages.placeholder')}

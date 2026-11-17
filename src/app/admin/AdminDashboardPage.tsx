@@ -318,7 +318,7 @@ function QueueTile({ stage, loading }: { stage: WorkQueueStage; loading: boolean
                     {t(`dashboard.stages.${stage.key}`)}
                 </span>
                 <ArrowUpRight
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warm-400 transition group-hover:text-primary dark:text-night-subtle dark:group-hover:text-night-accent"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warm-600 transition group-hover:text-primary dark:text-night-subtle dark:group-hover:text-night-accent"
                     aria-hidden="true"
                 />
             </span>
