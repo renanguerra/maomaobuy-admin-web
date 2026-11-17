@@ -37,7 +37,7 @@ export function StatCard({ label, value, hint, icon: Icon, href, tone = 'neutral
                 </span>
                 {href && (
                     <ArrowUpRight
-                        className="h-4 w-4 text-warm-400 transition group-hover:text-primary dark:text-night-subtle dark:group-hover:text-night-accent"
+                        className="h-4 w-4 text-warm-600 transition group-hover:text-primary dark:text-night-subtle dark:group-hover:text-night-accent"
                         aria-hidden="true"
                     />
                 )}
