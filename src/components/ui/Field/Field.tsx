@@ -37,7 +37,7 @@ export function Field({
             >
                 {label}
                 {required && (
-                    <span className="ml-0.5 text-origin-600 dark:text-night-coral" aria-hidden="true">
+                    <span className="ml-0.5 text-origin-700 dark:text-night-coral" aria-hidden="true">
                         *
                     </span>
                 )}

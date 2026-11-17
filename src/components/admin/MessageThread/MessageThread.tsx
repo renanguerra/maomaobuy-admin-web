@@ -101,7 +101,7 @@ export function MessageThread({ endpoint }: { endpoint: string }) {
                                 <p
                                     className={`m-0 mt-1 text-[0.7rem] ${
                                         message.authorType === 'ADMIN'
-                                            ? 'text-white/70'
+                                            ? 'text-white/85 dark:text-white'
                                             : 'text-muted dark:text-night-subtle'
                                     }`}
                                 >
