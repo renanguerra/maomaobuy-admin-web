@@ -101,7 +101,13 @@ export function CarriersPage() {
                                 <span className="mm-data font-semibold text-ink dark:text-night-text">
                                     {channel.code}
                                 </span>{' '}
-                                <span className="text-muted dark:text-night-muted">{channel.name}</span>
+                                <span className="text-muted dark:text-night-muted">{channel.name}</span>{' '}
+                                <a
+                                    className="text-primary no-underline hover:underline dark:text-night-accent"
+                                    href={`/admin/frete?westlink=${encodeURIComponent(channel.code)}&nome=${encodeURIComponent(channel.name)}`}
+                                >
+                                    {t('shippingTable.api.addFromAccount')}
+                                </a>
                             </li>
                         ))}
                     </ul>

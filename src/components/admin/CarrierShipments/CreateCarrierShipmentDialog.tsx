@@ -86,8 +86,9 @@ export function CreateCarrierShipmentDialog({
         ])
             .then(([loadedDraft, loadedChannels]) => {
                 setDraft(loadedDraft);
-                setChannels(loadedChannels.channels);
-                setChannelCode(initialChannelCode ?? loadedDraft.defaultChannelCode);
+                // Linha desligada na tabela de frete não cria envio (o backend recusa).
+                setChannels(loadedChannels.channels.filter((channel) => channel.isActive));
+                setChannelCode(initialChannelCode ?? loadedDraft.defaultChannelCode ?? '');
                 setParcel({
                     weightGrams: String(loadedDraft.parcel.weightGrams ?? ''),
                     lengthMillimeters: String(loadedDraft.parcel.lengthMillimeters ?? ''),

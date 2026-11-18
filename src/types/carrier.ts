@@ -6,13 +6,15 @@
 export type CarrierCargoType = 'GENERAL' | 'BATTERY_INTERNAL' | 'BATTERY_STANDALONE';
 
 export interface CarrierChannel {
+    /** Id da linha na tabela de frete (`/admin/frete`). */
+    id: string;
     code: string;
     name: string;
-    originalName: string;
-    family: 'CORREIOS' | 'EUB';
+    originalName: string | null;
+    isActive: boolean;
     preferred: boolean;
-    summary: string;
-    acceptedGoods: string;
+    summary: string | null;
+    acceptedGoods: string | null;
     cargoTypes: CarrierCargoType[];
     minWeightGrams: number;
     maxWeightGrams: number;
@@ -111,7 +113,7 @@ export interface CarrierDraft {
     packageStatus: string;
     readyToCreate: boolean;
     blockingReason: string | null;
-    defaultChannelCode: string;
+    defaultChannelCode: string | null;
     parcel: {
         weightGrams: number | null;
         lengthMillimeters: number | null;
