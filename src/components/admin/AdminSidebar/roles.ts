@@ -14,6 +14,7 @@ const WRITE_ROLES: Partial<Record<MenuItemKey, readonly string[]>> = {
     influencers: ['SUPPORT', 'FINANCE'],
     wholesale: ['SUPPORT'],
     siteNotices: ['SUPPORT'],
+    suppliers: ['CATALOG', 'WAREHOUSE', 'FINANCE'],
     products: ['CATALOG'],
     coinShop: ['CATALOG'],
     checkoutAddons: ['CATALOG'],

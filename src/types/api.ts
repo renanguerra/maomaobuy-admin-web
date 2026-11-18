@@ -1591,3 +1591,71 @@ export interface InfluencerDefaults {
 export function basisPointsLabel(basisPoints: number) {
     return `${(basisPoints / 100).toLocaleString(LOCALE_INTL_TAG[getStoreLocale()], { maximumFractionDigits: 2 })}%`;
 }
+
+/* Fornecedores (controle interno) */
+
+export type SupplierKind = 'PRODUCT' | 'SHIPPING';
+export type SupplierStatus = 'EVALUATING' | 'ACTIVE' | 'PAUSED' | 'DISCARDED';
+
+export interface SupplierContact {
+    name: string;
+    role: string | null;
+    phone: string | null;
+    email: string | null;
+    wechat: string | null;
+    notes: string | null;
+}
+
+export interface SupplierSummary {
+    id: string;
+    kind: SupplierKind;
+    status: SupplierStatus;
+    name: string;
+    country: string | null;
+    city: string | null;
+    supplies: string | null;
+    modalities: string[];
+    mainContact: SupplierContact | null;
+    contactCount: number;
+    updatedAt: string;
+}
+
+export interface SupplierAttachment {
+    id: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    url: string;
+    createdAt: string;
+}
+
+export interface Supplier {
+    id: string;
+    kind: SupplierKind;
+    status: SupplierStatus;
+    name: string;
+    country: string | null;
+    city: string | null;
+    website: string | null;
+    supplies: string | null;
+    modalities: string[];
+    contacts: SupplierContact[];
+    strengths: string | null;
+    weaknesses: string | null;
+    notes: string | null;
+    minOrder: string | null;
+    leadTime: string | null;
+    paymentTerms: string | null;
+    currency: string | null;
+    priceReference: string | null;
+    attachments: SupplierAttachment[];
+    createdBy: { id: string; name: string } | null;
+    updatedBy: { id: string; name: string } | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface SupplierModality {
+    kind: SupplierKind;
+    modality: string;
+}
