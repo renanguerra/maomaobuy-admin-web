@@ -70,7 +70,9 @@ function PresetForm({
     const [category, setCategory] = useState<CostCategory>(preset?.category ?? 'PACKAGING');
     const [unitAmountMinor, setUnitAmountMinor] = useState(preset?.unitAmountMinor ?? '0');
     const [currency, setCurrency] = useState<CostCurrency>(preset?.currency ?? 'CNY');
-    const [autoApply, setAutoApply] = useState<CostAutoApply | ''>(preset?.autoApply ?? '');
+    // O automático por caixa saiu (19/11/2026): item antigo marcado assim abre
+    // como manual, e salvar grava manual.
+    const [autoApply, setAutoApply] = useState<CostAutoApply | ''>(preset?.autoApply === 'ORDER' ? 'ORDER' : '');
     const [autoQuantity, setAutoQuantity] = useState(String(preset?.autoQuantity ?? 1));
     const [isActive, setIsActive] = useState(preset?.isActive ?? true);
     const [error, setError] = useState<string>();
@@ -151,7 +153,6 @@ function PresetForm({
                     options={[
                         { value: '', label: t('profit.presets.autoApplyOptions.none') },
                         { value: 'ORDER', label: t('profit.presets.autoApplyOptions.ORDER') },
-                        { value: 'PACKAGE', label: t('profit.presets.autoApplyOptions.PACKAGE') },
                     ]}
                     value={autoApply}
                 />

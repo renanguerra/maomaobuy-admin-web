@@ -787,6 +787,8 @@ export interface AdminPackage {
     shippingAmountMinor: string | null;
     /** Custo da transportadora, digitado pelo admin. */
     freightCostAmountMinor: string | null;
+    /** Embalagem usada (Embalagens); o custo dela vai à planilha da caixa. */
+    shippingBoxId: string | null;
     /** Margem aplicada naquela cotação, em pontos-base. */
     freightMarkupBasisPoints: number | null;
     /** Armazenagem dos pedidos do pacote, cobrada junto com o frete. */

@@ -16,6 +16,7 @@ const WRITE_ROLES: Partial<Record<MenuItemKey, readonly string[]>> = {
     siteNotices: ['SUPPORT'],
     suppliers: ['CATALOG', 'WAREHOUSE', 'FINANCE'],
     shippingTable: ['WAREHOUSE', 'FINANCE'],
+    shippingBoxes: ['WAREHOUSE', 'FINANCE'],
     products: ['CATALOG'],
     coinShop: ['CATALOG'],
     checkoutAddons: ['CATALOG'],

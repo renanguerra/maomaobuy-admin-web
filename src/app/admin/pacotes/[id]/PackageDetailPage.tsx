@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
+    Calculator,
     ArrowUpRight,
     CheckCircle2,
     ClipboardList,
@@ -35,6 +36,8 @@ import { ListRow, ListRows } from '@/components/admin/ListRow';
 import { MediaGrid, MediaTile } from '@/components/admin/MediaGrid';
 import { MessageThread } from '@/components/admin/MessageThread';
 import { PageHeader } from '@/components/admin/PageHeader';
+import { DeferredSection } from '@/components/admin/DeferredSection';
+import { PackageInternalControl } from '@/components/admin/PackageInternalControl';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { packageStatusTone, StatusPill } from '@/components/admin/StatusPill';
@@ -45,6 +48,8 @@ import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import type { MessageKey } from '@/i18n/translations';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
+import type { ShippingBox } from '@/types/shipping-box';
+import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import { api, ApiError, uploadToPresignedUrl } from '@/services/api';
 import {
     formatCpf,
@@ -155,6 +160,7 @@ const TRACKING_NEXT_STEP: Record<string, { status: string; labelKey: MessageKey 
 export function PackageDetailPage() {
     const { t } = useTranslation();
     const { notify } = useToast();
+    const { admin } = useAdminAccountAuth();
     const confirm = useConfirm();
     const params = useParams<{ id: string }>();
     const router = useRouter();
@@ -162,6 +168,10 @@ export function PackageDetailPage() {
     const [error, setError] = useState<string>();
     const [dialog, setDialog] = useState<DialogKind>(null);
     const [costSheetOpen, setCostSheetOpen] = useState(false);
+    const [sheetVersion, setSheetVersion] = useState(0);
+    // Embalagens carregadas pelo controle interno: preenchem as medidas
+    // sugeridas quando o pacote ainda não tem as dele.
+    const [boxes, setBoxes] = useState<ShippingBox[]>([]);
     const [removingItem, setRemovingItem] = useState<AdminPackageItem>();
     const [busy, setBusy] = useState<string>();
     const [uploading, setUploading] = useState(false);
@@ -501,6 +511,16 @@ export function PackageDetailPage() {
     // Peso e medidas podem ser corrigidos a qualquer momento, em qualquer
     // status: a rota própria não recota o frete nem avisa o cliente.
     const canEditMeasurements = true;
+    // Medida já gravada; sem ela, a da embalagem escolhida no controle interno.
+    const chosenBox = boxes.find((box) => box.id === pkg.shippingBoxId);
+    const suggestedSide = (side: 'length' | 'width' | 'height') => {
+        const own = pkg[`${side}Millimeters`];
+        if (own) return String(own);
+        const fromBox = chosenBox?.[`${side}Mm`];
+        return fromBox ? String(fromBox) : undefined;
+    };
+    // O backend aceita armazém, financeiro e SUPERADMIN; para os outros o campo só mostra.
+    const canEditPackaging = ['WAREHOUSE', 'FINANCE', 'SUPERADMIN'].includes(admin?.role ?? '');
     const hasActions =
         canEditMeasurements ||
         canEditItems ||
@@ -533,9 +553,6 @@ export function PackageDetailPage() {
                 }
                 actions={
                     <>
-                        <Button onClick={() => setCostSheetOpen(true)} size="small" variant="secondary">
-                            {t('profit.actions.costSheet')}
-                        </Button>
                         <ButtonLink
                             href={`/impressao/pacotes?ids=${pkg.id}`}
                             leadingIcon={<ClipboardList className="h-4 w-4" aria-hidden="true" />}
@@ -549,7 +566,11 @@ export function PackageDetailPage() {
                     </>
                 }
             />
-            <PackageCostSheetDialog onClose={() => setCostSheetOpen(false)} packageId={costSheetOpen ? pkg.id : null} />
+            <PackageCostSheetDialog
+                onChanged={() => setSheetVersion((value) => value + 1)}
+                onClose={() => setCostSheetOpen(false)}
+                packageId={costSheetOpen ? pkg.id : null}
+            />
 
             {pkg.replacedByPackage && (
                 <Alert
@@ -1040,13 +1061,13 @@ export function PackageDetailPage() {
                         )}
                     </SectionCard>
 
-                    <SectionCard
+                    <DeferredSection
                         description={t('messages.description')}
                         icon={<MessageSquare aria-hidden="true" />}
                         title={t('messages.title')}
                     >
                         <MessageThread endpoint={`/packages/${params.id}/messages`} />
-                    </SectionCard>
+                    </DeferredSection>
                 </div>
 
                 <div className="grid min-w-0 gap-5">
@@ -1121,6 +1142,25 @@ export function PackageDetailPage() {
                             ]}
                         />
                     </SectionCard>
+
+                    <DeferredSection
+                        description={t('shippingBoxes.package.sectionHint')}
+                        icon={<Calculator aria-hidden="true" />}
+                        title={t('shippingBoxes.package.sectionTitle')}
+                    >
+                        <PackageInternalControl
+                            canEditPackaging={canEditPackaging}
+                            onBoxesLoaded={setBoxes}
+                            onError={(message) => notify({ tone: 'danger', title: message })}
+                            onOpenSheet={() => setCostSheetOpen(true)}
+                            onUpdated={(updated) => {
+                                setPkg(updated);
+                                notify({ tone: 'success', title: t('shippingBoxes.package.saved') });
+                            }}
+                            pkg={pkg}
+                            sheetVersion={sheetVersion}
+                        />
+                    </DeferredSection>
 
                     <SectionCard dense title={t('packages.detail.datesSection')}>
                         <SummaryList
@@ -1214,7 +1254,7 @@ export function PackageDetailPage() {
                         kind: 'number',
                         min: 1,
                         suffix: 'mm',
-                        defaultValue: pkg.lengthMillimeters ? String(pkg.lengthMillimeters) : undefined,
+                        defaultValue: suggestedSide('length'),
                         placeholder: '300',
                     },
                     {
@@ -1223,7 +1263,7 @@ export function PackageDetailPage() {
                         kind: 'number',
                         min: 1,
                         suffix: 'mm',
-                        defaultValue: pkg.widthMillimeters ? String(pkg.widthMillimeters) : undefined,
+                        defaultValue: suggestedSide('width'),
                         placeholder: '200',
                     },
                     {
@@ -1232,7 +1272,7 @@ export function PackageDetailPage() {
                         kind: 'number',
                         min: 1,
                         suffix: 'mm',
-                        defaultValue: pkg.heightMillimeters ? String(pkg.heightMillimeters) : undefined,
+                        defaultValue: suggestedSide('height'),
                         placeholder: '150',
                     },
                 ]}

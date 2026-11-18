@@ -936,8 +936,7 @@ function PresetsTab({
                 <div className="grid gap-1">
                     <p className="m-0 text-xs text-muted dark:text-night-muted">{t('profit.presets.hint')}</p>
                     <p className="m-0 text-xs font-semibold text-ink dark:text-night-text">
-                        {t('profit.presets.perOrderTotal', { total: automaticTotal(presets, 'ORDER') })} ·{' '}
-                        {t('profit.presets.perPackageTotal', { total: automaticTotal(presets, 'PACKAGE') })}
+                        {t('profit.presets.perOrderTotal', { total: automaticTotal(presets, 'ORDER') })}
                     </p>
                 </div>
             </Toolbar>
@@ -955,7 +954,7 @@ function PresetsTab({
                                 {preset.autoApply === 'ORDER'
                                     ? t('profit.presets.ruleOrder', { quantity: preset.autoQuantity })
                                     : preset.autoApply === 'PACKAGE'
-                                      ? t('profit.presets.rulePackage', { quantity: preset.autoQuantity })
+                                      ? t('profit.presets.rulePackageRetired')
                                       : t('profit.presets.ruleManual')}
                             </span>
                         </span>
@@ -987,7 +986,7 @@ function PresetsTab({
 }
 
 /** Quanto cada pedido/caixa pago leva de custo automático, somado por moeda. */
-function automaticTotal(presets: readonly CostPreset[], target: 'ORDER' | 'PACKAGE'): string {
+function automaticTotal(presets: readonly CostPreset[], target: 'ORDER'): string {
     const totals = { CNY: 0, BRL: 0 };
     for (const preset of presets)
         if (preset.isActive && preset.autoApply === target)
