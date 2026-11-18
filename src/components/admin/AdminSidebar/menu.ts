@@ -3,6 +3,7 @@ import {
     ChartColumn,
     ClipboardList,
     Coins,
+    Contact,
     CreditCard,
     LayoutDashboard,
     Mail,
@@ -65,6 +66,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
             { key: 'users', href: '/admin/usuarios', icon: Users },
             { key: 'influencers', href: '/admin/influencers', icon: Star },
             { key: 'wholesale', href: '/admin/lojistas', icon: Store },
+            { key: 'suppliers', href: '/admin/fornecedores', icon: Contact },
         ],
     },
     {

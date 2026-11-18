@@ -28,6 +28,7 @@ export type MenuItemKey =
     | 'profit'
     | 'productRequests'
     | 'siteNotices'
+    | 'suppliers'
     | 'storefrontFeedbacks'
     | 'settings';
 
