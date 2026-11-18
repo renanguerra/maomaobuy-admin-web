@@ -2787,6 +2787,7 @@ export const zhHans: Messages = {
             contactName: '姓名',
             contactRole: '职位或部门',
             contactPhone: '电话 / WhatsApp',
+            contactPhoneHint: '带国际区号（+86、+55）才能在 WhatsApp 打开。',
             contactEmail: '邮箱',
             contactWechat: '微信',
             contactNotes: '备注',

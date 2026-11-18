@@ -31,7 +31,7 @@ import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError, uploadToPresignedUrl } from '@/services/api';
 import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import { formatDate, type PresignedUpload, type Supplier, type SupplierAttachment } from '@/types/api';
-import { locationLabel, SUPPLIER_STATUS_TONES, whatsappHref } from '../supplier-format';
+import { canWriteSuppliers, locationLabel, SUPPLIER_STATUS_TONES, whatsappHref } from '../supplier-format';
 
 /** Tipos aceitos pela API; alguns sistemas não informam o MIME de `.doc` e `.csv`. */
 const ATTACHMENT_MIME_BY_EXTENSION: Record<string, string> = {
@@ -77,6 +77,7 @@ export function SupplierDetailPage() {
     const { notify } = useToast();
     const confirm = useConfirm();
     const { admin } = useAdminAccountAuth();
+    const canWrite = canWriteSuppliers(admin?.role);
     const [supplier, setSupplier] = useState<Supplier>();
     const [error, setError] = useState<string>();
     const [attaching, setAttaching] = useState(false);
@@ -238,12 +239,14 @@ export function SupplierDetailPage() {
                                 {t('suppliers.detail.delete')}
                             </Button>
                         )}
-                        <ButtonLink
-                            href={`/admin/fornecedores/${supplier.id}/editar`}
-                            leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
-                        >
-                            {t('suppliers.detail.edit')}
-                        </ButtonLink>
+                        {canWrite && (
+                            <ButtonLink
+                                href={`/admin/fornecedores/${supplier.id}/editar`}
+                                leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
+                            >
+                                {t('suppliers.detail.edit')}
+                            </ButtonLink>
+                        )}
                     </>
                 }
                 backHref="/admin/fornecedores"
@@ -410,32 +413,34 @@ export function SupplierDetailPage() {
 
                     <SectionCard
                         action={
-                            <>
-                                <input
-                                    accept={ATTACHMENT_ACCEPT}
-                                    className="sr-only"
-                                    multiple
-                                    onChange={(event) => {
-                                        const files = Array.from(event.target.files ?? []);
-                                        if (files.length > 0) void uploadAttachments(files);
-                                    }}
-                                    ref={attachmentInputRef}
-                                    tabIndex={-1}
-                                    type="file"
-                                />
-                                <Button
-                                    leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
-                                    loading={attaching}
-                                    onClick={() => attachmentInputRef.current?.click()}
-                                    size="small"
-                                    type="button"
-                                    variant="secondary"
-                                >
-                                    {attaching
-                                        ? t('suppliers.attachments.uploadingButton')
-                                        : t('suppliers.attachments.uploadButton')}
-                                </Button>
-                            </>
+                            canWrite && (
+                                <>
+                                    <input
+                                        accept={ATTACHMENT_ACCEPT}
+                                        className="sr-only"
+                                        multiple
+                                        onChange={(event) => {
+                                            const files = Array.from(event.target.files ?? []);
+                                            if (files.length > 0) void uploadAttachments(files);
+                                        }}
+                                        ref={attachmentInputRef}
+                                        tabIndex={-1}
+                                        type="file"
+                                    />
+                                    <Button
+                                        leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
+                                        loading={attaching}
+                                        onClick={() => attachmentInputRef.current?.click()}
+                                        size="small"
+                                        type="button"
+                                        variant="secondary"
+                                    >
+                                        {attaching
+                                            ? t('suppliers.attachments.uploadingButton')
+                                            : t('suppliers.attachments.uploadButton')}
+                                    </Button>
+                                </>
+                            )
                         }
                         description={t('suppliers.attachments.description')}
                         flush={supplier.attachments.length > 0}
@@ -450,18 +455,20 @@ export function SupplierDetailPage() {
                                     <li key={attachment.id}>
                                         <ListRow
                                             actions={
-                                                <Button
-                                                    aria-label={t('suppliers.attachments.removeAria', {
-                                                        name: attachment.fileName,
-                                                    })}
-                                                    iconOnly
-                                                    loading={busy === `attachment:${attachment.id}`}
-                                                    onClick={() => void removeAttachment(attachment)}
-                                                    size="small"
-                                                    variant="dangerGhost"
-                                                >
-                                                    <Trash2 className="h-4 w-4" aria-hidden="true" />
-                                                </Button>
+                                                canWrite && (
+                                                    <Button
+                                                        aria-label={t('suppliers.attachments.removeAria', {
+                                                            name: attachment.fileName,
+                                                        })}
+                                                        iconOnly
+                                                        loading={busy === `attachment:${attachment.id}`}
+                                                        onClick={() => void removeAttachment(attachment)}
+                                                        size="small"
+                                                        variant="dangerGhost"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                                    </Button>
+                                                )
                                             }
                                             leading={
                                                 attachment.mimeType.startsWith('image/') ? (

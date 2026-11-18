@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Plus, Trash2, X } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
@@ -124,11 +124,23 @@ export function SupplierEditorPage() {
     const [attempted, setAttempted] = useState(false);
     const [modalityText, setModalityText] = useState('');
     const [usedModalities, setUsedModalities] = useState<SupplierModality[]>([]);
+    // Versão aberta no formulário: o backend recusa (409) se outra pessoa salvou no meio.
+    const [loadedUpdatedAt, setLoadedUpdatedAt] = useState<string>();
+    const saveErrorRef = useRef<HTMLDivElement>(null);
+
+    // O botão Salvar fica no fim da página e o aviso no topo: sem rolar, o
+    // erro (inclusive o 409 de edição simultânea) passava despercebido.
+    useEffect(() => {
+        if (saveError) saveErrorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, [saveError]);
 
     useEffect(() => {
         if (!id) return;
         api<Supplier>(`/suppliers/${id}`)
-            .then((supplier) => setDraft(draftOf(supplier)))
+            .then((supplier) => {
+                setDraft(draftOf(supplier));
+                setLoadedUpdatedAt(supplier.updatedAt);
+            })
             .catch((err) =>
                 setLoadError(
                     err instanceof ApiError && err.status === 404
@@ -213,7 +225,11 @@ export function SupplierEditorPage() {
     async function submit(event: FormEvent) {
         event.preventDefault();
         setAttempted(true);
-        if (nameMissing || current.contacts.some(contactMissing)) return;
+        if (nameMissing || current.contacts.some(contactMissing)) {
+            // O erro só aparece no próximo render; leva o foco ao primeiro campo marcado.
+            requestAnimationFrame(() => document.querySelector<HTMLElement>('form [aria-invalid="true"]')?.focus());
+            return;
+        }
 
         // Linha de contato toda em branco é só o espaço vazio do formulário.
         const contacts = current.contacts
@@ -233,7 +249,12 @@ export function SupplierEditorPage() {
         try {
             const saved = await api<Supplier>(id ? `/suppliers/${id}` : '/suppliers', {
                 method: id ? 'PUT' : 'POST',
-                body: JSON.stringify({ ...current, contacts, modalities }),
+                body: JSON.stringify({
+                    ...current,
+                    contacts,
+                    modalities,
+                    ...(id ? { expectedUpdatedAt: loadedUpdatedAt } : {}),
+                }),
             });
             notify({
                 tone: 'success',
@@ -262,9 +283,11 @@ export function SupplierEditorPage() {
             />
 
             {saveError && (
-                <Alert tone="danger" title={t('suppliers.form.saveError')}>
-                    <p>{saveError}</p>
-                </Alert>
+                <div ref={saveErrorRef}>
+                    <Alert tone="danger" title={t('suppliers.form.saveError')}>
+                        <p>{saveError}</p>
+                    </Alert>
+                </div>
             )}
 
             <SectionCard title={t('suppliers.form.identity')}>
@@ -456,6 +479,7 @@ export function SupplierEditorPage() {
                                 />
                                 <Input
                                     inputMode="tel"
+                                    hint={t('suppliers.form.contactPhoneHint')}
                                     label={t('suppliers.form.contactPhone')}
                                     maxLength={60}
                                     onChange={(event) => updateContact(contact.key, 'phone', event.target.value)}

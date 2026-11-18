@@ -17,8 +17,15 @@ import { SearchInput } from '@/components/ui/SearchInput';
 import { Select } from '@/components/ui/Select';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
+import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import type { Page, SupplierKind, SupplierModality, SupplierStatus, SupplierSummary } from '@/types/api';
-import { contactChannels, locationLabel, SUPPLIER_STATUS_TONES, SUPPLIER_STATUSES } from './supplier-format';
+import {
+    canWriteSuppliers,
+    contactChannels,
+    locationLabel,
+    SUPPLIER_STATUS_TONES,
+    SUPPLIER_STATUSES,
+} from './supplier-format';
 
 const LIMIT = 25;
 const VISIBLE_MODALITIES = 3;
@@ -41,6 +48,7 @@ interface Failure {
  */
 export function SuppliersListPage() {
     const { t } = useTranslation();
+    const { admin } = useAdminAccountAuth();
     const [kind, setKind] = useState<KindFilter>('all');
     const [status, setStatus] = useState<'' | SupplierStatus>('');
     const [modality, setModality] = useState('');
@@ -195,12 +203,14 @@ export function SuppliersListPage() {
         <div className="grid gap-6">
             <PageHeader
                 actions={
-                    <ButtonLink
-                        href="/admin/fornecedores/novo"
-                        leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
-                    >
-                        {t('suppliers.newSupplier')}
-                    </ButtonLink>
+                    canWriteSuppliers(admin?.role) && (
+                        <ButtonLink
+                            href="/admin/fornecedores/novo"
+                            leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
+                        >
+                            {t('suppliers.newSupplier')}
+                        </ButtonLink>
+                    )
                 }
                 description={t('suppliers.description')}
                 kicker={t('suppliers.kicker')}

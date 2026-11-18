@@ -2880,6 +2880,7 @@ export const ptBR = {
             contactName: 'Nome',
             contactRole: 'Cargo ou área',
             contactPhone: 'Telefone / WhatsApp',
+            contactPhoneHint: 'Com DDI (+86, +55) para abrir no WhatsApp.',
             contactEmail: 'E-mail',
             contactWechat: 'WeChat',
             contactNotes: 'Observação',

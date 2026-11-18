@@ -47,10 +47,20 @@ export const MODALITY_PRESETS: Record<SupplierKind, readonly string[]> = {
 
 export const SUPPLIER_CURRENCIES = ['CNY', 'USD', 'BRL', 'HKD', 'JPY', 'EUR'] as const;
 
-/** Só dígitos com DDI: o formato que o link do WhatsApp aceita. */
+/**
+ * Link do WhatsApp só para número com DDI (`+86 …`, `+55 …`): sem ele, um
+ * celular brasileiro "11 9…" viraria o código de outro país.
+ */
 export function whatsappHref(phone: string | null): string | undefined {
-    const digits = (phone ?? '').replace(/\D/g, '');
+    const trimmed = (phone ?? '').trim();
+    if (!trimmed.startsWith('+')) return undefined;
+    const digits = trimmed.replace(/\D/g, '');
     return digits.length >= 10 ? `https://wa.me/${digits}` : undefined;
+}
+
+/** Espelho do `@Roles` de escrita em `AdminSuppliersController`. */
+export function canWriteSuppliers(role: string | undefined): boolean {
+    return role === 'SUPERADMIN' || role === 'CATALOG' || role === 'WAREHOUSE' || role === 'FINANCE';
 }
 
 export function contactChannels(contact: SupplierContact): string {
