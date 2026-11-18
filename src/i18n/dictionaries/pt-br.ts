@@ -1731,7 +1731,8 @@ export const ptBR = {
         installmentsHint: 'Mais a parte fixa em cada cobrança. Parcela mínima: {{min}}.',
         installmentsOnlyCash: 'Só à vista. Para parcelar, aumente topup_card_max_installments em Configurações.',
         cardKeyNote:
-            'O cartão só aparece no site com a variável ABACATEPAY_PUBLIC_KEY configurada no app público, seja qual for a chave daqui.',
+            'O cartão só aparece no site com o cartão do provedor ligado no app público (ABACATEPAY_PUBLIC_KEY na AbacatePay, AIRWALLEX_CARD_ENABLED na Airwallex), seja qual for a chave daqui.',
+        installmentsUnsupported: 'Só à vista: este provedor não parcela.',
         listTitleOnly: 'Clientes liberados',
         listTitleExcept: 'Clientes bloqueados',
         listTitleInactive: 'Lista (sem efeito neste modo)',

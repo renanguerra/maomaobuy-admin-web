@@ -1674,7 +1674,9 @@ export const zhHans: Messages = {
         installmentsTitle: '分期（手续费由客户承担）',
         installmentsHint: '每笔另加固定费用。每期最低：{{min}}。',
         installmentsOnlyCash: '仅一次性付款。如需分期，请在“设置”中提高 topup_card_max_installments。',
-        cardKeyNote: '无论这里如何设置，只有在公共应用配置了 ABACATEPAY_PUBLIC_KEY 后，网站上才会显示信用卡。',
+        cardKeyNote:
+            '无论这里如何设置，只有在公共应用中启用了服务商的信用卡（AbacatePay 为 ABACATEPAY_PUBLIC_KEY，Airwallex 为 AIRWALLEX_CARD_ENABLED）后，网站上才会显示信用卡。',
+        installmentsUnsupported: '仅一次性付款：此服务商不支持分期。',
         listTitleOnly: '已开通的客户',
         listTitleExcept: '已屏蔽的客户',
         listTitleInactive: '名单（此模式下不生效）',

@@ -488,7 +488,14 @@ const PERCENT = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
 /** A taxa de cada parcela que o cliente paga no cartão, só para leitura. */
 function InstallmentFees({ method }: { method: AdminPaymentMethod }) {
     const { t } = useTranslation();
-    if (method.installmentFees.length <= 1) return <p className="m-0">{t('paymentMethods.installmentsOnlyCash')}</p>;
+    if (method.installmentFees.length <= 1)
+        return (
+            <p className="m-0">
+                {method.providerName && method.providerName !== 'ABACATEPAY'
+                    ? t('paymentMethods.installmentsUnsupported')
+                    : t('paymentMethods.installmentsOnlyCash')}
+            </p>
+        );
     return (
         <div className="mt-2 grid gap-1.5">
             <p className="m-0 font-semibold text-ink dark:text-night-text">{t('paymentMethods.installmentsTitle')}</p>
