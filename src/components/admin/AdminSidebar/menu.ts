@@ -5,7 +5,6 @@ import {
     Coins,
     CreditCard,
     LayoutDashboard,
-    LayoutTemplate,
     Mail,
     Megaphone,
     MessageSquareQuote,
@@ -55,7 +54,6 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
         // A vitrine do site em páginas próprias, como na exploração (14/11/2026).
         key: 'storefront',
         items: [
-            { key: 'storefront', href: '/admin/vitrine', icon: LayoutTemplate },
             { key: 'categories', href: '/admin/categorias', icon: Tags },
             { key: 'storefrontFeedbacks', href: '/admin/vitrine/feedbacks', icon: MessageSquareQuote },
             { key: 'siteNotices', href: '/admin/avisos', icon: Megaphone },
@@ -104,8 +102,6 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
  */
 export function isMenuItemActive(href: string, pathname: string) {
     if (href === '/admin') return pathname === href;
-    // "Destaques" (/admin/vitrine) não acende junto com "Feedbacks" (/admin/vitrine/feedbacks).
-    if (href === '/admin/vitrine') return pathname === href;
     return pathname === href || pathname.startsWith(`${href}/`);
 }
 

@@ -15,23 +15,6 @@ export interface StorefrontProductRef {
     imageUrl: string | null;
 }
 
-export type BannerStatus = 'LIVE' | 'SCHEDULED' | 'ENDED' | 'INACTIVE';
-
-export interface HomeBanner {
-    id: string;
-    label: string | null;
-    title: string;
-    body: string | null;
-    ctaLabel: string;
-    image: StorefrontImage | null;
-    product: StorefrontProductRef;
-    isActive: boolean;
-    startsAt: string | null;
-    endsAt: string | null;
-    isCurrent: boolean;
-    status: BannerStatus;
-}
-
 export type FeedbackStatus = 'LIVE' | 'AWAITING_AUTHORIZATION' | 'HIDDEN';
 
 export interface FeedbackPost {
@@ -54,4 +37,4 @@ export interface CategoryShortcut {
     productCount: number;
 }
 
-export type StorefrontImageTarget = 'BANNER' | 'FEEDBACK' | 'CATEGORY';
+export type StorefrontImageTarget = 'FEEDBACK' | 'CATEGORY';
