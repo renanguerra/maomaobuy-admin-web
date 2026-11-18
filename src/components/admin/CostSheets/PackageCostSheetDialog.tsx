@@ -26,7 +26,8 @@ interface PackageCostSheetDialogProps {
 /**
  * Planilha de custos de uma caixa: frete e armazenagem cobrados contra o
  * frete pago à transportadora e a embalagem. Os itens prontos viram botões
- * — "+ Caixa 43×21×27" lança na hora, sem abrir formulário.
+ * — "+ Fita adesiva" lança na hora, sem abrir formulário. A caixa vem da
+ * embalagem escolhida no pacote (Controle interno).
  */
 export function PackageCostSheetDialog({ packageId, onClose, onChanged }: PackageCostSheetDialogProps) {
     const { t } = useTranslation();

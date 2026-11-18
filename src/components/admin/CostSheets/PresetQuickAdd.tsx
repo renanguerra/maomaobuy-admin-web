@@ -10,7 +10,7 @@ import type { CostTarget } from './CostEntryDialog';
 import { todayIso } from './cost-utils';
 
 /**
- * Embalagens e brindes cadastrados como botões: "+ Caixa 43×21×27" lança na
+ * Materiais e brindes cadastrados como botões: "+ Fita adesiva" lança na
  * hora, preso ao pedido ou à caixa, sem abrir formulário. Serve para o que
  * não é automático ou para uma unidade a mais do que é.
  */
