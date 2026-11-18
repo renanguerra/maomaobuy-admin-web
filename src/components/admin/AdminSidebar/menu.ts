@@ -13,6 +13,7 @@ import {
     Package,
     PackageOpen,
     PackageSearch,
+    Route,
     Settings,
     ShieldCheck,
     ShoppingBasket,
@@ -43,6 +44,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
             { key: 'packages', href: '/admin/pacotes', icon: Boxes, badge: 'packages' },
             { key: 'unpacked', href: '/admin/sem-pacote', icon: PackageOpen },
             { key: 'carriers', href: '/admin/transportadoras', icon: Truck },
+            { key: 'shippingTable', href: '/admin/frete', icon: Route },
             {
                 key: 'productRequests',
                 href: '/admin/pedidos-de-produto',

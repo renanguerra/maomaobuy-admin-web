@@ -55,12 +55,12 @@ export function CarrierChannelDetails({ channel }: { channel: CarrierChannel }) 
             label: t('carrier.channel.cargo'),
             value: channel.cargoTypes.map((type) => t(`carrier.cargo.${type}`)).join(', '),
         },
-        { label: t('carrier.channel.original'), value: channel.originalName },
+        ...(channel.originalName ? [{ label: t('carrier.channel.original'), value: channel.originalName }] : []),
     ];
 
     return (
         <div className="grid gap-4 text-sm">
-            <p className="m-0 leading-relaxed text-ink dark:text-night-text">{channel.summary}</p>
+            {channel.summary && <p className="m-0 leading-relaxed text-ink dark:text-night-text">{channel.summary}</p>}
 
             <dl className="m-0 grid gap-x-6 gap-y-2 sm:grid-cols-2">
                 {facts.map((fact) => (
@@ -74,12 +74,14 @@ export function CarrierChannelDetails({ channel }: { channel: CarrierChannel }) 
                 <p className="m-0 text-xs text-muted dark:text-night-muted">{channel.estimatedDays.note}</p>
             )}
 
-            <div>
-                <h4 className="m-0 mb-1 text-xs font-semibold text-muted uppercase dark:text-night-muted">
-                    {t('carrier.channel.accepts')}
-                </h4>
-                <p className="m-0 leading-relaxed text-ink dark:text-night-text">{channel.acceptedGoods}</p>
-            </div>
+            {channel.acceptedGoods && (
+                <div>
+                    <h4 className="m-0 mb-1 text-xs font-semibold text-muted uppercase dark:text-night-muted">
+                        {t('carrier.channel.accepts')}
+                    </h4>
+                    <p className="m-0 leading-relaxed text-ink dark:text-night-text">{channel.acceptedGoods}</p>
+                </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <ChannelList items={channel.advantages} title={t('carrier.channel.advantages')} />
@@ -111,15 +113,17 @@ function ChannelList({ title, items }: { title: string; items: string[] }) {
     );
 }
 
-/** Selo da linha: preferida e família (Correios ou e-邮宝). */
-export function CarrierChannelBadges({ channel }: { channel: Pick<CarrierChannel, 'preferred' | 'family'> }) {
+/** Selo da linha: preferida e, se desligada na tabela de frete, inativa. */
+export function CarrierChannelBadges({ channel }: { channel: Pick<CarrierChannel, 'preferred' | 'isActive'> }) {
     const { t } = useTranslation();
     return (
         <span className="inline-flex flex-wrap gap-1.5">
             {channel.preferred && <StatusPill tone="success">{t('carrier.channel.preferred')}</StatusPill>}
-            <StatusPill tone="neutral" hideDot>
-                {channel.family === 'EUB' ? t('carrier.channel.eub') : t('carrier.channel.correios')}
-            </StatusPill>
+            {!channel.isActive && (
+                <StatusPill tone="neutral" hideDot>
+                    {t('carrier.channel.inactive')}
+                </StatusPill>
+            )}
         </span>
     );
 }
