@@ -12,6 +12,7 @@ import {
     ArrowDownToLine,
     Package,
     PackageOpen,
+    PackageCheck,
     PackageSearch,
     Route,
     Settings,
@@ -45,6 +46,7 @@ export const MENU_GROUPS: readonly MenuGroup[] = [
             { key: 'unpacked', href: '/admin/sem-pacote', icon: PackageOpen },
             { key: 'carriers', href: '/admin/transportadoras', icon: Truck },
             { key: 'shippingTable', href: '/admin/frete', icon: Route },
+            { key: 'shippingBoxes', href: '/admin/embalagens', icon: PackageCheck },
             {
                 key: 'productRequests',
                 href: '/admin/pedidos-de-produto',

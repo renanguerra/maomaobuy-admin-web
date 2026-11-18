@@ -35,6 +35,7 @@ import { ListRow, ListRows } from '@/components/admin/ListRow';
 import { MediaGrid, MediaTile } from '@/components/admin/MediaGrid';
 import { MessageThread } from '@/components/admin/MessageThread';
 import { PageHeader } from '@/components/admin/PageHeader';
+import { PackagePackagingCard } from '@/components/admin/PackagePackaging';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { packageStatusTone, StatusPill } from '@/components/admin/StatusPill';
@@ -45,6 +46,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import type { MessageKey } from '@/i18n/translations';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
+import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import { api, ApiError, uploadToPresignedUrl } from '@/services/api';
 import {
     formatCpf,
@@ -155,6 +157,7 @@ const TRACKING_NEXT_STEP: Record<string, { status: string; labelKey: MessageKey 
 export function PackageDetailPage() {
     const { t } = useTranslation();
     const { notify } = useToast();
+    const { admin } = useAdminAccountAuth();
     const confirm = useConfirm();
     const params = useParams<{ id: string }>();
     const router = useRouter();
@@ -501,6 +504,8 @@ export function PackageDetailPage() {
     // Peso e medidas podem ser corrigidos a qualquer momento, em qualquer
     // status: a rota própria não recota o frete nem avisa o cliente.
     const canEditMeasurements = true;
+    // O backend aceita armazém, financeiro e SUPERADMIN; para os outros o campo só mostra.
+    const canEditPackaging = ['WAREHOUSE', 'FINANCE', 'SUPERADMIN'].includes(admin?.role ?? '');
     const hasActions =
         canEditMeasurements ||
         canEditItems ||
@@ -1121,6 +1126,16 @@ export function PackageDetailPage() {
                             ]}
                         />
                     </SectionCard>
+
+                    <PackagePackagingCard
+                        canEdit={canEditPackaging}
+                        onError={(message) => notify({ tone: 'danger', title: message })}
+                        onUpdated={(updated) => {
+                            setPkg(updated);
+                            notify({ tone: 'success', title: t('shippingBoxes.package.saved') });
+                        }}
+                        pkg={pkg}
+                    />
 
                     <SectionCard dense title={t('packages.detail.datesSection')}>
                         <SummaryList

@@ -30,6 +30,7 @@ export type MenuItemKey =
     | 'siteNotices'
     | 'suppliers'
     | 'shippingTable'
+    | 'shippingBoxes'
     | 'storefrontFeedbacks'
     | 'settings';
 
