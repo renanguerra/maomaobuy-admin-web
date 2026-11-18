@@ -1684,6 +1684,31 @@ export const zhHans: Messages = {
         add: '添加',
         remove: '移除',
         addedAt: '加入时间 {{date}}',
+        provider: {
+            title: '支付服务商',
+            current: '由 {{provider}} 收款。',
+            pilot: '试点：下方名单中的客户通过 {{provider}} 付款。',
+            noPilot: '没有试点。',
+            unavailable:
+                '{{provider}} 在此环境未启用（PAYMENT_PROVIDERS）或缺少凭证。在选择其他服务商或在部署中启用之前，客户看不到此支付方式。',
+            pilotUnavailable:
+                '{{provider}} 在此环境未启用或缺少凭证。在更换或关闭试点之前，试点客户无法使用此支付方式。',
+            change: '更换服务商',
+            onlySuperadmin: '只有 SUPERADMIN 可以更换服务商。',
+            dialogTitle: '更换 {{method}} 的服务商',
+            dialogDescription: '从下一次报价开始生效。已创建的 Pix 和信用卡付款会留在原服务商，直到支付或过期。',
+            providerLabel: '所有客户的服务商',
+            pilotLabel: '试点服务商',
+            pilotHint: '试点名单中的客户通过它付款。与所有客户的服务商相同 = 没有试点。',
+            noPilotOption: '没有试点',
+            confirm: '更换',
+            pilotListTitle: '试点客户',
+            pilotListInactive: '试点客户（未生效：未选择试点服务商）',
+        },
+        providerNames: {
+            ABACATEPAY: 'AbacatePay',
+            AIRWALLEX: 'Airwallex',
+        },
     },
     productRequests: {
         kicker: '商品请求',
