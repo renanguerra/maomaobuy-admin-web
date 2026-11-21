@@ -307,6 +307,72 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                 )}
             </SectionCard>
 
+            <SectionCard description={t('products.new.invoice.description')} title={t('products.new.invoice.title')}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <Input
+                        label={t('products.new.invoice.nameEn')}
+                        maxLength={64}
+                        onChange={(event) => patch({ customsNameEn: event.target.value })}
+                        placeholder="Trading cards"
+                        value={values.customsNameEn}
+                    />
+                    <Input
+                        label={t('products.new.invoice.nameZh')}
+                        maxLength={100}
+                        onChange={(event) => patch({ customsNameZh: event.target.value })}
+                        placeholder="卡牌"
+                        value={values.customsNameZh}
+                    />
+                    <Input
+                        hint={t('products.new.invoice.hsCodeHint')}
+                        inputMode="numeric"
+                        label={t('products.new.invoice.hsCode')}
+                        maxLength={12}
+                        onChange={(event) => patch({ hsCode: event.target.value })}
+                        pattern="\d{4,12}"
+                        placeholder="9504400000"
+                        value={values.hsCode}
+                    />
+                    <Input
+                        label={t('products.new.invoice.brand')}
+                        maxLength={100}
+                        onChange={(event) => patch({ customsBrand: event.target.value })}
+                        placeholder="Pokemon"
+                        value={values.customsBrand}
+                    />
+                    <Input
+                        label={t('products.new.invoice.material')}
+                        maxLength={100}
+                        onChange={(event) => patch({ customsMaterial: event.target.value })}
+                        placeholder="Paper"
+                        value={values.customsMaterial}
+                    />
+                    <Input
+                        label={t('products.new.invoice.purpose')}
+                        maxLength={200}
+                        onChange={(event) => patch({ customsPurpose: event.target.value })}
+                        placeholder="Collectible card game"
+                        value={values.customsPurpose}
+                    />
+                    <Select
+                        label={t('products.new.invoice.electricMagnetic')}
+                        name="customsElectricMagnetic"
+                        onChange={(event) =>
+                            patch({
+                                customsElectricMagnetic: event.target
+                                    .value as ProductForm['values']['customsElectricMagnetic'],
+                            })
+                        }
+                        options={[
+                            { value: '', label: t('products.new.invoice.notInformed') },
+                            { value: 'NO', label: t('products.new.invoice.no') },
+                            { value: 'YES', label: t('products.new.invoice.yes') },
+                        ]}
+                        value={values.customsElectricMagnetic}
+                    />
+                </div>
+            </SectionCard>
+
             {isStore && (
                 <SectionCard
                     description={t('products.new.preSale.description')}

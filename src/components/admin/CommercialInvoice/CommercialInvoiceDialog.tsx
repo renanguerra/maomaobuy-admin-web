@@ -15,6 +15,7 @@ import {
     buildCommercialInvoiceFile,
     DEFAULT_SHIPPER,
     invoiceFileName,
+    invoiceIncludesFreight,
     invoiceItemsTotalCents,
     XLSX_MIME_TYPE,
     type CommercialInvoice,
@@ -68,16 +69,23 @@ function writeStored(key: string, value: unknown) {
     }
 }
 
+/** O cadastro guarda sim/não; o invoice escreve em inglês. */
+function electricMagneticLabel(value: boolean | null | undefined): string | undefined {
+    if (value === true) return 'Yes';
+    if (value === false) return 'No';
+    return undefined;
+}
+
 function itemFormFrom(item: CarrierDraftItem, remembered: Record<string, RememberedProduct>): ItemForm {
     const known = item.productId ? remembered[item.productId] : undefined;
     return {
         description: item.englishName || known?.description || '',
         chineseName: item.chineseName || known?.chineseName || '',
         hsCode: item.hsCode || known?.hsCode || '',
-        brand: known?.brand ?? '',
-        material: known?.material ?? '',
-        purpose: known?.purpose ?? '',
-        electricMagnetic: known?.electricMagnetic ?? 'No',
+        brand: item.brand || known?.brand || '',
+        material: item.material || known?.material || '',
+        purpose: item.purpose || known?.purpose || '',
+        electricMagnetic: electricMagneticLabel(item.electricMagnetic) ?? known?.electricMagnetic ?? 'No',
         unitValueUsd: (item.unitDeclaredUsdCents / 100).toFixed(2),
     };
 }
@@ -104,9 +112,10 @@ function toCents(value: string): number {
 }
 
 /**
- * Monta o commercial invoice do pacote. Vem preenchido com o destinatário e os
- * valores pagos, convertidos em dólar; a equipe completa o que o sistema não
- * guarda (exportador, marca, material, uso) e baixa ou anexa a planilha.
+ * Monta o commercial invoice do pacote. Vem preenchido com o destinatário, os
+ * valores pagos em dólar e os dados de invoice do cadastro de cada produto
+ * (nomes, HS, marca, material, uso); o que faltar a equipe completa aqui, e
+ * fica lembrado neste navegador. Baixa ou anexa a planilha.
  * Montado só enquanto aberto.
  */
 export function CommercialInvoiceDialog({ pkg, onClose, onAttach }: CommercialInvoiceDialogProps) {
@@ -190,9 +199,10 @@ export function CommercialInvoiceDialog({ pkg, onClose, onAttach }: CommercialIn
                 unitValueCents: toCents(items[index].unitValueUsd),
             })),
             numberOfUnits: Number(numberOfUnits),
+            destinationCountry: countryName(destination.countryCode),
             shippingWay: pkg.carrier ? `By Express (${pkg.carrier})` : 'By Express',
             terms: terms.trim(),
-            freightCents: toCents(freightUsd),
+            freightCents: invoiceIncludesFreight(model) ? toCents(freightUsd) : 0,
             reasonForExport: reasonForExport.trim(),
         };
     }
@@ -304,6 +314,7 @@ export function CommercialInvoiceDialog({ pkg, onClose, onAttach }: CommercialIn
                         options={[
                             { value: 'DETAILED', label: t('packages.detail.invoice.modelDETAILED') },
                             { value: 'SIMPLE', label: t('packages.detail.invoice.modelSIMPLE') },
+                            { value: 'ABC_LEO', label: t('packages.detail.invoice.modelABC_LEO') },
                         ]}
                         value={model}
                     />
@@ -346,7 +357,7 @@ export function CommercialInvoiceDialog({ pkg, onClose, onAttach }: CommercialIn
                                     required
                                     value={customShipper.address}
                                 />
-                                {model === 'DETAILED' && (
+                                {model !== 'SIMPLE' && (
                                     <>
                                         <Input
                                             fieldClassName="sm:col-span-2"
@@ -396,7 +407,7 @@ export function CommercialInvoiceDialog({ pkg, onClose, onAttach }: CommercialIn
                             required
                             value={terms}
                         />
-                        {model === 'DETAILED' && (
+                        {model !== 'SIMPLE' && (
                             <Input
                                 fieldClassName="sm:col-span-2"
                                 inputMode="numeric"
@@ -408,18 +419,20 @@ export function CommercialInvoiceDialog({ pkg, onClose, onAttach }: CommercialIn
                                 value={numberOfUnits}
                             />
                         )}
-                        <Input
-                            fieldClassName="sm:col-span-2"
-                            inputMode="decimal"
-                            label={t('packages.detail.invoice.freight')}
-                            min={0}
-                            onChange={(event) => setFreightUsd(event.target.value)}
-                            required
-                            step={0.01}
-                            suffix="USD"
-                            type="number"
-                            value={freightUsd}
-                        />
+                        {invoiceIncludesFreight(model) && (
+                            <Input
+                                fieldClassName="sm:col-span-2"
+                                inputMode="decimal"
+                                label={t('packages.detail.invoice.freight')}
+                                min={0}
+                                onChange={(event) => setFreightUsd(event.target.value)}
+                                required
+                                step={0.01}
+                                suffix="USD"
+                                type="number"
+                                value={freightUsd}
+                            />
+                        )}
                         <Input
                             fieldClassName="sm:col-span-6"
                             label={t('packages.detail.invoice.reason')}
@@ -451,7 +464,9 @@ export function CommercialInvoiceDialog({ pkg, onClose, onAttach }: CommercialIn
                         ))}
                         <p className="m-0 text-right text-sm font-semibold text-ink dark:text-night-text">
                             {t('packages.detail.invoice.total', {
-                                amount: usd(itemsTotalCents + toCents(freightUsd)),
+                                amount: usd(
+                                    itemsTotalCents + (invoiceIncludesFreight(model) ? toCents(freightUsd) : 0),
+                                ),
                             })}
                         </p>
                         {itemsTotalCents < paidTotalCents && (

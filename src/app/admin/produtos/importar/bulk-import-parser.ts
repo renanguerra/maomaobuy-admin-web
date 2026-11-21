@@ -5,6 +5,7 @@ import {
     inWholesaleOnlyCategory,
     resolveCategories,
     resolveChinaExclusive,
+    resolveInvoiceFields,
     resolveSalesChannel,
     toAmountMinor,
     toInt,
@@ -12,6 +13,7 @@ import {
     toOptionalAmountMinor,
     toNullableAmountMinor,
     toOptionalInt,
+    type InvoiceFields,
 } from '../product-bulk-shared';
 
 export interface BulkImportVariantInput {
@@ -22,7 +24,7 @@ export interface BulkImportVariantInput {
 }
 
 /** Corpo aceito por `POST /products` — mesmo formato de `toProductPayload`. */
-export interface BulkImportProductBody {
+export interface BulkImportProductBody extends InvoiceFields {
     name: string;
     slug: string;
     description: string;
@@ -147,6 +149,7 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
             lengthMm: toOptionalInt(record.lengthMm, 'lengthMm', 1),
             widthMm: toOptionalInt(record.widthMm, 'widthMm', 1),
             heightMm: toOptionalInt(record.heightMm, 'heightMm', 1),
+            ...resolveInvoiceFields(record),
             ...channel,
             ...taxonomy,
             variants: resolveVariants(record.variants),

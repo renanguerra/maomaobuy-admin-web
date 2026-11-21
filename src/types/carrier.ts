@@ -102,6 +102,11 @@ export interface CarrierDraftItem {
     englishName: string;
     chineseName: string;
     hsCode: string;
+    /** Campos do invoice vindos do cadastro do produto; vazio = não cadastrado. */
+    brand?: string;
+    material?: string;
+    purpose?: string;
+    electricMagnetic?: boolean | null;
     unitNetWeightGrams: number;
     unitDeclaredUsdCents: number;
     unitPaidAmountMinor: string;

@@ -486,7 +486,7 @@ export const ptBR = {
             schemaHelp: {
                 title: 'Formato esperado',
                 description:
-                    'Cada produto aceita os mesmos campos do formulário de novo produto. Categorias e subcategorias são referenciadas pelo slug, não pelo ID. O campo opcional "images" aceita URLs https de fotos — elas são baixadas e enviadas ao nosso armazenamento automaticamente. Produtos são sempre criados como rascunho — publicar continua sendo feito produto a produto depois da importação. Para PJ, use "salesChannel" (RETAIL_ONLY, WHOLESALE_ONLY ou BOTH), "wholesaleAmountMinor", "wholesaleMinQuantity" (só em BOTH) e "unitsPerPackage". Produto na categoria "caixa-master" entra como WHOLESALE_ONLY quando o canal não é informado e precisa de "weightGrams".',
+                    'Cada produto aceita os mesmos campos do formulário de novo produto. Categorias e subcategorias são referenciadas pelo slug, não pelo ID. O campo opcional "images" aceita URLs https de fotos — elas são baixadas e enviadas ao nosso armazenamento automaticamente. Produtos são sempre criados como rascunho — publicar continua sendo feito produto a produto depois da importação. Para PJ, use "salesChannel" (RETAIL_ONLY, WHOLESALE_ONLY ou BOTH), "wholesaleAmountMinor", "wholesaleMinQuantity" (só em BOTH) e "unitsPerPackage". Produto na categoria "caixa-master" entra como WHOLESALE_ONLY quando o canal não é informado e precisa de "weightGrams". Para o invoice, use "customsNameEn", "customsNameZh", "hsCode" (só dígitos), "customsBrand", "customsMaterial", "customsPurpose" e "customsElectricMagnetic" (true ou false).',
             },
             previewTitle: 'Produtos encontrados',
             previewCaption: 'Lista de produtos do arquivo',
@@ -688,6 +688,22 @@ export const ptBR = {
                 weight: 'Peso embalado (g)',
                 weightHint: 'Opcional. Ajuda a estimar o frete da caixa.',
                 weightAddonHint: 'Obrigatório. O checkout só mostra itens até o teto das configurações.',
+            },
+            invoice: {
+                title: 'Invoice e alfândega',
+                description:
+                    'Preenche o commercial invoice e a declaração da transportadora. Interno: o cliente não vê.',
+                nameEn: 'Nome em inglês',
+                nameZh: 'Nome em chinês',
+                hsCode: 'Código HS',
+                hsCodeHint: 'Só dígitos, de 4 a 12.',
+                brand: 'Marca',
+                material: 'Material',
+                purpose: 'Uso',
+                electricMagnetic: 'Elétrico/magnético',
+                notInformed: 'Não informado',
+                no: 'Não',
+                yes: 'Sim',
             },
             preSale: {
                 title: 'Pré-venda',
@@ -1378,8 +1394,10 @@ export const ptBR = {
                 model: 'Modelo',
                 modelDETAILED: 'Detalhado (planilha de exportação)',
                 modelSIMPLE: 'Simples (Starlink)',
+                modelABC_LEO: 'ABC Leo',
                 modelHintDETAILED: 'Colunas de marca, nome em chinês e volumes, com rótulos em inglês e chinês.',
                 modelHintSIMPLE: 'Só em inglês, com o frete como linha do invoice.',
+                modelHintABC_LEO: 'Bilíngue (inglês e chinês), com volumes em caixas e sem linha de frete.',
                 shipperNone: 'Não preencher',
                 shipperCustom: 'Personalizado',
                 shipper: 'Exportador',

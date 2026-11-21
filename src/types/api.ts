@@ -283,6 +283,15 @@ export interface AdminProduct {
     language?: string | null;
     condition?: 'SEALED' | 'LOOSE' | null;
     contents?: string | null;
+    /** Declaração aduaneira e commercial invoice; só o painel recebe. */
+    customsNameEn?: string | null;
+    customsNameZh?: string | null;
+    hsCode?: string | null;
+    customsBrand?: string | null;
+    customsMaterial?: string | null;
+    customsPurpose?: string | null;
+    /** `null` = não informado. */
+    customsElectricMagnetic?: boolean | null;
     coinRedeemLimitPerUser: number | null;
     coinAvailableFrom: string | null;
     coinAvailableUntil: string | null;

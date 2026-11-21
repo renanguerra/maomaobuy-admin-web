@@ -30,6 +30,13 @@ const TEMPLATE = [
         lengthMm: 250,
         widthMm: 180,
         heightMm: 120,
+        customsNameEn: 'T-shirt',
+        customsNameZh: 'T恤',
+        hsCode: '6109100000',
+        customsBrand: 'MaoMaoBuy',
+        customsMaterial: 'Cotton',
+        customsPurpose: 'Clothing',
+        customsElectricMagnetic: false,
         categories: [{ slug: 'roupas', subcategories: ['camisetas'] }],
         variants: [
             { externalId: 'azul-p', label: 'Azul, P', amountAdjustmentMinor: '0', isAvailable: true },
