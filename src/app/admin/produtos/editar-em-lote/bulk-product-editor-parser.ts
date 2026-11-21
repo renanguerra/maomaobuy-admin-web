@@ -5,6 +5,7 @@ import {
     inWholesaleOnlyCategory,
     resolveCategories,
     resolveChinaExclusive,
+    resolveInvoiceFields,
     resolveSalesChannel,
     type SalesChannelFields,
     toAmountMinor,
@@ -13,6 +14,7 @@ import {
     toOptionalAmountMinor,
     toNullableAmountMinor,
     toOptionalInt,
+    type InvoiceFields,
 } from '../product-bulk-shared';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -27,7 +29,7 @@ export interface BulkEditVariantInput {
 }
 
 /** Corpo aceito por `PATCH /products/:id` — mesmo formato de `toProductPayload`, mais o `id` do produto a editar. */
-export interface BulkEditProductBody extends Partial<SalesChannelFields> {
+export interface BulkEditProductBody extends Partial<SalesChannelFields>, InvoiceFields {
     id: string;
     name: string;
     slug: string;
@@ -149,6 +151,7 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
         lengthMm: toOptionalInt(record.lengthMm, 'lengthMm', 1),
         widthMm: toOptionalInt(record.widthMm, 'widthMm', 1),
         heightMm: toOptionalInt(record.heightMm, 'heightMm', 1),
+        ...resolveInvoiceFields(record),
         isPublished: Boolean(record.isPublished),
         isChinaExclusive,
         isPreSale,

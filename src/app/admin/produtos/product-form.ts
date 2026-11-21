@@ -26,6 +26,15 @@ export interface ProductFormValues {
     condition: string;
     /** O que vem na caixa, em uma linha. */
     contents: string;
+    /** Commercial invoice e declaração aduaneira; vazio = não informado. */
+    customsNameEn: string;
+    customsNameZh: string;
+    hsCode: string;
+    customsBrand: string;
+    customsMaterial: string;
+    customsPurpose: string;
+    /** `YES`, `NO` ou vazio (não informado), como o `<select>` entrega. */
+    customsElectricMagnetic: '' | 'YES' | 'NO';
     isPreSale: boolean;
     /** `YYYY-MM-DD`, como o `<input type="date">` entrega e o backend espera. */
     releaseDate: string;
@@ -63,6 +72,13 @@ const EMPTY: ProductFormValues = {
     language: '',
     condition: '',
     contents: '',
+    customsNameEn: '',
+    customsNameZh: '',
+    hsCode: '',
+    customsBrand: '',
+    customsMaterial: '',
+    customsPurpose: '',
+    customsElectricMagnetic: '',
     isPreSale: false,
     releaseDate: '',
     isOnDemand: false,
@@ -95,6 +111,14 @@ function fromProduct(product: AdminProduct): ProductFormValues {
         language: product.language ?? '',
         condition: product.condition ?? '',
         contents: product.contents ?? '',
+        customsNameEn: product.customsNameEn ?? '',
+        customsNameZh: product.customsNameZh ?? '',
+        hsCode: product.hsCode ?? '',
+        customsBrand: product.customsBrand ?? '',
+        customsMaterial: product.customsMaterial ?? '',
+        customsPurpose: product.customsPurpose ?? '',
+        customsElectricMagnetic:
+            product.customsElectricMagnetic === true ? 'YES' : product.customsElectricMagnetic === false ? 'NO' : '',
         isPreSale: product.isPreSale,
         releaseDate: product.releaseDate ?? '',
         isOnDemand: product.isOnDemand,
@@ -190,6 +214,13 @@ export function toProductPayload(values: ProductFormValues) {
         language: values.language || null,
         condition: values.condition || null,
         contents: values.contents.trim() || null,
+        customsNameEn: values.customsNameEn.trim() || null,
+        customsNameZh: values.customsNameZh.trim() || null,
+        hsCode: values.hsCode.trim() || null,
+        customsBrand: values.customsBrand.trim() || null,
+        customsMaterial: values.customsMaterial.trim() || null,
+        customsPurpose: values.customsPurpose.trim() || null,
+        customsElectricMagnetic: values.customsElectricMagnetic ? values.customsElectricMagnetic === 'YES' : null,
         // Pré-venda e sob demanda são só da loja: Coin Shop e "Leve junto"
         // precisam do item pronto no armazém.
         isPreSale: isStore && values.isPreSale,

@@ -51,6 +51,49 @@ export function toNonEmptyString(value: unknown, field: string, maxLength: numbe
     return trimmed;
 }
 
+/**
+ * Campos do commercial invoice e da declaração aduaneira, com o nome da API.
+ * Nos arquivos em lote: ausente (ou "") não mexe, `null` apaga, valor grava.
+ */
+export interface InvoiceFields {
+    customsNameEn?: string | null;
+    customsNameZh?: string | null;
+    hsCode?: string | null;
+    customsBrand?: string | null;
+    customsMaterial?: string | null;
+    customsPurpose?: string | null;
+    customsElectricMagnetic?: boolean | null;
+}
+
+function toNullableText(value: unknown, field: string, maxLength: number): string | null | undefined {
+    if (value === undefined || value === '') return undefined;
+    if (value === null) return null;
+    if (typeof value !== 'string') throw new Error(`Campo "${field}" precisa ser texto.`);
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    if (trimmed.length > maxLength) throw new Error(`Campo "${field}" excede ${maxLength} caracteres.`);
+    return trimmed;
+}
+
+export function resolveInvoiceFields(record: Record<string, unknown>): InvoiceFields {
+    const hsCode = toNullableText(record.hsCode, 'hsCode', 12);
+    if (hsCode && !/^\d{4,12}$/.test(hsCode)) throw new Error('Campo "hsCode" precisa ter só dígitos, de 4 a 12.');
+    const electric = record.customsElectricMagnetic;
+    if (electric !== undefined && electric !== null && typeof electric !== 'boolean')
+        throw new Error('Campo "customsElectricMagnetic" precisa ser true, false ou null.');
+    const fields: InvoiceFields = {
+        customsNameEn: toNullableText(record.customsNameEn, 'customsNameEn', 64),
+        customsNameZh: toNullableText(record.customsNameZh, 'customsNameZh', 100),
+        hsCode,
+        customsBrand: toNullableText(record.customsBrand, 'customsBrand', 100),
+        customsMaterial: toNullableText(record.customsMaterial, 'customsMaterial', 100),
+        customsPurpose: toNullableText(record.customsPurpose, 'customsPurpose', 200),
+        customsElectricMagnetic: electric as boolean | null | undefined,
+    };
+    // Sem as chaves ausentes, o PATCH não apaga o que já está gravado.
+    return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined)) as InvoiceFields;
+}
+
 const CHINA_PREFIX = /^\s*EXCLUSIVO(?:\s+CHINA)?\s*[-–—:]\s*/i;
 const JAPAN_PREFIX = /^\s*EXCLUSIVO\s+JAP[ÃA]O\s*[-–—:]\s*/i;
 
