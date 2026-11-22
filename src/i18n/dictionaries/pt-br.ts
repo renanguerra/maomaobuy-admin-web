@@ -1762,6 +1762,32 @@ export const ptBR = {
         add: 'Adicionar',
         remove: 'Remover',
         addedAt: 'na lista desde {{date}}',
+        provider: {
+            title: 'Provedor',
+            current: 'Cobrado por {{provider}}.',
+            pilot: 'Piloto: os clientes da lista abaixo pagam por {{provider}}.',
+            noPilot: 'Sem piloto.',
+            unavailable:
+                '{{provider}} não está ligado neste ambiente (PAYMENT_PROVIDERS) ou está sem credencial. Este meio não aparece para os clientes até você escolher outro provedor ou ligar este no deploy.',
+            pilotUnavailable:
+                '{{provider}} não está ligado neste ambiente ou está sem credencial. Os clientes do piloto ficam sem este meio até você trocar ou desligar o piloto.',
+            change: 'Trocar provedor',
+            onlySuperadmin: 'Só o SUPERADMIN troca o provedor.',
+            dialogTitle: 'Trocar o provedor de {{method}}',
+            dialogDescription:
+                'Vale para a próxima cotação. Pix e cartão já abertos continuam no provedor em que foram criados até serem pagos ou vencerem.',
+            providerLabel: 'Provedor para todos',
+            pilotLabel: 'Provedor-piloto',
+            pilotHint: 'Os clientes da lista de piloto pagam por ele. Igual ao provedor para todos = sem piloto.',
+            noPilotOption: 'Sem piloto',
+            confirm: 'Trocar',
+            pilotListTitle: 'Clientes do piloto',
+            pilotListInactive: 'Clientes do piloto (sem efeito: nenhum piloto escolhido)',
+        },
+        providerNames: {
+            ABACATEPAY: 'AbacatePay',
+            AIRWALLEX: 'Airwallex',
+        },
     },
     productRequests: {
         kicker: 'Pedidos de produto',

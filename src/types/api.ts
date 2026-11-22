@@ -1068,6 +1068,15 @@ export interface AdminPaymentMethod {
     installmentFees: Array<{ installmentCount: number; feeBasisPoints: number }>;
     /** Menor parcela aceita, em centavos de BRL. */
     minInstallmentMinor: string;
+    /** Quem cobra este meio para todos (`ABACATEPAY`, `AIRWALLEX`). */
+    providerName: string;
+    /** Quem cobra os clientes da lista de piloto; nulo = sem piloto. */
+    pilotProviderName: string | null;
+    pilotUsers: Array<{ userId: string; name: string; email: string; addedAt: string }>;
+    /** Provedores ligados no deploy e com credencial: a troca é entre eles. */
+    availableProviders: string[];
+    /** A rota aponta para um provedor desligado: o meio some para os clientes. */
+    providerUnavailable: boolean;
 }
 
 export interface AdminTopUpsPage extends Page<AdminTopUp> {
