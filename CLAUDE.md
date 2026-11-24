@@ -7,10 +7,19 @@
 - Branch naming: `feature/<short-description>` for features, `fix/<short-description>` for bug fixes.
 - Each task gets its own branch; do not reuse a branch left over from an unrelated task.
 
+## Áreas do painel (24/11/2026)
+
+- O menu (`components/admin/AdminSidebar/menu.ts`) é por área de trabalho: Operação, Loja, Clientes, Finanças e Ajustes. Só o agrupamento mora ali: **endereço não muda**, e a área sai dele (`areaOfPath`). Dois níveis e nada mais; assunto dentro de uma tela vira aba (`PageTabs`, `FreightTabs`).
+- Ajustes troca a barra inteira e volta para a última tela de trabalho. Frete é um item só com três endereços (`also`).
+- Tela nova entra em `menu.ts`, `AdminSidebar.types.ts`, nos dois dicionários (`sidebar.items`) e, se só alguns papéis escrevem, em `roles.ts`. Área sem item visível some; não deixe um papel com uma área de um item que ele não usa.
+- Fixados (até 6) ficam no `localStorage` e os últimos acessos no `sessionStorage` (levam nome de cliente, saem no logout), os dois por admin: `services/admin/panel-prefs.ts`.
+- Busca geral (`CommandPalette`, Ctrl+K) usa a busca das listas (`/orders`, `/packages`, `/users`, `/products`) e só mostra o que o papel vê no menu.
+- Configurações: nome, assunto e unidade em `configuracoes/settings-catalog.ts` + `settings.names` nos dicionários. Chave sem cadastro aparece com o nome técnico.
+- Ficha do cliente: link a partir de pedido, pacote ou encomenda usa `customerHref` (`?de=`), para o "voltar" levar de onde se veio.
+
 ## Vitrine da home (14/11/2026)
 
-- Menu "Vitrine do site" (exploração, 14/11/2026), uma página por assunto:
-  - **Destaques da home** (`/admin/vitrine`): estrutura da home (ordem, textos, prateleiras) e, abaixo, o banner principal.
+- Área "Loja", uma página por assunto:
   - **Categorias** (`/admin/categorias`): o cadastro de categorias e, embaixo, foto e ordem dos atalhos da home (`CategoriesTab`).
   - **Feedbacks** (`/admin/vitrine/feedbacks`): posts de unboxing do Instagram.
   - **Avisos** (`/admin/avisos`).

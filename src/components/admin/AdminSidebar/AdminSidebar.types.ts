@@ -10,42 +10,42 @@ export type MenuItemKey =
     | 'orders'
     | 'packages'
     | 'unpacked'
-    | 'carriers'
-    | 'users'
-    | 'influencers'
-    | 'wholesale'
+    | 'productRequests'
+    | 'suppliers'
     | 'products'
     | 'coinShop'
     | 'checkoutAddons'
     | 'categories'
-    | 'finance'
-    | 'admins'
-    | 'emails'
-    | 'optionalServices'
-    | 'coupons'
-    | 'topUps'
-    | 'paymentMethods'
-    | 'profit'
-    | 'productRequests'
-    | 'siteNotices'
-    | 'suppliers'
-    | 'shippingTable'
-    | 'shippingBoxes'
     | 'storefrontFeedbacks'
-    | 'settings';
+    | 'siteNotices'
+    | 'users'
+    | 'wholesale'
+    | 'influencers'
+    | 'coupons'
+    | 'emails'
+    | 'profit'
+    | 'topUps'
+    | 'finance'
+    | 'settings'
+    | 'freight'
+    | 'optionalServices'
+    | 'paymentMethods'
+    | 'admins';
 
-/** Sufixos válidos em `sidebar.groups.*`. */
-export type MenuGroupKey = 'operations' | 'storefront' | 'catalog' | 'logistics' | 'finance' | 'system';
+/** Sufixos válidos em `sidebar.areas.*`. */
+export type MenuAreaKey = 'operations' | 'store' | 'customers' | 'finance' | 'settings';
 
 export interface MenuItem {
     key: MenuItemKey;
     href: string;
     icon: LucideIcon;
     badge?: MenuBadge;
+    /** Outros endereços da mesma tela (abas), que também acendem o item. */
+    also?: readonly string[];
 }
 
-export interface MenuGroup {
-    /** `undefined` para itens soltos no topo, sem cabeçalho de grupo. */
-    key?: MenuGroupKey;
+export interface MenuArea {
+    key: MenuAreaKey;
+    icon: LucideIcon;
     items: readonly MenuItem[];
 }

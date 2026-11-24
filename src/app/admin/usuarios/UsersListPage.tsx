@@ -4,110 +4,194 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { SearchX, Users } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
+import { CustomerTag } from '@/components/admin/CustomerCard';
 import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
 import { EmptyState } from '@/components/admin/EmptyState';
+import { FilterTabs } from '@/components/admin/FilterTabs';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { Pagination } from '@/components/admin/Pagination';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { StatusPill, userStatusTone } from '@/components/admin/StatusPill';
 import { Toolbar } from '@/components/admin/Toolbar';
 import { SearchInput } from '@/components/ui/SearchInput';
+import { Select } from '@/components/ui/Select';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
-import type { AdminUser, Page } from '@/types/api';
-import { formatDate, userStatusLabel } from '@/types/api';
+import { cny, formatDate, userStatusLabel } from '@/types/api';
+import {
+    CUSTOMER_SEGMENTS,
+    CUSTOMER_SORTS,
+    type CustomerListItem,
+    type CustomerPage,
+    type CustomerSegment,
+    type CustomerSort,
+    type CustomerTagCount,
+} from '@/types/customers';
 
 const LIMIT = 20;
+const ACCOUNT_TYPES = ['RETAIL', 'WHOLESALE', 'WHOLESALE_APPLICANT'] as const;
 
-interface LoadedPage {
-    /** Identifica a consulta que produziu estes dados (página + busca). */
-    key: string;
-    page: Page<AdminUser>;
+type SegmentFilter = 'all' | CustomerSegment;
+
+interface Filters {
+    search: string;
+    segment: SegmentFilter;
+    accountType: string;
+    tag: string;
+    sort: CustomerSort;
+    page: number;
 }
 
-interface Failure {
-    key: string;
-    message: string;
-}
+const INITIAL: Filters = { search: '', segment: 'all', accountType: '', tag: '', sort: 'newest', page: 1 };
 
+/**
+ * Clientes como relacionamento: quanto compraram, quando foi a última vez e o
+ * que está parado. Os grupos prontos respondem as perguntas do dia.
+ */
 export function UsersListPage() {
     const { t } = useTranslation();
-    const [search, setSearch] = useState('');
-    const [pageNumber, setPageNumber] = useState(1);
-    const [loaded, setLoaded] = useState<LoadedPage>();
-    const [failure, setFailure] = useState<Failure>();
+    const [filters, setFilters] = useState(INITIAL);
+    const [tags, setTags] = useState<CustomerTagCount[]>([]);
+    const [loaded, setLoaded] = useState<{ key: string; page: CustomerPage }>();
+    const [failure, setFailure] = useState<{ key: string; message: string }>();
 
-    // A consulta em andamento é identificada por página + termo: enquanto o que
-    // está em tela não corresponder a ela, a lista está carregando.
-    const queryKey = `${pageNumber}|${search}`;
-    const result = loaded?.key === queryKey ? loaded.page : undefined;
-    const error = failure?.key === queryKey ? failure.message : undefined;
+    const query = new URLSearchParams({
+        page: String(filters.page),
+        limit: String(LIMIT),
+        sort: filters.sort,
+        ...(filters.search && { search: filters.search }),
+        ...(filters.segment !== 'all' && { segment: filters.segment }),
+        ...(filters.accountType && { accountType: filters.accountType }),
+        ...(filters.tag && { tag: filters.tag }),
+    }).toString();
+
+    // A consulta em andamento é identificada pelos filtros: enquanto o que
+    // está em tela não corresponder a eles, a lista está carregando.
+    const result = loaded?.key === query ? loaded.page : undefined;
+    const error = failure?.key === query ? failure.message : undefined;
     const loading = !result && !error;
 
     useEffect(() => {
         let active = true;
-        const key = `${pageNumber}|${search}`;
-        const query = new URLSearchParams({ page: String(pageNumber), limit: String(LIMIT) });
-        if (search) query.set('search', search);
-
-        api<Page<AdminUser>>(`/users?${query.toString()}`)
+        api<CustomerPage>(`/customers?${query}`)
             .then((page) => {
-                if (active) setLoaded({ key, page });
+                if (active) setLoaded({ key: query, page });
             })
             .catch(() => {
-                if (active) setFailure({ key, message: t('users.list.error') });
+                if (active) setFailure({ key: query, message: t('users.list.error') });
             });
-
         return () => {
             active = false;
         };
-    }, [pageNumber, search, t]);
+    }, [query, t]);
 
-    // Trocar o termo sempre volta para a primeira página: a paginação antiga
-    // não vale mais para o novo conjunto de resultados.
-    const handleSearch = useCallback((term: string) => {
-        setSearch(term);
-        setPageNumber(1);
+    useEffect(() => {
+        let active = true;
+        api<CustomerTagCount[]>('/customers/tags')
+            .then((list) => {
+                if (active) setTags(list);
+            })
+            .catch(() => {
+                // Sem as etiquetas some só o filtro por elas.
+            });
+        return () => {
+            active = false;
+        };
     }, []);
 
-    const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 1;
+    // Trocar qualquer filtro volta à primeira página: a paginação antiga não
+    // vale mais para o novo conjunto de resultados.
+    const change = useCallback((patch: Partial<Filters>) => {
+        setFilters((current) => ({ ...current, page: 1, ...patch }));
+    }, []);
+    const handleSearch = useCallback((search: string) => change({ search }), [change]);
 
-    const columns: DataTableColumn<AdminUser>[] = [
+    const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 1;
+    // Os números dos grupos continuam na tela enquanto a próxima página carrega.
+    const counts = (result ?? loaded?.page)?.segmentCounts;
+    const filtered = filters.search || filters.segment !== 'all' || filters.accountType || filters.tag;
+
+    const columns: DataTableColumn<CustomerListItem>[] = [
         {
             key: 'name',
             header: t('users.list.columns.name'),
-            cell: (user) => (
-                <Link
-                    className="font-semibold text-primary no-underline hover:underline dark:text-night-accent"
-                    href={`/admin/usuarios/${user.id}`}
-                >
-                    {user.name}
-                </Link>
+            cell: (customer) => (
+                <div className="min-w-0">
+                    <Link
+                        className="font-semibold text-primary no-underline hover:underline dark:text-night-accent"
+                        href={`/admin/usuarios/${customer.id}`}
+                    >
+                        {customer.name}
+                    </Link>
+                    <span className="block truncate text-xs text-muted dark:text-night-muted">{customer.email}</span>
+                    {customer.tags.length > 0 && (
+                        <span className="mt-1 flex flex-wrap gap-1">
+                            {customer.tags.map((tag) => (
+                                <CustomerTag key={tag} label={tag} />
+                            ))}
+                        </span>
+                    )}
+                </div>
             ),
         },
         {
-            key: 'username',
-            header: t('users.list.columns.username'),
+            key: 'account',
+            header: t('users.list.columns.account'),
+            hideBelow: 'md',
+            cell: (customer) => (
+                <span className="flex flex-wrap gap-1.5">
+                    <span className="text-muted dark:text-night-muted">
+                        {t(`users.accountTypes.${customer.accountType}`)}
+                    </span>
+                    {customer.status !== 'ACTIVE' && (
+                        <StatusPill tone={userStatusTone(customer.status)}>
+                            {userStatusLabel(customer.status)}
+                        </StatusPill>
+                    )}
+                    {customer.excludedFromReports && (
+                        <StatusPill hideDot tone="warning">
+                            {t('users.detail.internalAccount')}
+                        </StatusPill>
+                    )}
+                </span>
+            ),
+        },
+        {
+            key: 'purchases',
+            header: t('customers.stats.purchases'),
+            numeric: true,
+            cell: (customer) => customer.purchases,
+        },
+        {
+            key: 'spent',
+            header: t('customers.stats.spent'),
+            numeric: true,
+            cell: (customer) => <span className="mm-data">{cny(customer.spentAmountMinor)}</span>,
+        },
+        {
+            key: 'lastPurchase',
+            header: t('customers.stats.lastPurchase'),
             hideBelow: 'lg',
-            cell: (user) => <span className="text-muted dark:text-night-muted">{user.username}</span>,
+            numeric: true,
+            cell: (customer) => (
+                <span className="text-muted dark:text-night-muted">{formatDate(customer.lastPurchaseAt)}</span>
+            ),
         },
         {
-            key: 'email',
-            header: t('users.list.columns.email'),
-            hideBelow: 'sm',
-            cell: (user) => <span className="text-muted dark:text-night-muted">{user.email}</span>,
-        },
-        {
-            key: 'status',
-            header: t('users.list.columns.status'),
-            cell: (user) => <StatusPill tone={userStatusTone(user.status)}>{userStatusLabel(user.status)}</StatusPill>,
+            key: 'waiting',
+            header: t('customers.waiting.title'),
+            hideBelow: 'md',
+            cell: (customer) => <Waiting customer={customer} />,
         },
         {
             key: 'createdAt',
             header: t('users.list.columns.createdAt'),
-            hideBelow: 'md',
+            hideBelow: 'lg',
             numeric: true,
-            cell: (user) => <span className="text-muted dark:text-night-muted">{formatDate(user.createdAt)}</span>,
+            card: 'hide',
+            cell: (customer) => (
+                <span className="text-muted dark:text-night-muted">{formatDate(customer.createdAt)}</span>
+            ),
         },
     ];
 
@@ -121,6 +205,20 @@ export function UsersListPage() {
                 </Alert>
             )}
 
+            <FilterTabs<SegmentFilter>
+                label={t('customers.segments.label')}
+                onChange={(segment) => change({ segment })}
+                options={[
+                    { value: 'all', label: t('customers.segments.all') },
+                    ...CUSTOMER_SEGMENTS.map((segment) => ({
+                        value: segment,
+                        label: t(`customers.segments.${segment}`),
+                        count: counts?.[segment],
+                    })),
+                ]}
+                value={filters.segment}
+            />
+
             <SectionCard flush>
                 <Toolbar>
                     <SearchInput
@@ -129,7 +227,39 @@ export function UsersListPage() {
                         label={t('users.list.searchLabel')}
                         onChange={handleSearch}
                         placeholder={t('users.list.searchPlaceholder')}
-                        value={search}
+                        value={filters.search}
+                    />
+                    <Select
+                        fieldClassName="max-sm:min-w-36 max-sm:flex-1"
+                        hideLabel
+                        label={t('customers.filters.accountType')}
+                        onChange={(event) => change({ accountType: event.target.value })}
+                        options={[
+                            { value: '', label: t('customers.filters.allAccountTypes') },
+                            ...ACCOUNT_TYPES.map((type) => ({ value: type, label: t(`users.accountTypes.${type}`) })),
+                        ]}
+                        value={filters.accountType}
+                    />
+                    {tags.length > 0 && (
+                        <Select
+                            fieldClassName="max-sm:min-w-36 max-sm:flex-1"
+                            hideLabel
+                            label={t('customers.filters.tag')}
+                            onChange={(event) => change({ tag: event.target.value })}
+                            options={[
+                                { value: '', label: t('customers.filters.allTags') },
+                                ...tags.map((tag) => ({ value: tag.label, label: `${tag.label} (${tag.customers})` })),
+                            ]}
+                            value={filters.tag}
+                        />
+                    )}
+                    <Select
+                        fieldClassName="max-sm:min-w-36 max-sm:flex-1"
+                        hideLabel
+                        label={t('customers.filters.sort')}
+                        onChange={(event) => change({ sort: event.target.value as CustomerSort })}
+                        options={CUSTOMER_SORTS.map((sort) => ({ value: sort, label: t(`customers.sorts.${sort}`) }))}
+                        value={filters.sort}
                     />
                 </Toolbar>
 
@@ -138,13 +268,13 @@ export function UsersListPage() {
                     columns={columns}
                     loading={loading}
                     loadingLabel={t('users.list.loading')}
-                    minWidth="44rem"
-                    rowKey={(user) => user.id}
+                    minWidth="52rem"
+                    rowKey={(customer) => customer.id}
                     rows={result?.data ?? []}
                     empty={
-                        search ? (
+                        filtered ? (
                             <EmptyState
-                                description={t('users.list.emptySearchDescription')}
+                                description={t('customers.emptyFilteredDescription')}
                                 icon={SearchX}
                                 title={t('users.list.emptySearch')}
                             />
@@ -157,15 +287,32 @@ export function UsersListPage() {
                 {result && result.data.length > 0 && (
                     <Pagination
                         nextLabel={t('common.pagination.next')}
-                        onChange={setPageNumber}
-                        page={pageNumber}
+                        onChange={(page) => change({ page })}
+                        page={filters.page}
                         previousLabel={t('common.pagination.previous')}
                         disabled={loading}
                         totalPages={totalPages}
-                        summary={`${t('common.pagination.page', { page: pageNumber, total: totalPages })} · ${t('users.list.countUnit', { count: result.total })}`}
+                        summary={`${t('common.pagination.page', { page: filters.page, total: totalPages })} · ${t('users.list.countUnit', { count: result.total })}`}
                     />
                 )}
             </SectionCard>
         </div>
+    );
+}
+
+/** O que está parado com o cliente, em palavras. */
+function Waiting({ customer }: { customer: CustomerListItem }) {
+    const { t } = useTranslation();
+    if (customer.unpackedUnits === 0 && customer.freightUnpaid === 0)
+        return <span className="text-muted dark:text-night-subtle">{t('common.dash')}</span>;
+    return (
+        <span className="grid gap-0.5 text-xs font-semibold text-amber-700 dark:text-night-warning">
+            {customer.unpackedUnits > 0 && (
+                <span>{t('customers.waiting.unpacked', { count: customer.unpackedUnits })}</span>
+            )}
+            {customer.freightUnpaid > 0 && (
+                <span>{t('customers.waiting.freight', { count: customer.freightUnpaid })}</span>
+            )}
+        </span>
     );
 }

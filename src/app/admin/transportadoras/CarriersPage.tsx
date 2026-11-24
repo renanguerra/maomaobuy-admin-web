@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ShieldCheck, Truck } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
 import { CarrierChannelBadges, CarrierChannelDetails, CarrierSimulator } from '@/components/admin/CarrierShipments';
+import { FreightTabs } from '@/components/admin/FreightTabs';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
@@ -43,6 +44,7 @@ export function CarriersPage() {
 
     return (
         <div className="grid gap-6">
+            <FreightTabs />
             <PageHeader
                 description={t('carrier.page.description')}
                 title={t('carrier.page.title')}

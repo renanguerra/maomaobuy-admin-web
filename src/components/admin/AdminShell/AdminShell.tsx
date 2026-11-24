@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import Image from 'next/image';
-import { Menu, X } from 'lucide-react';
+import { Menu, Search, X } from 'lucide-react';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { CommandPalette } from '@/components/admin/CommandPalette';
 import { useTranslation } from '@/i18n/LanguageProvider';
 
 /**
@@ -14,6 +15,27 @@ import { useTranslation } from '@/i18n/LanguageProvider';
 export function AdminShell({ children }: { children: ReactNode }) {
     const { t } = useTranslation();
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const closeSearch = useCallback(() => setSearchOpen(false), []);
+
+    function openSearch() {
+        setDrawerOpen(false);
+        setSearchOpen(true);
+    }
+
+    // Ctrl+K (⌘K no Mac). Com outro diálogo aberto não faz nada: sair dele
+    // no meio perderia o que a pessoa estava preenchendo.
+    useEffect(() => {
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key.toLowerCase() !== 'k' || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey)
+                return;
+            event.preventDefault();
+            if (searchOpen) setSearchOpen(false);
+            else if (document.body.dataset.dialogOpen !== 'true') setSearchOpen(true);
+        }
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [searchOpen]);
 
     useEffect(() => {
         if (!drawerOpen) return;
@@ -31,7 +53,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     return (
         <div className="flex min-h-screen w-full">
             <aside className="sticky top-0 hidden h-screen w-64 shrink-0 lg:block">
-                <AdminSidebar />
+                <AdminSidebar onSearch={openSearch} />
             </aside>
 
             <div className="flex min-w-0 flex-1 flex-col">
@@ -55,6 +77,14 @@ export function AdminShell({ children }: { children: ReactNode }) {
                         />
                         <strong className="mm-display truncate text-sm">{t('sidebar.brandTagline')}</strong>
                     </span>
+                    <button
+                        className="ml-auto grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-lg border border-line bg-surface text-ink transition hover:border-brand-300 dark:border-night-line dark:bg-night-raised dark:text-night-text"
+                        type="button"
+                        onClick={openSearch}
+                        aria-label={t('palette.title')}
+                    >
+                        <Search className="h-5 w-5" aria-hidden="true" />
+                    </button>
                 </header>
 
                 <main className="min-w-0 flex-1 px-4 py-5 lg:px-8 lg:py-6">
@@ -79,10 +109,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
                         >
                             <X className="h-4 w-4" aria-hidden="true" />
                         </button>
-                        <AdminSidebar onNavigate={() => setDrawerOpen(false)} />
+                        <AdminSidebar onNavigate={() => setDrawerOpen(false)} onSearch={openSearch} />
                     </div>
                 </div>
             )}
+
+            {searchOpen && <CommandPalette onClose={closeSearch} />}
         </div>
     );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ChevronDown, LoaderCircle } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
 
@@ -12,6 +12,8 @@ export interface LazySectionProps<T> {
     summary?: (data: T) => string;
     fetcher: () => Promise<T>;
     errorMessage: string;
+    /** Já abre e consulta ao montar: a seção é o assunto da aba. */
+    defaultOpen?: boolean;
     children: (data: T) => ReactNode;
 }
 
@@ -27,23 +29,15 @@ export function LazySection<T>({
     summary,
     fetcher,
     errorMessage,
+    defaultOpen = false,
     children,
 }: LazySectionProps<T>) {
-    const [open, setOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [open, setOpen] = useState(defaultOpen);
+    const [loading, setLoading] = useState(defaultOpen);
     const [error, setError] = useState<string>();
     const [data, setData] = useState<T>();
 
-    async function toggle() {
-        if (open) {
-            setOpen(false);
-            return;
-        }
-        setOpen(true);
-        if (data !== undefined) return;
-
-        setLoading(true);
-        setError(undefined);
+    async function load() {
         try {
             setData(await fetcher());
         } catch {
@@ -51,6 +45,28 @@ export function LazySection<T>({
         } finally {
             setLoading(false);
         }
+    }
+
+    useEffect(() => {
+        if (!defaultOpen) return;
+        // `fetcher` e as mensagens nascem a cada render de quem usa; aqui só
+        // importa a primeira consulta, ao montar.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    async function toggle() {
+        if (open) {
+            setOpen(false);
+            return;
+        }
+        setOpen(true);
+        if (data !== undefined || loading) return;
+
+        setLoading(true);
+        setError(undefined);
+        await load();
     }
 
     return (

@@ -22,11 +22,13 @@ import { ListRow, ListRows } from '@/components/admin/ListRow';
 import { PageActions } from '@/components/admin/PageActions';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { PageNotices } from '@/components/admin/PageNotices';
+import { PageTabs } from '@/components/admin/PageTabs';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { orderStatusTone, packageStatusTone, StatusPill, userStatusTone } from '@/components/admin/StatusPill';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
+import { returnLink } from '@/services/admin/customer-link';
 import { api, ApiError } from '@/services/api';
 import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import type { AdminOrder, AdminPackage, AdminUser, AdminUserAddress, Page } from '@/types/api';
@@ -40,6 +42,7 @@ import {
     userStatusLabel,
 } from '@/types/api';
 import { CreatePackageDialog } from './CreatePackageDialog';
+import { CustomerOverview } from './CustomerOverview';
 import { UserCoinsCard } from './UserCoinsCard';
 import { UserWalletCard } from './UserWalletCard';
 
@@ -52,6 +55,13 @@ type DialogKind =
     | 'report-exclusion'
     | null;
 
+const USER_TABS = ['resumo', 'compras', 'saldo', 'conta'] as const;
+type UserTab = (typeof USER_TABS)[number];
+
+function userTabOf(value: string | null): UserTab {
+    return USER_TABS.find((tab) => tab === value) ?? 'resumo';
+}
+
 export function UserDetailPage() {
     const { t } = useTranslation();
     const { notify } = useToast();
@@ -61,6 +71,12 @@ export function UserDetailPage() {
     // `?acao=pacote` chega da tela "Sem pacote": abre direto o "Montar pacote".
     const searchParams = useSearchParams();
     const [dialog, setDialog] = useState<DialogKind>(searchParams.get('acao') === 'pacote' ? 'create-package' : null);
+    // `?aba=` guarda a aba no endereço: voltar de um pedido cai na mesma.
+    const [tab, setTab] = useState<UserTab>(() => userTabOf(searchParams.get('aba')));
+    // `?de=` diz de que pedido, pacote ou encomenda se veio.
+    const origin = returnLink(searchParams.get('de'));
+    const backHref = origin?.href ?? '/admin/usuarios';
+    const backLabel = t(origin?.label ?? 'users.detail.backLink');
     const { admin } = useAdminAccountAuth();
     const canMarkInternal = admin?.role === 'FINANCE' || admin?.role === 'SUPERADMIN';
 
@@ -139,14 +155,18 @@ export function UserDetailPage() {
         }
     }
 
+    function selectTab(next: UserTab) {
+        setTab(next);
+        const query = new URLSearchParams(window.location.search);
+        query.delete('acao');
+        query.set('aba', next);
+        window.history.replaceState(null, '', `${window.location.pathname}?${query.toString()}`);
+    }
+
     if (error) {
         return (
             <div className="grid gap-6">
-                <PageHeader
-                    backHref="/admin/usuarios"
-                    backLabel={t('users.detail.backLink')}
-                    title={t('users.detail.kicker')}
-                />
+                <PageHeader backHref={backHref} backLabel={backLabel} title={t('users.detail.kicker')} />
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>
                     <p>{error}</p>
                 </Alert>
@@ -157,11 +177,7 @@ export function UserDetailPage() {
     if (!user) {
         return (
             <div className="grid gap-6">
-                <PageHeader
-                    backHref="/admin/usuarios"
-                    backLabel={t('users.detail.backLink')}
-                    title={t('users.detail.loading')}
-                />
+                <PageHeader backHref={backHref} backLabel={backLabel} title={t('users.detail.loading')} />
                 <SkeletonCards label={t('users.detail.loading')} />
             </div>
         );
@@ -172,8 +188,8 @@ export function UserDetailPage() {
     return (
         <div className="grid gap-6">
             <PageHeader
-                backHref="/admin/usuarios"
-                backLabel={t('users.detail.backLink')}
+                backHref={backHref}
+                backLabel={backLabel}
                 badge={
                     <span className="flex flex-wrap gap-1.5">
                         <StatusPill tone={userStatusTone(user.status)}>{userStatusLabel(user.status)}</StatusPill>
@@ -254,175 +270,239 @@ export function UserDetailPage() {
                 ]}
             />
 
-            <SectionCard title={t('users.detail.accountSection')}>
-                <DescriptionList
-                    items={[
-                        { label: t('users.detail.fields.username'), value: user.username },
-                        { label: t('users.detail.fields.email'), value: user.email },
-                        {
-                            label: t('users.detail.fields.emailVerified'),
-                            value: user.emailVerifiedAt
-                                ? formatDate(user.emailVerifiedAt)
-                                : t('users.detail.fields.notVerified'),
-                        },
-                        {
-                            label: t('users.detail.fields.status'),
-                            value: (
-                                <StatusPill tone={userStatusTone(user.status)}>
-                                    {userStatusLabel(user.status)}
-                                </StatusPill>
-                            ),
-                        },
-                        {
-                            label: t('users.detail.fields.accountType'),
-                            value: (
-                                <span className="flex flex-wrap items-center gap-2">
-                                    {t(`users.accountTypes.${user.accountType}`)}
-                                    {user.accountType !== 'RETAIL' && (
-                                        <a
-                                            className="text-sm text-primary no-underline hover:underline dark:text-night-accent"
-                                            href={`/admin/lojistas?busca=${encodeURIComponent(user.email)}`}
-                                        >
-                                            {t('users.detail.wholesaleLink')}
-                                        </a>
-                                    )}
-                                </span>
-                            ),
-                        },
-                        {
-                            label: t('users.detail.fields.reports'),
-                            value: (
-                                <span className="flex flex-wrap items-center gap-2">
-                                    {user.excludedFromReports
-                                        ? t('users.detail.fields.reportsExcluded')
-                                        : t('users.detail.fields.reportsIncluded')}
-                                    {canMarkInternal && (
-                                        <button
-                                            className="cursor-pointer border-0 bg-transparent p-0 text-sm text-primary hover:underline dark:text-night-accent"
-                                            onClick={() => setDialog('report-exclusion')}
-                                            type="button"
-                                        >
-                                            {user.excludedFromReports
-                                                ? t('users.detail.unmarkInternalButton')
-                                                : t('users.detail.markInternalButton')}
-                                        </button>
-                                    )}
-                                </span>
-                            ),
-                        },
-                        { label: t('users.detail.fields.createdAt'), value: formatDate(user.createdAt), numeric: true },
-                        {
-                            label: t('users.detail.fields.id'),
-                            value: <span className="font-mono text-xs break-all">{user.id}</span>,
-                        },
-                    ]}
-                />
-            </SectionCard>
-
-            <UserWalletCard userId={user.id} />
-            <UserCoinsCard userId={user.id} />
-
-            <LazySection<AdminUserAddress[]>
-                description={t('users.detail.addressesSection.description')}
-                errorMessage={t('users.detail.addressesSection.error')}
-                fetcher={() => api<AdminUserAddress[]>(`/users/${user.id}/addresses`)}
-                icon={<MapPin aria-hidden="true" />}
-                summary={(addresses) => t('users.detail.addressesSection.count', { count: addresses.length })}
-                title={t('users.detail.addressesSection.title')}
-            >
-                {(addresses) =>
-                    addresses.length === 0 ? (
-                        <EmptyState icon={MapPin} title={t('users.detail.addressesSection.empty')} />
-                    ) : (
-                        <div className="grid gap-2">
-                            {addresses.map((address) => (
-                                <div
-                                    className="rounded-lg border border-line px-4 py-3 dark:border-night-line"
-                                    key={address.id}
+            <PageTabs<UserTab>
+                label={t('customers.tabs.label')}
+                onChange={selectTab}
+                tabs={[
+                    {
+                        key: 'resumo',
+                        label: t('customers.tabs.overview'),
+                        content: <CustomerOverview userId={user.id} />,
+                    },
+                    {
+                        key: 'compras',
+                        label: t('customers.tabs.purchases'),
+                        content: (
+                            <>
+                                <LazySection<AdminOrder[]>
+                                    defaultOpen
+                                    description={t('users.detail.ordersSection.description')}
+                                    errorMessage={t('users.detail.ordersSection.error')}
+                                    fetcher={() =>
+                                        api<Page<AdminOrder>>(`/orders?userId=${user.id}`).then((page) => page.data)
+                                    }
+                                    icon={<ShoppingBag aria-hidden="true" />}
+                                    summary={(orders) =>
+                                        t('users.detail.ordersSection.count', { count: orders.length })
+                                    }
+                                    title={t('users.detail.ordersSection.title')}
                                 >
-                                    <p className="m-0 text-sm font-semibold text-ink dark:text-night-text">
-                                        {addressLabel(address)}
-                                    </p>
-                                    <p className="mt-1 mb-0 text-xs text-muted dark:text-night-muted">
-                                        {address.postalCode} · {formatPhone(address.phoneE164)}
-                                        {address.recipientTaxId ? ` · CPF ${formatCpf(address.recipientTaxId)}` : ''}
-                                        {address.deliveryInstructions ? ` · ${address.deliveryInstructions}` : ''}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    )
-                }
-            </LazySection>
+                                    {(orders) =>
+                                        orders.length === 0 ? (
+                                            <EmptyState
+                                                icon={ShoppingBag}
+                                                title={t('users.detail.ordersSection.empty')}
+                                            />
+                                        ) : (
+                                            <div className="-mx-5 -my-5">
+                                                <ListRows>
+                                                    {orders.map((order) => (
+                                                        <li key={order.id}>
+                                                            <ListRow
+                                                                href={`/admin/pedidos/${order.id}`}
+                                                                meta={formatDate(order.createdAt)}
+                                                                title={`#${order.id.slice(0, 8)}`}
+                                                                value={money(order.totalAmountMinor, order.currency)}
+                                                                pill={
+                                                                    <StatusPill tone={orderStatusTone(order.status)}>
+                                                                        {orderStatusLabel(order.status)}
+                                                                    </StatusPill>
+                                                                }
+                                                            />
+                                                        </li>
+                                                    ))}
+                                                </ListRows>
+                                            </div>
+                                        )
+                                    }
+                                </LazySection>
 
-            <LazySection<AdminOrder[]>
-                description={t('users.detail.ordersSection.description')}
-                errorMessage={t('users.detail.ordersSection.error')}
-                fetcher={() => api<Page<AdminOrder>>(`/orders?userId=${user.id}`).then((page) => page.data)}
-                icon={<ShoppingBag aria-hidden="true" />}
-                summary={(orders) => t('users.detail.ordersSection.count', { count: orders.length })}
-                title={t('users.detail.ordersSection.title')}
-            >
-                {(orders) =>
-                    orders.length === 0 ? (
-                        <EmptyState icon={ShoppingBag} title={t('users.detail.ordersSection.empty')} />
-                    ) : (
-                        <div className="-mx-5 -my-5">
-                            <ListRows>
-                                {orders.map((order) => (
-                                    <li key={order.id}>
-                                        <ListRow
-                                            href={`/admin/pedidos/${order.id}`}
-                                            meta={formatDate(order.createdAt)}
-                                            title={`#${order.id.slice(0, 8)}`}
-                                            value={money(order.totalAmountMinor, order.currency)}
-                                            pill={
-                                                <StatusPill tone={orderStatusTone(order.status)}>
-                                                    {orderStatusLabel(order.status)}
-                                                </StatusPill>
-                                            }
-                                        />
-                                    </li>
-                                ))}
-                            </ListRows>
-                        </div>
-                    )
-                }
-            </LazySection>
+                                <LazySection<AdminPackage[]>
+                                    defaultOpen
+                                    description={t('users.detail.packagesSection.description')}
+                                    errorMessage={t('users.detail.packagesSection.error')}
+                                    fetcher={() =>
+                                        api<Page<AdminPackage>>(`/packages?userId=${user.id}`).then((page) => page.data)
+                                    }
+                                    icon={<Package aria-hidden="true" />}
+                                    summary={(packages) =>
+                                        t('users.detail.packagesSection.count', { count: packages.length })
+                                    }
+                                    title={t('users.detail.packagesSection.title')}
+                                >
+                                    {(packages) =>
+                                        packages.length === 0 ? (
+                                            <EmptyState
+                                                icon={Package}
+                                                title={t('users.detail.packagesSection.empty')}
+                                            />
+                                        ) : (
+                                            <div className="-mx-5 -my-5">
+                                                <ListRows>
+                                                    {packages.map((pkg) => (
+                                                        <li key={pkg.id}>
+                                                            <ListRow
+                                                                href={`/admin/pacotes/${pkg.id}`}
+                                                                meta={formatDate(pkg.createdAt)}
+                                                                title={pkg.packageCode}
+                                                                pill={
+                                                                    <StatusPill tone={packageStatusTone(pkg.status)}>
+                                                                        {packageStatusLabel(pkg.status)}
+                                                                    </StatusPill>
+                                                                }
+                                                            />
+                                                        </li>
+                                                    ))}
+                                                </ListRows>
+                                            </div>
+                                        )
+                                    }
+                                </LazySection>
+                            </>
+                        ),
+                    },
+                    {
+                        key: 'saldo',
+                        label: t('customers.tabs.balance'),
+                        content: (
+                            <>
+                                <UserWalletCard userId={user.id} />
+                                <UserCoinsCard userId={user.id} />
+                            </>
+                        ),
+                    },
+                    {
+                        key: 'conta',
+                        label: t('customers.tabs.account'),
+                        content: (
+                            <>
+                                <SectionCard title={t('users.detail.accountSection')}>
+                                    <DescriptionList
+                                        items={[
+                                            { label: t('users.detail.fields.username'), value: user.username },
+                                            { label: t('users.detail.fields.email'), value: user.email },
+                                            {
+                                                label: t('users.detail.fields.emailVerified'),
+                                                value: user.emailVerifiedAt
+                                                    ? formatDate(user.emailVerifiedAt)
+                                                    : t('users.detail.fields.notVerified'),
+                                            },
+                                            {
+                                                label: t('users.detail.fields.status'),
+                                                value: (
+                                                    <StatusPill tone={userStatusTone(user.status)}>
+                                                        {userStatusLabel(user.status)}
+                                                    </StatusPill>
+                                                ),
+                                            },
+                                            {
+                                                label: t('users.detail.fields.accountType'),
+                                                value: (
+                                                    <span className="flex flex-wrap items-center gap-2">
+                                                        {t(`users.accountTypes.${user.accountType}`)}
+                                                        {user.accountType !== 'RETAIL' && (
+                                                            <a
+                                                                className="text-sm text-primary no-underline hover:underline dark:text-night-accent"
+                                                                href={`/admin/lojistas?busca=${encodeURIComponent(user.email)}`}
+                                                            >
+                                                                {t('users.detail.wholesaleLink')}
+                                                            </a>
+                                                        )}
+                                                    </span>
+                                                ),
+                                            },
+                                            {
+                                                label: t('users.detail.fields.reports'),
+                                                value: (
+                                                    <span className="flex flex-wrap items-center gap-2">
+                                                        {user.excludedFromReports
+                                                            ? t('users.detail.fields.reportsExcluded')
+                                                            : t('users.detail.fields.reportsIncluded')}
+                                                        {canMarkInternal && (
+                                                            <button
+                                                                className="cursor-pointer border-0 bg-transparent p-0 text-sm text-primary hover:underline dark:text-night-accent"
+                                                                onClick={() => setDialog('report-exclusion')}
+                                                                type="button"
+                                                            >
+                                                                {user.excludedFromReports
+                                                                    ? t('users.detail.unmarkInternalButton')
+                                                                    : t('users.detail.markInternalButton')}
+                                                            </button>
+                                                        )}
+                                                    </span>
+                                                ),
+                                            },
+                                            {
+                                                label: t('users.detail.fields.createdAt'),
+                                                value: formatDate(user.createdAt),
+                                                numeric: true,
+                                            },
+                                            {
+                                                label: t('users.detail.fields.id'),
+                                                value: <span className="font-mono text-xs break-all">{user.id}</span>,
+                                            },
+                                        ]}
+                                    />
+                                </SectionCard>
 
-            <LazySection<AdminPackage[]>
-                description={t('users.detail.packagesSection.description')}
-                errorMessage={t('users.detail.packagesSection.error')}
-                fetcher={() => api<Page<AdminPackage>>(`/packages?userId=${user.id}`).then((page) => page.data)}
-                icon={<Package aria-hidden="true" />}
-                summary={(packages) => t('users.detail.packagesSection.count', { count: packages.length })}
-                title={t('users.detail.packagesSection.title')}
-            >
-                {(packages) =>
-                    packages.length === 0 ? (
-                        <EmptyState icon={Package} title={t('users.detail.packagesSection.empty')} />
-                    ) : (
-                        <div className="-mx-5 -my-5">
-                            <ListRows>
-                                {packages.map((pkg) => (
-                                    <li key={pkg.id}>
-                                        <ListRow
-                                            href={`/admin/pacotes/${pkg.id}`}
-                                            meta={formatDate(pkg.createdAt)}
-                                            title={pkg.packageCode}
-                                            pill={
-                                                <StatusPill tone={packageStatusTone(pkg.status)}>
-                                                    {packageStatusLabel(pkg.status)}
-                                                </StatusPill>
-                                            }
-                                        />
-                                    </li>
-                                ))}
-                            </ListRows>
-                        </div>
-                    )
-                }
-            </LazySection>
+                                <LazySection<AdminUserAddress[]>
+                                    defaultOpen
+                                    description={t('users.detail.addressesSection.description')}
+                                    errorMessage={t('users.detail.addressesSection.error')}
+                                    fetcher={() => api<AdminUserAddress[]>(`/users/${user.id}/addresses`)}
+                                    icon={<MapPin aria-hidden="true" />}
+                                    summary={(addresses) =>
+                                        t('users.detail.addressesSection.count', { count: addresses.length })
+                                    }
+                                    title={t('users.detail.addressesSection.title')}
+                                >
+                                    {(addresses) =>
+                                        addresses.length === 0 ? (
+                                            <EmptyState
+                                                icon={MapPin}
+                                                title={t('users.detail.addressesSection.empty')}
+                                            />
+                                        ) : (
+                                            <div className="grid gap-2">
+                                                {addresses.map((address) => (
+                                                    <div
+                                                        className="rounded-lg border border-line px-4 py-3 dark:border-night-line"
+                                                        key={address.id}
+                                                    >
+                                                        <p className="m-0 text-sm font-semibold text-ink dark:text-night-text">
+                                                            {addressLabel(address)}
+                                                        </p>
+                                                        <p className="mt-1 mb-0 text-xs text-muted dark:text-night-muted">
+                                                            {address.postalCode} · {formatPhone(address.phoneE164)}
+                                                            {address.recipientTaxId
+                                                                ? ` · CPF ${formatCpf(address.recipientTaxId)}`
+                                                                : ''}
+                                                            {address.deliveryInstructions
+                                                                ? ` · ${address.deliveryInstructions}`
+                                                                : ''}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )
+                                    }
+                                </LazySection>
+                            </>
+                        ),
+                    },
+                ]}
+                value={tab}
+            />
 
             <ActionDialog
                 confirmLabel={t('users.detail.dialogs.suspend.confirmLabel')}

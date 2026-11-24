@@ -13,6 +13,8 @@ const FORM_ID = 'setting-form';
 interface SettingFormDialogProps {
     open: boolean;
     setting?: AdminSetting;
+    /** Nome da configuração para a equipe. */
+    name?: string;
     onClose: () => void;
     onSubmit: (value: string) => Promise<void>;
 }
@@ -21,7 +23,7 @@ interface SettingFormDialogProps {
  * Edita só o valor — chave e tipo vêm do que já está gravado, nunca de algo
  * que o admin escolhe aqui. Ver `AdminSettingsService.update` no backend.
  */
-export function SettingFormDialog({ open, setting, onClose, onSubmit }: SettingFormDialogProps) {
+export function SettingFormDialog({ open, setting, name, onClose, onSubmit }: SettingFormDialogProps) {
     const { t } = useTranslation();
     const [submitting, setSubmitting] = useState(false);
 
@@ -31,7 +33,7 @@ export function SettingFormDialog({ open, setting, onClose, onSubmit }: SettingF
             description={setting?.description ?? undefined}
             onClose={onClose}
             open={open}
-            title={setting ? t('settings.editTitle', { key: setting.key }) : ''}
+            title={setting ? t('settings.editTitle', { key: name ?? setting.key }) : ''}
             footer={
                 <>
                     <Button disabled={submitting} onClick={onClose} type="button" variant="ghost">

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Package, Plus } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
+import { FreightTabs } from '@/components/admin/FreightTabs';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
@@ -65,6 +66,7 @@ export function ShippingBoxesPage() {
 
     return (
         <div className="grid gap-6">
+            <FreightTabs />
             <PageHeader
                 description={t('shippingBoxes.page.description')}
                 title={t('shippingBoxes.page.title')}
