@@ -130,7 +130,6 @@ export function InfluencerLevelsPage() {
                 backHref="/admin/influencers"
                 backLabel={t('influencers.detail.back')}
                 description={t('influencers.levels.description')}
-                kicker={t('influencers.kicker')}
                 title={t('influencers.levels.title')}
             />
 
@@ -185,11 +184,7 @@ function LevelFormDialog({
             onClose={onClose}
             open={open}
             size="medium"
-            title={
-                level
-                    ? t('influencers.levels.editTitle', { name: level.name })
-                    : t('influencers.levels.new')
-            }
+            title={level ? t('influencers.levels.editTitle', { name: level.name }) : t('influencers.levels.new')}
             footer={
                 <>
                     <Button disabled={submitting} onClick={onClose} type="button" variant="ghost">
@@ -254,8 +249,7 @@ function LevelForm({
                 shippingDiscountBasisPoints: shippingEnabled
                     ? percentToBasisPoints(String(data.get('shippingPercent') ?? '100'))
                     : null,
-                shippingMaxDiscountMinor:
-                    shippingEnabled && maxDiscount && maxDiscount !== '0' ? maxDiscount : null,
+                shippingMaxDiscountMinor: shippingEnabled && maxDiscount && maxDiscount !== '0' ? maxDiscount : null,
                 giftProductId: giftEnabled ? (gift?.productId ?? null) : null,
                 giftVariantExternalId: giftEnabled ? gift?.variantExternalId || null : null,
                 isActive,

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Pencil, Trash2, X } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
 import { DescriptionList } from '@/components/admin/DescriptionList';
+import { PageActions } from '@/components/admin/PageActions';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
@@ -154,7 +155,6 @@ export function ProductDetailPage({ kind = 'STORE' }: { kind?: ProductKind }) {
             <PageHeader
                 backHref={productPath(kind)}
                 backLabel={t(`productKinds.${kind}.backLink`)}
-                kicker={t(`productKinds.${kind}.kicker`)}
                 meta={<span className="font-mono">/{product.slug}</span>}
                 title={product.name}
                 badge={
@@ -163,33 +163,38 @@ export function ProductDetailPage({ kind = 'STORE' }: { kind?: ProductKind }) {
                     </StatusPill>
                 }
                 actions={
-                    editing ? (
-                        <Button
-                            leadingIcon={<X className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setEditing(false)}
-                            variant="ghost"
-                        >
-                            {t('products.detail.form.cancel')}
-                        </Button>
-                    ) : (
-                        <>
-                            <Button
-                                leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => startEditing(product)}
-                                variant="secondary"
-                            >
-                                {t('products.detail.editButton')}
-                            </Button>
-                            <Button
-                                leadingIcon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
-                                loading={busy === 'delete-product'}
-                                onClick={deleteProduct}
-                                variant="danger"
-                            >
-                                {t('products.detail.deleteButton')}
-                            </Button>
-                        </>
-                    )
+                    <PageActions
+                        actions={
+                            editing
+                                ? [
+                                      {
+                                          key: 'cancel-edit',
+                                          label: t('products.detail.form.cancel'),
+                                          icon: X,
+                                          inline: true,
+                                          onClick: () => setEditing(false),
+                                      },
+                                  ]
+                                : [
+                                      {
+                                          key: 'delete',
+                                          label: t('products.detail.deleteButton'),
+                                          icon: Trash2,
+                                          tone: 'danger',
+                                          inline: true,
+                                          loading: busy === 'delete-product',
+                                          onClick: () => void deleteProduct(),
+                                      },
+                                      {
+                                          key: 'edit',
+                                          label: t('products.detail.editButton'),
+                                          icon: Pencil,
+                                          tone: 'primary',
+                                          onClick: () => startEditing(product),
+                                      },
+                                  ]
+                        }
+                    />
                 }
             />
 

@@ -6,7 +6,9 @@ import { useParams } from 'next/navigation';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
 import { DescriptionList } from '@/components/admin/DescriptionList';
+import { PageActions } from '@/components/admin/PageActions';
 import { PageHeader } from '@/components/admin/PageHeader';
+import { PageNotices } from '@/components/admin/PageNotices';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { StatusPill } from '@/components/admin/StatusPill';
@@ -127,28 +129,36 @@ export function WholesaleApplicationDetailPage() {
         <div className="grid gap-6">
             <PageHeader
                 actions={
-                    open ? (
-                        <div className="flex flex-wrap gap-2">
-                            <Button onClick={() => setDialog('reject')} variant="ghost">
-                                {t('wholesale.actions.reject')}
-                            </Button>
-                            {status === 'PENDING' && (
-                                <>
-                                    <Button onClick={() => setDialog('request-info')} variant="secondary">
-                                        {t('wholesale.actions.requestInfo')}
-                                    </Button>
-                                    <Button disabled={blocked} onClick={() => setDialog('approve')}>
-                                        {t('wholesale.actions.approve')}
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    ) : undefined
+                    <PageActions
+                        actions={[
+                            open && {
+                                key: 'reject',
+                                label: t('wholesale.actions.reject'),
+                                tone: 'danger',
+                                inline: true,
+                                onClick: () => setDialog('reject'),
+                            },
+                            status === 'PENDING' && {
+                                key: 'request-info',
+                                label: t('wholesale.actions.requestInfo'),
+                                inline: true,
+                                onClick: () => setDialog('request-info'),
+                            },
+                            status === 'PENDING' && {
+                                key: 'approve',
+                                label: t('wholesale.actions.approve'),
+                                tone: 'primary',
+                                disabled: blocked,
+                                hint: blocked ? t('wholesale.detail.influencerTitle') : undefined,
+                                onClick: () => setDialog('approve'),
+                            },
+                        ]}
+                    />
                 }
                 backHref="/admin/lojistas"
                 backLabel={t('wholesale.detail.back')}
                 badge={<StatusPill tone={wholesaleStatusTone(status)}>{t(`wholesale.statuses.${status}`)}</StatusPill>}
-                description={
+                meta={
                     <Link
                         className="text-primary no-underline hover:underline dark:text-night-accent"
                         href={`/admin/usuarios/${application.user.id}`}
@@ -156,50 +166,44 @@ export function WholesaleApplicationDetailPage() {
                         {application.user.name} · {application.user.email}
                     </Link>
                 }
-                kicker={t('wholesale.detail.kicker')}
                 title={application.tradeName ?? application.legalName}
             />
 
-            {blocked && (
-                <Alert tone="warning" title={t('wholesale.detail.influencerTitle')}>
-                    <p>{t('wholesale.detail.influencerBody')}</p>
-                    <p>
-                        <Link className="font-semibold text-inherit underline" href="/admin/influencers">
-                            {t('wholesale.detail.influencerLink')}
-                        </Link>
-                    </p>
-                </Alert>
-            )}
-
-            {application.cnpjLookupStatus === 'ALERT' && (
-                <Alert tone="danger" title={t('wholesale.detail.lookupAlertTitle')}>
-                    {receita && receita.divergences.length > 0 ? (
-                        <ul className="m-0 grid gap-1 pl-5">
-                            {receita.divergences.map((item) => (
-                                <li key={item}>{item}</li>
-                            ))}
-                        </ul>
-                    ) : null}
-                    <p>{t('wholesale.detail.lookupAlertBody')}</p>
-                </Alert>
-            )}
-
-            {status === 'NEEDS_INFO' && application.infoRequest && (
-                <Alert tone="info" title={t('wholesale.detail.infoRequested')}>
-                    <p>{application.infoRequest}</p>
-                </Alert>
-            )}
-
-            {(status === 'REJECTED' || status === 'REVOKED') && application.rejectionReason && (
-                <Alert
-                    tone="danger"
-                    title={t(
-                        status === 'REVOKED' ? 'wholesale.detail.revokedReason' : 'wholesale.detail.rejectedReason',
-                    )}
-                >
-                    <p>{application.rejectionReason}</p>
-                </Alert>
-            )}
+            <PageNotices
+                notices={[
+                    blocked && {
+                        key: 'influencer',
+                        tone: 'warning',
+                        title: t('wholesale.detail.influencerTitle'),
+                        body: t('wholesale.detail.influencerBody'),
+                        link: { href: '/admin/influencers', label: t('wholesale.detail.influencerLink') },
+                    },
+                    application.cnpjLookupStatus === 'ALERT' && {
+                        key: 'lookup',
+                        tone: 'danger',
+                        title: t('wholesale.detail.lookupAlertTitle'),
+                        body: [...(receita?.divergences ?? []), t('wholesale.detail.lookupAlertBody')].join(' · '),
+                    },
+                    status === 'NEEDS_INFO' &&
+                        Boolean(application.infoRequest) && {
+                            key: 'info-requested',
+                            tone: 'info',
+                            title: t('wholesale.detail.infoRequested'),
+                            body: application.infoRequest,
+                        },
+                    (status === 'REJECTED' || status === 'REVOKED') &&
+                        Boolean(application.rejectionReason) && {
+                            key: 'reason',
+                            tone: 'danger',
+                            title: t(
+                                status === 'REVOKED'
+                                    ? 'wholesale.detail.revokedReason'
+                                    : 'wholesale.detail.rejectedReason',
+                            ),
+                            body: application.rejectionReason,
+                        },
+                ]}
+            />
 
             <SectionCard title={t('wholesale.detail.company')}>
                 <DescriptionList

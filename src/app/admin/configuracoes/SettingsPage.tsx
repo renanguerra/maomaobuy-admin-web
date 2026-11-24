@@ -101,11 +101,7 @@ export function SettingsPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader
-                description={t('settings.description')}
-                kicker={t('settings.kicker')}
-                title={t('settings.title')}
-            />
+            <PageHeader description={t('settings.description')} title={t('settings.title')} />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>

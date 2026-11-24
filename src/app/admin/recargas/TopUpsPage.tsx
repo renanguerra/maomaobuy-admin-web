@@ -164,7 +164,7 @@ export function TopUpsPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader description={t('topUps.description')} kicker={t('topUps.kicker')} title={t('topUps.title')} />
+            <PageHeader description={t('topUps.description')} title={t('topUps.title')} />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>

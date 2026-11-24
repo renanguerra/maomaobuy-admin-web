@@ -135,7 +135,6 @@ export function CategoriesPage() {
         <div className="grid gap-6">
             <PageHeader
                 description={t('categories.description')}
-                kicker={t('categories.kicker')}
                 title={t('categories.title')}
                 actions={
                     <Button

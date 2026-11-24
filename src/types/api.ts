@@ -839,6 +839,17 @@ export interface AdminPackage {
     replacedByPackage: LinkedPackage | null;
 }
 
+/** Ação da equipe no pacote (`GET /packages/:id/history`). */
+export interface AdminPackageHistoryEntry {
+    id: string;
+    action: string;
+    /** `null` quando o admin confirmou sem escrever motivo. */
+    reason: string | null;
+    /** `null` quando a conta do admin não existe mais. */
+    adminName: string | null;
+    createdAt: string;
+}
+
 /** O outro lado do vínculo de problema no envio. */
 export interface LinkedPackage {
     id: string;
@@ -1182,6 +1193,18 @@ export function formatCpf(value: string | null | undefined) {
     const digits = (value ?? '').replace(/\D/g, '');
     if (digits.length !== 11) return '';
     return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+/**
+ * Documento do destinatário com o nome certo: CNPJ no pacote de lojista, CPF no
+ * de varejo. O tamanho decide quando o pacote é anterior ao campo de tipo.
+ */
+export function recipientTaxIdLabel(destination: AddressSnapshot): string | null {
+    const taxId = destination.recipientTaxId;
+    if (!taxId) return null;
+    return destination.recipientTaxIdType === 'CNPJ' || taxId.length === 14
+        ? `CNPJ ${formatCnpj(taxId)}`
+        : `CPF ${formatCpf(taxId)}`;
 }
 
 export function formatDate(value: string | null) {

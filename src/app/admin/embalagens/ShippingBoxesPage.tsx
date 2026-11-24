@@ -67,7 +67,6 @@ export function ShippingBoxesPage() {
         <div className="grid gap-6">
             <PageHeader
                 description={t('shippingBoxes.page.description')}
-                kicker={t('shippingBoxes.page.kicker')}
                 title={t('shippingBoxes.page.title')}
                 actions={
                     canWrite && boxes ? (

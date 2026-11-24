@@ -213,7 +213,6 @@ export function SuppliersListPage() {
                     )
                 }
                 description={t('suppliers.description')}
-                kicker={t('suppliers.kicker')}
                 title={t('suppliers.title')}
             />
 

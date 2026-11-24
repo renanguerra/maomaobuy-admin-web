@@ -8,11 +8,11 @@ import { Alert } from '@/components/admin/Alert';
 import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
 import { DescriptionList } from '@/components/admin/DescriptionList';
 import { EmptyState } from '@/components/admin/EmptyState';
+import { PageActions } from '@/components/admin/PageActions';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { StatusPill } from '@/components/admin/StatusPill';
-import { Button, ButtonLink } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
@@ -149,22 +149,29 @@ export function CouponDetailPage() {
         <div className="grid gap-6">
             <PageHeader
                 actions={
-                    coupon.influencerId ? (
-                        <ButtonLink href={`/admin/influencers/${coupon.influencerId}`} variant="secondary">
-                            {t('coupons.openInfluencer')}
-                        </ButtonLink>
-                    ) : (
-                        <Button onClick={() => setEditing(true)} variant="secondary">
-                            <Pencil className="h-4 w-4" aria-hidden="true" />
-                            {t('coupons.edit')}
-                        </Button>
-                    )
+                    <PageActions
+                        actions={[
+                            coupon.influencerId
+                                ? {
+                                      key: 'open-influencer',
+                                      label: t('coupons.openInfluencer'),
+                                      inline: true,
+                                      href: `/admin/influencers/${coupon.influencerId}`,
+                                  }
+                                : {
+                                      key: 'edit',
+                                      label: t('coupons.edit'),
+                                      icon: Pencil,
+                                      inline: true,
+                                      onClick: () => setEditing(true),
+                                  },
+                        ]}
+                    />
                 }
                 backHref="/admin/cupons"
                 backLabel={t('coupons.detail.back')}
                 badge={<StatusPill tone={couponStatusTone(status)}>{t(`coupons.statuses.${status}`)}</StatusPill>}
-                description={coupon.name}
-                kicker={t('coupons.detail.kicker')}
+                meta={coupon.name}
                 title={<span className="mm-data">{coupon.code}</span>}
             />
 
@@ -201,9 +208,7 @@ export function CouponDetailPage() {
                         {
                             label: t('coupons.detail.fields.maxUsesPerUser'),
                             value:
-                                coupon.maxUsesPerUser === null
-                                    ? t('coupons.unlimited')
-                                    : String(coupon.maxUsesPerUser),
+                                coupon.maxUsesPerUser === null ? t('coupons.unlimited') : String(coupon.maxUsesPerUser),
                             numeric: true,
                         },
                         { label: t('coupons.detail.fields.usedCount'), value: String(coupon.usedCount), numeric: true },

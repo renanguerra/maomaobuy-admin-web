@@ -9,7 +9,9 @@ import { Alert } from '@/components/admin/Alert';
 import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
 import { DescriptionList } from '@/components/admin/DescriptionList';
 import { EmptyState } from '@/components/admin/EmptyState';
+import { PageActions } from '@/components/admin/PageActions';
 import { PageHeader } from '@/components/admin/PageHeader';
+import { PageNotices } from '@/components/admin/PageNotices';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { StatCard } from '@/components/admin/StatCard';
@@ -28,12 +30,7 @@ import {
     type InfluencerDetail,
 } from '@/types/api';
 import { InfluencerCouponDialog, type InfluencerCouponValues } from '../InfluencerCouponDialog';
-import {
-    benefitStatusTone,
-    commissionStatusTone,
-    influencerStatusTone,
-    socialProfileUrl,
-} from '../influencer-format';
+import { benefitStatusTone, commissionStatusTone, influencerStatusTone, socialProfileUrl } from '../influencer-format';
 
 type Dialog =
     | { kind: 'approve' | 'edit' }
@@ -312,42 +309,49 @@ export function InfluencerDetailPage() {
         <div className="grid gap-6">
             <PageHeader
                 actions={
-                    <div className="flex flex-wrap gap-2">
-                        {status === 'PENDING' && (
-                            <>
-                                <Button onClick={() => setDialog({ kind: 'reject' })} variant="ghost">
-                                    {t('influencers.actions.reject')}
-                                </Button>
-                                <Button onClick={() => setDialog({ kind: 'approve' })}>
-                                    {t('influencers.actions.approve')}
-                                </Button>
-                            </>
-                        )}
-                        {(status === 'APPROVED' || status === 'DISABLED') && (
-                            <Button onClick={() => setDialog({ kind: 'edit' })} variant="secondary">
-                                {t('influencers.actions.edit')}
-                            </Button>
-                        )}
-                        {status === 'APPROVED' && (
-                            <Button onClick={() => setDialog({ kind: 'disable' })} variant="ghost">
-                                {t('influencers.actions.disable')}
-                            </Button>
-                        )}
-                        {status === 'DISABLED' && (
-                            <Button onClick={() => setDialog({ kind: 'enable' })}>
-                                {t('influencers.actions.enable')}
-                            </Button>
-                        )}
-                    </div>
+                    <PageActions
+                        actions={[
+                            status === 'PENDING' && {
+                                key: 'reject',
+                                label: t('influencers.actions.reject'),
+                                tone: 'danger',
+                                inline: true,
+                                onClick: () => setDialog({ kind: 'reject' }),
+                            },
+                            status === 'PENDING' && {
+                                key: 'approve',
+                                label: t('influencers.actions.approve'),
+                                tone: 'primary',
+                                onClick: () => setDialog({ kind: 'approve' }),
+                            },
+                            status === 'APPROVED' && {
+                                key: 'disable',
+                                label: t('influencers.actions.disable'),
+                                tone: 'danger',
+                                inline: true,
+                                onClick: () => setDialog({ kind: 'disable' }),
+                            },
+                            (status === 'APPROVED' || status === 'DISABLED') && {
+                                key: 'edit',
+                                label: t('influencers.actions.edit'),
+                                inline: true,
+                                onClick: () => setDialog({ kind: 'edit' }),
+                            },
+                            status === 'DISABLED' && {
+                                key: 'enable',
+                                label: t('influencers.actions.enable'),
+                                tone: 'primary',
+                                onClick: () => setDialog({ kind: 'enable' }),
+                            },
+                        ]}
+                    />
                 }
                 backHref="/admin/influencers"
                 backLabel={t('influencers.detail.back')}
                 badge={
-                    <StatusPill tone={influencerStatusTone(status)}>
-                        {t(`influencers.statuses.${status}`)}
-                    </StatusPill>
+                    <StatusPill tone={influencerStatusTone(status)}>{t(`influencers.statuses.${status}`)}</StatusPill>
                 }
-                description={
+                meta={
                     <Link
                         className="text-primary no-underline hover:underline dark:text-night-accent"
                         href={`/admin/usuarios/${influencer.user.id}`}
@@ -355,22 +359,23 @@ export function InfluencerDetailPage() {
                         {influencer.user.email}
                     </Link>
                 }
-                kicker={t('influencers.detail.kicker')}
                 title={influencer.user.name}
             />
 
-            {influencer.decisionReason && (
-                <Alert
-                    tone={status === 'REJECTED' ? 'danger' : 'warning'}
-                    title={t(
-                        status === 'DISABLED'
-                            ? 'influencers.detail.disabledReason'
-                            : 'influencers.detail.rejectedReason',
-                    )}
-                >
-                    <p>{influencer.decisionReason}</p>
-                </Alert>
-            )}
+            <PageNotices
+                notices={[
+                    Boolean(influencer.decisionReason) && {
+                        key: 'decision',
+                        tone: status === 'REJECTED' ? 'danger' : 'warning',
+                        title: t(
+                            status === 'DISABLED'
+                                ? 'influencers.detail.disabledReason'
+                                : 'influencers.detail.rejectedReason',
+                        ),
+                        body: influencer.decisionReason,
+                    },
+                ]}
+            />
 
             {influencer.approvedAt && (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

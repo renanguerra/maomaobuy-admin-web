@@ -166,11 +166,7 @@ export function WholesaleApplicationsListPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader
-                description={t('wholesale.description')}
-                kicker={t('wholesale.kicker')}
-                title={t('wholesale.title')}
-            />
+            <PageHeader description={t('wholesale.description')} title={t('wholesale.title')} />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>

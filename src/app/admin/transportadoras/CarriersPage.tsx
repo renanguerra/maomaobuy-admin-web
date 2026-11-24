@@ -45,7 +45,6 @@ export function CarriersPage() {
         <div className="grid gap-6">
             <PageHeader
                 description={t('carrier.page.description')}
-                kicker={t('carrier.page.kicker')}
                 title={t('carrier.page.title')}
                 actions={
                     <Button

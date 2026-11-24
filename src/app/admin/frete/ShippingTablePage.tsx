@@ -105,7 +105,6 @@ export function ShippingTablePage() {
         <div className="grid gap-6">
             <PageHeader
                 description={t('shippingTable.page.description', { markup })}
-                kicker={t('shippingTable.page.kicker')}
                 title={t('shippingTable.page.title')}
                 actions={
                     canWrite && table ? (

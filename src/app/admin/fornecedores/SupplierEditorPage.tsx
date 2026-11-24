@@ -278,7 +278,6 @@ export function SupplierEditorPage() {
             <PageHeader
                 backHref={backHref}
                 backLabel={t('suppliers.detail.back')}
-                kicker={t('suppliers.kicker')}
                 title={id ? current.name || title : title}
             />
 

@@ -47,11 +47,7 @@ export function UnpackedItemsPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader
-                description={t('unpacked.description')}
-                kicker={t('unpacked.kicker')}
-                title={t('unpacked.title')}
-            />
+            <PageHeader description={t('unpacked.description')} title={t('unpacked.title')} />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>

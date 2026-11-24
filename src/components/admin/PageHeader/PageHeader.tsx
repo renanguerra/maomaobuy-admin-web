@@ -3,13 +3,13 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 
 export interface PageHeaderProps {
-    /** Etiqueta curta acima do título — situa a página dentro da área. */
+    /** Origem ou tipo do registro, na linha do link de voltar. Só quando diz algo que o título não diz. */
     kicker?: ReactNode;
     title: ReactNode;
     /** Selo ao lado do título (situação do pedido, do pacote, do usuário). */
     badge?: ReactNode;
     description?: ReactNode;
-    /** Linha de contexto abaixo do título (cliente, código, e-mail). */
+    /** Contexto na linha do título (cliente, código, e-mail). */
     meta?: ReactNode;
     actions?: ReactNode;
     backHref?: string;
@@ -19,8 +19,9 @@ export interface PageHeaderProps {
 
 /**
  * Cabeçalho padrão de toda tela do painel: quem sou, onde estou, o que posso
- * fazer daqui. As ações ficam sempre no canto superior direito para que o
- * admin não precise procurá-las em cada página.
+ * fazer daqui. Ocupa uma linha (mais a do link de voltar): título, situação e
+ * contexto à esquerda, ações à direita. Em telas de detalhe as ações são um
+ * `PageActions` e os avisos, um `PageNotices` logo abaixo.
  */
 export function PageHeader({
     kicker,
@@ -35,26 +36,35 @@ export function PageHeader({
 }: PageHeaderProps) {
     return (
         <header className={className}>
-            {backHref && (
-                <Link
-                    className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-muted no-underline transition hover:text-primary dark:text-night-muted dark:hover:text-night-accent"
-                    href={backHref}
-                >
-                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                    {backLabel}
-                </Link>
+            {(backHref || kicker) && (
+                <p className="m-0 mb-1 flex flex-wrap items-center gap-x-2 text-xs text-muted dark:text-night-muted">
+                    {backHref && (
+                        <Link
+                            className="inline-flex items-center gap-0.5 font-semibold text-inherit no-underline transition hover:text-primary dark:hover:text-night-accent"
+                            href={backHref}
+                        >
+                            <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                            {backLabel}
+                        </Link>
+                    )}
+                    {backHref && kicker && <span aria-hidden="true">·</span>}
+                    {kicker && <span>{kicker}</span>}
+                </p>
             )}
 
-            <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
-                <div className="min-w-0">
-                    {kicker && <p className="mm-kicker mb-2.5">{kicker}</p>}
-                    <div className="flex flex-wrap items-center gap-3">
-                        <h1 className="mm-display m-0 text-2xl break-words sm:text-[1.75rem]">{title}</h1>
+            <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+                {/* Cresce e encolhe até 24rem: o contexto desce para baixo do título
+                    antes de as ações saírem da linha dele. */}
+                <div className="min-w-0 sm:flex-[1_1_24rem]">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <h1 className="mm-display m-0 text-xl break-words sm:text-2xl">{title}</h1>
                         {badge}
+                        {meta && (
+                            <div className="min-w-0 text-sm break-words text-muted dark:text-night-muted">{meta}</div>
+                        )}
                     </div>
-                    {meta && <div className="mt-1.5 text-sm text-muted dark:text-night-muted">{meta}</div>}
                     {description && (
-                        <p className="mt-2 mb-0 max-w-2xl text-sm leading-relaxed text-muted dark:text-night-muted">
+                        <p className="mt-1 mb-0 max-w-3xl text-sm leading-snug text-muted dark:text-night-muted">
                             {description}
                         </p>
                     )}
@@ -62,7 +72,11 @@ export function PageHeader({
 
                 {/* `max-w-full` e não `shrink-0`: com muitas ações o grupo quebra
                     linha dentro do cabeçalho em vez de empurrar a página. */}
-                {actions && <div className="flex max-w-full flex-wrap items-center gap-2">{actions}</div>}
+                {actions && (
+                    <div className="flex max-w-full flex-wrap items-center gap-2 max-sm:w-full sm:ml-auto sm:justify-end">
+                        {actions}
+                    </div>
+                )}
             </div>
         </header>
     );

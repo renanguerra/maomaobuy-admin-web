@@ -236,7 +236,6 @@ export function CreateOrderPage({ editOrderId }: { editOrderId?: string } = {}) 
                     backHref={`/admin/pedidos/${editOrderId}`}
                     backLabel={t('orders.detail.backLink')}
                     description={t('orders.editItems.description')}
-                    kicker={t('orders.editItems.kicker')}
                     title={t('orders.editItems.title', { id: editOrderId?.slice(0, 8) ?? '' })}
                 />
             ) : (
@@ -244,7 +243,6 @@ export function CreateOrderPage({ editOrderId }: { editOrderId?: string } = {}) 
                     backHref="/admin/pedidos"
                     backLabel={t('orders.detail.backLink')}
                     description={t('orders.create.description')}
-                    kicker={t('orders.create.kicker')}
                     title={t('orders.create.title')}
                 />
             )}

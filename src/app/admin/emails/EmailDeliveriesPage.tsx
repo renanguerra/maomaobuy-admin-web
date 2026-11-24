@@ -133,7 +133,7 @@ export function EmailDeliveriesPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader description={t('emails.description')} kicker={t('emails.kicker')} title={t('emails.title')} />
+            <PageHeader description={t('emails.description')} title={t('emails.title')} />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>

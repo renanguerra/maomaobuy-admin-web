@@ -263,11 +263,7 @@ export function PackagesListPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader
-                description={t('packages.list.description')}
-                kicker={t('packages.list.kicker')}
-                title={t('packages.list.title')}
-            />
+            <PageHeader description={t('packages.list.description')} title={t('packages.list.title')} />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>

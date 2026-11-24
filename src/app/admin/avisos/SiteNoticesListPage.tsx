@@ -172,7 +172,6 @@ export function SiteNoticesListPage() {
             <PageHeader
                 actions={<Button onClick={() => setEditing({})}>{t('siteNotices.newNotice')}</Button>}
                 description={t('siteNotices.description')}
-                kicker={t('siteNotices.kicker')}
                 title={t('siteNotices.title')}
             />
 

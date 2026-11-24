@@ -199,11 +199,7 @@ export function FinancePage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader
-                description={t('finance.description')}
-                kicker={t('finance.kicker')}
-                title={t('finance.title')}
-            />
+            <PageHeader description={t('finance.description')} title={t('finance.title')} />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>

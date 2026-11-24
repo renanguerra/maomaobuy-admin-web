@@ -9,11 +9,7 @@ export function StorefrontFeedbacksPage() {
     const { t } = useTranslation();
     return (
         <div className="grid gap-6">
-            <PageHeader
-                description={t('storefront.feedbacksDescription')}
-                kicker={t('storefront.kicker')}
-                title={t('storefront.tabs.feedbacks')}
-            />
+            <PageHeader description={t('storefront.feedbacksDescription')} title={t('storefront.tabs.feedbacks')} />
             <FeedbacksTab />
         </div>
     );

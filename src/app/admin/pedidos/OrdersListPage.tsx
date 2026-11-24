@@ -251,7 +251,6 @@ export function OrdersListPage() {
                     </ButtonLink>
                 }
                 description={t('orders.list.description')}
-                kicker={t('orders.list.kicker')}
                 title={t('orders.list.title')}
             />
 

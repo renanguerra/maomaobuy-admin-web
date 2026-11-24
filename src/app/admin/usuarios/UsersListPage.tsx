@@ -113,11 +113,7 @@ export function UsersListPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader
-                description={t('users.list.description')}
-                kicker={t('users.list.kicker')}
-                title={t('users.list.title')}
-            />
+            <PageHeader description={t('users.list.description')} title={t('users.list.title')} />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>

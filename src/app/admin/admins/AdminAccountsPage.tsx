@@ -245,7 +245,6 @@ export function AdminAccountsPage() {
         <div className="grid gap-6">
             <PageHeader
                 description={t('admins.list.description')}
-                kicker={t('admins.list.kicker')}
                 title={t('admins.list.title')}
                 actions={
                     <Button
