@@ -1204,6 +1204,8 @@ export const ptBR = {
                 selectAllAria: 'Selecionar todos os pacotes da página',
                 selectAria: 'Selecionar pacote {{code}}',
                 selectedCount: '{{count}} selecionados',
+                copyTracking: 'Copiar rastreios ({{count}})',
+                withoutTracking: '{{count}} sem rastreio',
                 clearSelection: 'Limpar seleção',
                 assemblySheet: 'Folha de montagem',
             },

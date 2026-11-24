@@ -9,7 +9,7 @@ import { useTranslation } from '@/i18n/LanguageProvider';
 const COPIED_MS = 2000;
 
 /** Copia um texto pronto e confirma no próprio botão. */
-export function CopyButton({ text, label }: { text: string; label: string }) {
+export function CopyButton({ text, label, disabled }: { text: string; label: string; disabled?: boolean }) {
     const { t } = useTranslation();
     const { notify } = useToast();
     const [copied, setCopied] = useState(false);
@@ -34,6 +34,7 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
 
     return (
         <Button
+            disabled={disabled}
             leadingIcon={<Icon className="h-4 w-4" aria-hidden="true" />}
             onClick={() => void copy()}
             size="small"

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Boxes, ClipboardList, FilterX, X } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
+import { CopyButton } from '@/components/admin/CopyButton';
 import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { PageHeader } from '@/components/admin/PageHeader';
@@ -68,9 +69,11 @@ export function PackagesListPage() {
     const [loaded, setLoaded] = useState<LoadedPage>();
     const [failure, setFailure] = useState<Failure>();
     const { queue } = usePendingCounts();
-    // Seleção para a folha de montagem. Sobrevive à troca de página e de
-    // filtro de propósito: quem monta o turno marca pacotes de várias telas.
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    // Seleção para a folha de montagem e os rastreios. Sobrevive à troca de
+    // página e de filtro de propósito: quem monta o turno marca pacotes de
+    // várias telas. Guarda o rastreio junto, porque o pacote marcado em outra
+    // página não está mais nas linhas carregadas.
+    const [selected, setSelected] = useState<ReadonlyMap<string, string | null>>(new Map());
 
     // A consulta em andamento é identificada pelos filtros: enquanto o que
     // está em tela não corresponder a ela, a lista está carregando.
@@ -130,30 +133,34 @@ export function PackagesListPage() {
 
     const totalPages = result ? Math.max(1, Math.ceil(result.total / result.limit)) : 1;
 
-    const allOnPageSelected = rows.length > 0 && rows.every((pkg) => selectedIds.has(pkg.id));
+    const allOnPageSelected = rows.length > 0 && rows.every((pkg) => selected.has(pkg.id));
 
-    const toggleSelected = (id: string) => {
-        setSelectedIds((current) => {
-            const next = new Set(current);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
+    const toggleSelected = (pkg: AdminPackage) => {
+        setSelected((current) => {
+            const next = new Map(current);
+            if (next.has(pkg.id)) next.delete(pkg.id);
+            else next.set(pkg.id, pkg.trackingCode);
             return next;
         });
     };
 
     const toggleSelectAllOnPage = () => {
-        setSelectedIds((current) => {
-            const next = new Set(current);
+        setSelected((current) => {
+            const next = new Map(current);
             if (rows.length > 0 && rows.every((pkg) => current.has(pkg.id))) {
                 for (const pkg of rows) next.delete(pkg.id);
             } else {
-                for (const pkg of rows) next.add(pkg.id);
+                for (const pkg of rows) next.set(pkg.id, pkg.trackingCode);
             }
             return next;
         });
     };
 
-    const assemblySheetHref = `/impressao/pacotes?ids=${Array.from(selectedIds).join(',')}`;
+    const assemblySheetHref = `/impressao/pacotes?ids=${Array.from(selected.keys()).join(',')}`;
+    const trackingCodes = Array.from(selected.values()).filter((code): code is string => Boolean(code));
+    const withoutTracking = selected.size - trackingCodes.length;
+    // Duas caixas podem viajar com o mesmo código; ele sai uma vez só.
+    const uniqueTrackingCodes = Array.from(new Set(trackingCodes));
 
     const columns: DataTableColumn<AdminPackage>[] = [
         {
@@ -169,11 +176,11 @@ export function PackagesListPage() {
             width: '2.75rem',
             cell: (pkg) => (
                 <Checkbox
-                    checked={selectedIds.has(pkg.id)}
+                    checked={selected.has(pkg.id)}
                     label={
                         <span className="sr-only">{t('packages.list.bulk.selectAria', { code: pkg.packageCode })}</span>
                     }
-                    onChange={() => toggleSelected(pkg.id)}
+                    onChange={() => toggleSelected(pkg)}
                 />
             ),
         },
@@ -323,28 +330,40 @@ export function PackagesListPage() {
                     </div>
                 </Toolbar>
 
-                {selectedIds.size > 0 && (
+                {selected.size > 0 && (
                     <Toolbar
                         className="bg-warm-100 dark:bg-night-canvas"
                         actions={
-                            <ButtonLink
-                                href={assemblySheetHref}
-                                leadingIcon={<ClipboardList className="h-4 w-4" aria-hidden="true" />}
-                                rel="noopener"
-                                size="small"
-                                target="_blank"
-                                variant="primary"
-                            >
-                                {t('packages.list.bulk.assemblySheet')}
-                            </ButtonLink>
+                            <>
+                                <CopyButton
+                                    disabled={uniqueTrackingCodes.length === 0}
+                                    label={t('packages.list.bulk.copyTracking', { count: uniqueTrackingCodes.length })}
+                                    text={uniqueTrackingCodes.join(' ')}
+                                />
+                                <ButtonLink
+                                    href={assemblySheetHref}
+                                    leadingIcon={<ClipboardList className="h-4 w-4" aria-hidden="true" />}
+                                    rel="noopener"
+                                    size="small"
+                                    target="_blank"
+                                    variant="primary"
+                                >
+                                    {t('packages.list.bulk.assemblySheet')}
+                                </ButtonLink>
+                            </>
                         }
                     >
                         <span className="flex items-center gap-2 text-sm font-semibold text-ink dark:text-night-text">
-                            {t('packages.list.bulk.selectedCount', { count: selectedIds.size })}
+                            {t('packages.list.bulk.selectedCount', { count: selected.size })}
+                            {withoutTracking > 0 && (
+                                <span className="font-normal text-muted dark:text-night-muted">
+                                    {t('packages.list.bulk.withoutTracking', { count: withoutTracking })}
+                                </span>
+                            )}
                             <Button
                                 aria-label={t('packages.list.bulk.clearSelection')}
                                 iconOnly
-                                onClick={() => setSelectedIds(new Set())}
+                                onClick={() => setSelected(new Map())}
                                 size="small"
                                 variant="ghost"
                             >

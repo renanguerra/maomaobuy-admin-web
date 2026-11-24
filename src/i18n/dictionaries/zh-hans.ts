@@ -1156,6 +1156,8 @@ export const zhHans: Messages = {
                 selectAllAria: '选择本页所有包裹',
                 selectAria: '选择包裹 {{code}}',
                 selectedCount: '已选择 {{count}} 项',
+                copyTracking: '复制物流单号（{{count}}）',
+                withoutTracking: '{{count}} 个无单号',
                 clearSelection: '清除选择',
                 assemblySheet: '装箱单',
             },
