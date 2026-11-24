@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
+    Calculator,
     CheckCircle2,
     History,
     ListPlus,
@@ -17,21 +18,22 @@ import {
     XCircle,
 } from 'lucide-react';
 import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
-import { ActionBar } from '@/components/admin/ActionBar';
 import { OrderCostSheetDialog } from '@/components/admin/CostSheets';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
 import { MessageThread } from '@/components/admin/MessageThread';
+import { PageActions } from '@/components/admin/PageActions';
 import { PageHeader } from '@/components/admin/PageHeader';
+import { PageNotices } from '@/components/admin/PageNotices';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { orderStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { SummaryList } from '@/components/admin/SummaryList';
 import { Timeline } from '@/components/admin/Timeline';
 import { MediaGrid, MediaTile } from '@/components/admin/MediaGrid';
-import { Button, ButtonLink } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import type { MessageKey } from '@/i18n/translations';
@@ -303,18 +305,18 @@ export function OrderDetailPage() {
     const canOverrideStatus = order.fulfillmentMode === 'SOURCED' && OVERRIDABLE_FROM_STATUSES.includes(order.status);
     // Pedido montado pela equipe troca os itens até o cliente aceitar.
     const canEditItems = order.createdByAdminId !== null && order.status === 'AWAITING_CUSTOMER_APPROVAL';
-    const hasActions =
-        canEditItems ||
-        canEditDescriptionAndMedia ||
-        canReprice ||
-        Boolean(sourcingStep) ||
-        canOverrideStatus ||
-        canCancelPaid ||
-        order.status === 'IN_WAREHOUSE' ||
-        order.status === 'REFUND_REQUESTED';
+    // Cada fase tem um jeito de cancelar; o rótulo diz o que acontece.
+    const cancelLabel =
+        order.status === 'AWAITING_CUSTOMER_APPROVAL'
+            ? t('orders.detail.actions.cancelOrder')
+            : awaitingPayment
+              ? t('orders.detail.actions.cancelOrderRestock')
+              : canCancelPaid
+                ? t('orders.detail.actions.cancelOrderRefund')
+                : undefined;
 
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-4">
             <PageHeader
                 backHref="/admin/pedidos"
                 backLabel={t('orders.detail.backLink')}
@@ -337,181 +339,134 @@ export function OrderDetailPage() {
                     </>
                 }
                 actions={
-                    <Button onClick={() => setCostSheetOpen(true)} size="small" variant="secondary">
-                        {t('profit.actions.costSheet')}
-                    </Button>
+                    <PageActions
+                        actions={[
+                            {
+                                key: 'cost-sheet',
+                                label: t('profit.actions.costSheet'),
+                                icon: Calculator,
+                                inline: true,
+                                onClick: () => setCostSheetOpen(true),
+                            },
+                            canEditItems && {
+                                key: 'edit-items',
+                                label: t('orders.detail.actions.editItems'),
+                                icon: ListPlus,
+                                inline: true,
+                                href: `/admin/pedidos/${order.id}/itens`,
+                            },
+                            canEditDescriptionAndMedia && {
+                                key: 'edit-description',
+                                label: t('orders.detail.actions.editDescription'),
+                                icon: Pencil,
+                                onClick: () => setDialog('edit-description'),
+                            },
+                            canReprice && {
+                                key: 'change-price',
+                                label: t('orders.detail.actions.changePrice'),
+                                icon: Wallet,
+                                onClick: () => setDialog('change-price'),
+                            },
+                            canReprice && {
+                                key: 'change-shipping-estimate',
+                                label: t('orders.detail.actions.changeShippingEstimate'),
+                                icon: Truck,
+                                onClick: () => setDialog('change-shipping-estimate'),
+                            },
+                            canDraft && {
+                                key: 'reject',
+                                label: t('orders.detail.actions.reject'),
+                                icon: XCircle,
+                                tone: 'danger',
+                                inline: true,
+                                onClick: () => setDialog('reject'),
+                            },
+                            canDraft && {
+                                key: 'approve',
+                                label: t('orders.detail.actions.approve'),
+                                icon: CheckCircle2,
+                                // Sem o aval do cliente no valor, o próximo
+                                // passo é pedir o aval.
+                                tone: priceAuthorized ? 'primary' : 'default',
+                                inline: true,
+                                disabled: !priceAuthorized,
+                                hint: priceAuthorized ? undefined : t('orders.detail.actions.needsCustomerApproval'),
+                                onClick: () => setDialog('approve'),
+                            },
+                            (canDraft || awaitingPayment) &&
+                                !priceAuthorized && {
+                                    key: 'request-customer-approval',
+                                    label: t('orders.detail.actions.requestCustomerApproval'),
+                                    icon: Send,
+                                    tone: 'primary',
+                                    onClick: () => setDialog('request-customer-approval'),
+                                },
+                            sourcingStep && {
+                                key: 'sourcing',
+                                label: t(sourcingStep.labelKey),
+                                icon: PackageCheck,
+                                tone: 'primary',
+                                loading: busy === 'sourcing',
+                                onClick: () => void advanceSourcing(sourcingStep.status),
+                            },
+                            order.status === 'IN_WAREHOUSE' && {
+                                key: 'mark-ready-to-ship',
+                                label: t('orders.detail.actions.markReadyToShip'),
+                                icon: PackageCheck,
+                                tone: 'primary',
+                                loading: busy === 'mark-ready-to-ship',
+                                onClick: () => void markReadyToShip(),
+                            },
+                            order.status === 'REFUND_REQUESTED' &&
+                                canConfirmRefund && {
+                                    key: 'confirm-refund',
+                                    label: t('orders.detail.actions.confirmRefund'),
+                                    icon: Wallet,
+                                    tone: 'primary',
+                                    onClick: () => setDialog('confirm-refund'),
+                                },
+                            canOverrideStatus && {
+                                key: 'override-status',
+                                label: t('orders.detail.actions.overrideStatus'),
+                                icon: ListRestart,
+                                onClick: () => setDialog('override-status'),
+                            },
+                            sourcingStep && {
+                                key: 'fail-sourcing',
+                                label: t('orders.detail.actions.failSourcing'),
+                                icon: XCircle,
+                                tone: 'danger',
+                                onClick: () => setDialog('fail-sourcing'),
+                            },
+                            cancelLabel !== undefined && {
+                                key: 'cancel',
+                                label: cancelLabel,
+                                icon: XCircle,
+                                tone: 'danger',
+                                onClick: () => setDialog('reject'),
+                            },
+                        ]}
+                    />
                 }
             />
             <OrderCostSheetDialog onClose={() => setCostSheetOpen(false)} orderId={costSheetOpen ? order.id : null} />
 
-            {order.rejectionReason && (
-                <Alert tone="danger" title={t('orders.detail.fields.rejectionReason')}>
-                    <p>{order.rejectionReason}</p>
-                </Alert>
-            )}
-
-            {hasActions && (
-                <ActionBar
-                    description={t('orders.detail.actionBar.description')}
-                    title={t('orders.detail.actionBar.title', { status: orderStatusLabel(order.status) })}
-                >
-                    {canEditDescriptionAndMedia && (
-                        <Button
-                            leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('edit-description')}
-                            size="small"
-                            variant="ghost"
-                        >
-                            {t('orders.detail.actions.editDescription')}
-                        </Button>
-                    )}
-                    {canEditItems && (
-                        <ButtonLink
-                            href={`/admin/pedidos/${order.id}/itens`}
-                            leadingIcon={<ListPlus className="h-4 w-4" aria-hidden="true" />}
-                            size="small"
-                            variant="ghost"
-                        >
-                            {t('orders.detail.actions.editItems')}
-                        </ButtonLink>
-                    )}
-                    {canReprice && (
-                        <>
-                            <Button
-                                leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('change-price')}
-                                size="small"
-                                variant="ghost"
-                            >
-                                {t('orders.detail.actions.changePrice')}
-                            </Button>
-                            <Button
-                                leadingIcon={<Truck className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('change-shipping-estimate')}
-                                size="small"
-                                variant="ghost"
-                            >
-                                {t('orders.detail.actions.changeShippingEstimate')}
-                            </Button>
-                        </>
-                    )}
-                    {(canDraft || awaitingPayment) && !priceAuthorized && (
-                        <Button
-                            leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('request-customer-approval')}
-                            size="small"
-                            variant="secondary"
-                        >
-                            {t('orders.detail.actions.requestCustomerApproval')}
-                        </Button>
-                    )}
-                    {canDraft && (
-                        <>
-                            <Button
-                                disabled={!priceAuthorized}
-                                leadingIcon={<CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('approve')}
-                                size="small"
-                                title={priceAuthorized ? undefined : t('orders.detail.actions.needsCustomerApproval')}
-                            >
-                                {t('orders.detail.actions.approve')}
-                            </Button>
-                            <Button
-                                leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('reject')}
-                                size="small"
-                                variant="danger"
-                            >
-                                {t('orders.detail.actions.reject')}
-                            </Button>
-                        </>
-                    )}
-                    {order.status === 'AWAITING_CUSTOMER_APPROVAL' && (
-                        <Button
-                            leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('reject')}
-                            size="small"
-                            variant="danger"
-                        >
-                            {t('orders.detail.actions.cancelOrder')}
-                        </Button>
-                    )}
-                    {awaitingPayment && (
-                        <Button
-                            leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('reject')}
-                            size="small"
-                            variant="danger"
-                        >
-                            {t('orders.detail.actions.cancelOrderRestock')}
-                        </Button>
-                    )}
-                    {sourcingStep && (
-                        <Button
-                            leadingIcon={<PackageCheck className="h-4 w-4" aria-hidden="true" />}
-                            loading={busy === 'sourcing'}
-                            onClick={() => advanceSourcing(sourcingStep.status)}
-                            size="small"
-                        >
-                            {t(sourcingStep.labelKey)}
-                        </Button>
-                    )}
-                    {order.status === 'IN_WAREHOUSE' && (
-                        <Button
-                            leadingIcon={<PackageCheck className="h-4 w-4" aria-hidden="true" />}
-                            loading={busy === 'mark-ready-to-ship'}
-                            onClick={markReadyToShip}
-                            size="small"
-                        >
-                            {t('orders.detail.actions.markReadyToShip')}
-                        </Button>
-                    )}
-                    {canOverrideStatus && (
-                        <Button
-                            leadingIcon={<ListRestart className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('override-status')}
-                            size="small"
-                            variant="ghost"
-                        >
-                            {t('orders.detail.actions.overrideStatus')}
-                        </Button>
-                    )}
-                    {sourcingStep && (
-                        <Button
-                            leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('fail-sourcing')}
-                            size="small"
-                            variant="danger"
-                        >
-                            {t('orders.detail.actions.failSourcing')}
-                        </Button>
-                    )}
-                    {canCancelPaid && (
-                        <Button
-                            leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('reject')}
-                            size="small"
-                            variant="danger"
-                        >
-                            {t('orders.detail.actions.cancelOrderRefund')}
-                        </Button>
-                    )}
-                    {order.status === 'REFUND_REQUESTED' &&
-                        (canConfirmRefund ? (
-                            <Button
-                                leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('confirm-refund')}
-                                size="small"
-                            >
-                                {t('orders.detail.actions.confirmRefund')}
-                            </Button>
-                        ) : (
-                            <p className="m-0 text-sm text-muted">
-                                {t('orders.detail.actions.confirmRefundSuperadminOnly')}
-                            </p>
-                        ))}
-                </ActionBar>
-            )}
+            <PageNotices
+                notices={[
+                    Boolean(order.rejectionReason) && {
+                        key: 'reason',
+                        tone: 'danger',
+                        title: t('orders.detail.fields.rejectionReason'),
+                        body: order.rejectionReason,
+                    },
+                    order.status === 'REFUND_REQUESTED' &&
+                        !canConfirmRefund && {
+                            key: 'refund-superadmin',
+                            tone: 'info',
+                            title: t('orders.detail.actions.confirmRefundSuperadminOnly'),
+                        },
+                ]}
+            />
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
                 <div className="grid min-w-0 gap-5">

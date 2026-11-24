@@ -144,7 +144,6 @@ export function OptionalServicesPage() {
             <PageHeader
                 actions={<Button onClick={() => setEditing({})}>{t('optionalServices.newService')}</Button>}
                 description={t('optionalServices.description')}
-                kicker={t('optionalServices.kicker')}
                 title={t('optionalServices.title')}
             />
 

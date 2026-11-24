@@ -171,11 +171,7 @@ export function ProductRequestsPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader
-                description={t('productRequests.description')}
-                kicker={t('productRequests.kicker')}
-                title={t('productRequests.title')}
-            />
+            <PageHeader description={t('productRequests.description')} title={t('productRequests.title')} />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>

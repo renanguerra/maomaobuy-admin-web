@@ -406,7 +406,6 @@ export function ProductsBulkEditorPage() {
                 backHref="/admin/produtos"
                 backLabel={t('products.bulkEditor.backLink')}
                 description={t('products.bulkEditor.description')}
-                kicker={t('products.bulkEditor.kicker')}
                 title={t('products.bulkEditor.title')}
             />
 

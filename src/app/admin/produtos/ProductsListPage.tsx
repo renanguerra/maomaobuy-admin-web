@@ -314,7 +314,6 @@ export function ProductsListPage({ kind = 'STORE' }: { kind?: ProductKind }) {
         <div className="grid gap-6">
             <PageHeader
                 description={t(`productKinds.${kind}.listDescription`)}
-                kicker={t('products.list.kicker')}
                 title={t(`productKinds.${kind}.listTitle`)}
                 actions={
                     <>

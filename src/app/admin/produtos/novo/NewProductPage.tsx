@@ -142,7 +142,6 @@ export function NewProductPage({ kind = 'STORE' }: { kind?: ProductKind }) {
                 description={
                     step === 'info' ? t(`productKinds.${kind}.newDescription`) : t('products.new.stepHintMedia')
                 }
-                kicker={t(`productKinds.${kind}.kicker`)}
                 title={t(`productKinds.${kind}.newTitle`)}
             />
 

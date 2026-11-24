@@ -13,6 +13,10 @@ export const ptBR = {
             add: 'Adicionar',
             confirm: 'Confirmar',
             clearFilters: 'Limpar filtros',
+            moreActions: 'Mais ações',
+            copy: 'Copiar',
+            copied: 'Copiado',
+            copyError: 'Não foi possível copiar. Selecione o texto e copie manualmente.',
             clearSearch: 'Limpar busca',
             open: 'Abrir',
         },
@@ -117,7 +121,6 @@ export const ptBR = {
         queueErrorTitle: 'Não foi possível carregar as filas',
         queueError: 'Tente novamente para consultar as pendências.',
         queueStale: 'Os números exibidos são da última consulta e podem estar desatualizados.',
-        kicker: 'Painel administrativo',
         title: 'Pendências',
         error: 'Não foi possível carregar o painel.',
         loading: 'Carregando filas…',
@@ -173,7 +176,6 @@ export const ptBR = {
     },
     users: {
         list: {
-            kicker: 'Operação',
             title: 'Usuários',
             searchPlaceholder: 'Buscar por nome, usuário ou e-mail',
             error: 'Não foi possível carregar os usuários.',
@@ -377,7 +379,6 @@ export const ptBR = {
     },
     productKinds: {
         STORE: {
-            kicker: 'Loja',
             listTitle: 'Produtos da loja',
             listDescription: 'O que aparece na vitrine, na busca e no carrinho. Todo produto é estoque próprio.',
             newButton: 'Novo produto da loja',
@@ -387,7 +388,6 @@ export const ptBR = {
             backLink: 'Voltar para produtos da loja',
         },
         COIN_SHOP: {
-            kicker: 'CoinShop',
             listTitle: 'CoinShop',
             listDescription:
                 'Recompensas resgatadas com MaoMaoCoins. Não aparecem na vitrine, na busca nem no carrinho.',
@@ -398,7 +398,6 @@ export const ptBR = {
             backLink: 'Voltar para a CoinShop',
         },
         CHECKOUT_ADDON: {
-            kicker: 'Leve junto',
             listTitle: 'Leve junto',
             listDescription:
                 'Itens oferecidos no fechamento do carrinho. Ficam fora da vitrine e do cupom e rendem moedas multiplicadas.',
@@ -410,7 +409,6 @@ export const ptBR = {
     },
     products: {
         list: {
-            kicker: 'Catálogo',
             title: 'Produtos',
             newButton: 'Novo produto',
             categoryLabel: 'Categoria',
@@ -469,7 +467,6 @@ export const ptBR = {
             },
         },
         bulkImport: {
-            kicker: 'Catálogo',
             title: 'Importar produtos em lote',
             backLink: 'Voltar para produtos',
             description: 'Cole ou envie um arquivo JSON com uma lista de produtos para cadastrar vários de uma vez.',
@@ -510,7 +507,6 @@ export const ptBR = {
             downloadFailedButton: 'Baixar itens com falha',
         },
         bulkEditor: {
-            kicker: 'Catálogo',
             title: 'Editar produtos em lote',
             backLink: 'Voltar para produtos',
             description:
@@ -567,7 +563,6 @@ export const ptBR = {
             backLink: 'Voltar para produtos',
             error: 'Não foi possível carregar o produto.',
             loading: 'Carregando produto…',
-            kicker: 'Produto',
             editButton: 'Editar',
             deleteButton: 'Excluir',
             deleteConfirm: 'Remover este produto definitivamente?',
@@ -623,7 +618,6 @@ export const ptBR = {
         },
         new: {
             backLink: 'Voltar para produtos',
-            kicker: 'Catálogo',
             title: 'Novo produto',
             steps: {
                 info: 'Informações',
@@ -806,7 +800,6 @@ export const ptBR = {
         },
     },
     categories: {
-        kicker: 'Catálogo',
         title: 'Categorias',
         error: 'Não foi possível carregar as categorias.',
         loading: 'Carregando categorias…',
@@ -850,7 +843,6 @@ export const ptBR = {
     },
     orders: {
         list: {
-            kicker: 'Logística',
             title: 'Pedidos',
             description:
                 'Fila de análise de pedidos de cotação e compra por link — aprove, rejeite, confirme pagamento manual e libere para envio.',
@@ -895,7 +887,6 @@ export const ptBR = {
             emptyFilteredDescription: 'Nenhum pedido está nessa situação no momento.',
         },
         editItems: {
-            kicker: 'Pedido montado pela equipe',
             title: 'Editar itens do pedido #{{id}}',
             description:
                 'Inclua, remova ou mude a quantidade enquanto o cliente não aceitou. Total, taxa e frete estimado são recalculados.',
@@ -916,7 +907,6 @@ export const ptBR = {
             customer: 'Cliente',
         },
         create: {
-            kicker: 'Pedidos',
             title: 'Novo pedido para cliente',
             description:
                 'Monte o pedido com produtos da loja. O cliente recebe um e-mail com os itens e o total, aceita e paga com o saldo da carteira.',
@@ -1151,10 +1141,6 @@ export const ptBR = {
                 customerNote: 'Pedido do cliente: {{note}}',
                 adminNote: 'Nota da equipe: {{note}}',
             },
-            actionBar: {
-                title: 'Situação: {{status}}',
-                description: 'Estas são as ações disponíveis para o pedido agora.',
-            },
         },
         media: {
             title: 'Mídia',
@@ -1179,7 +1165,6 @@ export const ptBR = {
     },
     packages: {
         list: {
-            kicker: 'Logística',
             title: 'Pacotes',
             description: 'Consolidação, aprovação de frete, cobrança e despacho dos pacotes dos clientes.',
             statusLabel: 'Status',
@@ -1219,6 +1204,8 @@ export const ptBR = {
                 selectAllAria: 'Selecionar todos os pacotes da página',
                 selectAria: 'Selecionar pacote {{code}}',
                 selectedCount: '{{count}} selecionados',
+                copyTracking: 'Copiar rastreios ({{count}})',
+                withoutTracking: '{{count}} sem rastreio',
                 clearSelection: 'Limpar seleção',
                 assemblySheet: 'Folha de montagem',
             },
@@ -1300,7 +1287,6 @@ export const ptBR = {
             backLink: 'Voltar para pacotes',
             error: 'Não foi possível carregar o pacote.',
             loading: 'Carregando pacote…',
-            kicker: 'Pacote',
             actions: {
                 assemblySheet: 'Folha de montagem',
                 setShipping: 'Definir frete',
@@ -1332,17 +1318,40 @@ export const ptBR = {
                 trackingCode: 'Código de rastreio',
                 weight: 'Peso',
                 dimensions: 'Dimensões (C×L×A)',
-                createdAt: 'Criado em',
-                shippedAt: 'Enviado em',
-                deliveredAt: 'Entregue em',
                 destination: 'Destino',
                 rejectionReason: 'Motivo da rejeição',
                 shippingFailureReason: 'Motivo do problema no envio',
+            },
+            tabs: {
+                label: 'Registro do pacote',
+                files: 'Arquivos',
+                history: 'Histórico',
+            },
+            history: {
+                created: 'Pacote criado',
+                reviewed: 'Conferido',
+                approved: 'Aprovado',
+                rejected: 'Rejeitado',
+                cancelled: 'Cancelado',
+                freightSet: 'Frete definido',
+                paid: 'Frete pago',
+                measurements: 'Peso e medidas corrigidos',
+                dispatched: 'Despachado',
+                trackingCorrected: 'Rastreio corrigido',
+                shippingFailure: 'Problema no envio registrado',
+                statusOverridden: 'Status alterado manualmente',
+                carrierCreated: 'Envio criado na Westlink',
+                carrierCancelled: 'Envio cancelado na Westlink',
+                delivered: 'Entregue',
+                other: 'Ação da equipe',
+                team: 'Equipe',
+                error: 'Não foi possível carregar as ações da equipe. Abaixo, só as datas do pacote.',
             },
             replacement: {
                 replacesTitle: 'Substitui o pacote {{code}}',
                 replacesDescription:
                     'Pacote criado por problema no envio, com o frete já pago no original. Confira os itens: o que sair fica livre para outro pacote, cancelamento ou reembolso. Ao aprovar, vai direto para despacho.',
+                replacesSummary: 'Criado por problema no envio, com o frete já pago no original.',
                 replacedTitle: 'Pacote encerrado por problema no envio',
                 replacedDescription: 'Fica só para consulta. Os itens seguem no pacote {{code}}.',
                 open: 'Abrir {{code}}',
@@ -1543,15 +1552,9 @@ export const ptBR = {
                 },
             },
             shippingSection: 'Envio',
-            datesSection: 'Datas',
-            actionBar: {
-                title: 'Situação: {{status}}',
-                description: 'Estas são as ações disponíveis para o pacote agora.',
-            },
         },
     },
     unpacked: {
-        kicker: 'Logística',
         title: 'No armazém sem pacote',
         description:
             'Itens liberados para envio que nenhum pacote pegou, por cliente, do que chegou primeiro. Quem monta o pacote é o cliente; aqui você vê quem lembrar antes da armazenagem começar.',
@@ -1570,7 +1573,6 @@ export const ptBR = {
         createPackage: 'Montar pacote',
     },
     finance: {
-        kicker: 'Financeiro',
         title: 'Financeiro',
         description: 'Fila de solicitações de reembolso.',
         sectionTitle: 'Reembolsos',
@@ -1634,7 +1636,6 @@ export const ptBR = {
         },
     },
     emails: {
-        kicker: 'Sistema',
         title: 'E-mails enviados',
         description:
             'A fila de saída dos e-mails transacionais. É aqui que se responde "o cliente foi avisado?" sem abrir o painel do provedor.',
@@ -1665,7 +1666,6 @@ export const ptBR = {
         },
     },
     topUps: {
-        kicker: 'Financeiro',
         title: 'Recargas',
         description:
             'Histórico de recargas de saldo: quanto o cliente pagou, quanto entrou na carteira e em que deu. Contas internas aparecem na lista, mas ficam fora dos totais.',
@@ -1718,7 +1718,6 @@ export const ptBR = {
         },
     },
     paymentMethods: {
-        kicker: 'Financeiro',
         title: 'Meios de pagamento',
         description:
             'Quem pode recarregar por Pix e por cartão. Cada meio tem sua chave: ativo para todos, desativado para todos, só para alguns ou para todos menos alguns.',
@@ -1764,7 +1763,6 @@ export const ptBR = {
         addedAt: 'na lista desde {{date}}',
     },
     productRequests: {
-        kicker: 'Pedidos de produto',
         title: 'Pedidos de produto',
         description: 'Produtos que os clientes pediram e não estão na loja.',
         sectionTitle: 'Pedidos',
@@ -1802,8 +1800,6 @@ export const ptBR = {
             backLink: 'Pedidos de produto',
             loading: 'Carregando pedido de produto…',
             titleFallback: 'Pedido de produto',
-            actionBarTitle: 'Situação: {{status}}',
-            actionBarDescription: 'Tire dúvidas pela conversa e atualize o status quando decidir.',
             requestSection: 'O que o cliente pediu',
             reference: 'Link de referência',
             summarySection: 'Resumo',
@@ -1851,7 +1847,6 @@ export const ptBR = {
     },
     admins: {
         list: {
-            kicker: 'Sistema',
             title: 'Administradores',
             error: 'Não foi possível carregar os admins.',
             loading: 'Carregando admins…',
@@ -1938,7 +1933,6 @@ export const ptBR = {
         error: 'Código inválido. Confira o código no app e tente de novo.',
     },
     optionalServices: {
-        kicker: 'Comercial',
         title: 'Serviços adicionais',
         description:
             'Adicionais que o cliente pode contratar ao pagar o pedido. Preço-piloto: revise aqui, sem implantação.',
@@ -1992,7 +1986,6 @@ export const ptBR = {
         },
     },
     profit: {
-        kicker: 'Financeiro',
         title: 'Custos e lucro',
         description:
             'Quanto entrou, quanto saiu e quanto sobrou no período. Valores em yuan; o equivalente em reais usa a cotação de hoje. Contas internas ficam de fora.',
@@ -2209,7 +2202,6 @@ export const ptBR = {
         },
     },
     coupons: {
-        kicker: 'Comercial',
         title: 'Cupons',
         description:
             'Cupons de desconto no pedido ou no frete: abertos a todo mundo ou dirigidos a um cliente, com quantidade, validade e mínimo.',
@@ -2372,7 +2364,6 @@ export const ptBR = {
         },
     },
     influencers: {
-        kicker: 'Comercial',
         title: 'Influencers',
         description:
             'Pedidos para ser influencer, cupons, comissões e níveis. Quem usa o cupom ganha desconto nos produtos; o influencer ganha comissão quando o pacote sai do armazém.',
@@ -2580,7 +2571,6 @@ export const ptBR = {
         },
     },
     wholesale: {
-        kicker: 'Operação',
         title: 'Lojistas',
         description:
             'Pedidos de conta de lojista (CNPJ). Aprovar libera o atacado; recusa e correção vão por e-mail ao cliente com o seu texto.',
@@ -2702,7 +2692,6 @@ export const ptBR = {
         },
     },
     storefront: {
-        kicker: 'Vitrine do site',
         feedbacksDescription:
             'Posts de unboxing do Instagram para o bloco “Quem comprou, mostrou”. Só vai ao site o post com a autorização do cliente marcada.',
         loadError: 'Não foi possível carregar a vitrine.',
@@ -2763,7 +2752,6 @@ export const ptBR = {
         },
     },
     suppliers: {
-        kicker: 'Operação',
         title: 'Fornecedores',
         description:
             'Controle interno de quem fornece mercadoria e frete: contatos, o que cada um atende, condições e o que aprendemos com eles. Nada daqui aparece para o cliente.',
@@ -2926,7 +2914,6 @@ export const ptBR = {
         },
     },
     siteNotices: {
-        kicker: 'Comunicação',
         title: 'Avisos do site',
         description:
             'O modal que abre quando o cliente entra na loja. Um aviso por vez: se dois estiverem ativos na mesma janela, aparece o que começou por último.',
@@ -3012,7 +2999,6 @@ export const ptBR = {
         },
     },
     settings: {
-        kicker: 'Sistema',
         title: 'Configurações',
         description: 'Taxas, prazos e limites usados nos cálculos do site — mudar aqui evita editar direto no banco.',
         tableCaption: 'Lista de configurações',
@@ -3054,7 +3040,6 @@ export const ptBR = {
     },
     shippingBoxes: {
         page: {
-            kicker: 'Logística',
             title: 'Embalagens',
             description:
                 'Caixas e envelopes do armazém. As ativas montam os volumes da estimativa de frete do carrinho: cada volume vai na menor embalagem que leva tudo. O custo é só controle interno.',
@@ -3118,7 +3103,6 @@ export const ptBR = {
     },
     shippingTable: {
         page: {
-            kicker: 'Logística',
             title: 'Tabela de frete',
             description:
                 'Modalidades com o nosso nome (o que o cliente vê) e as linhas de cada fornecedor por trás delas. A estimativa do site usa, em cada modalidade ativa, a linha ativa mais barata que aceita o volume, com a margem de frete ({{markup}}).',
@@ -3297,7 +3281,6 @@ export const ptBR = {
     },
     carrier: {
         page: {
-            kicker: 'Logística',
             title: 'Transportadoras',
             description:
                 'Linhas da Westlink para o Brasil. Preço, limites e prazo de cada linha são editados na Tabela de frete. Cotação, etiqueta e rastreio ficam na página de cada pacote.',

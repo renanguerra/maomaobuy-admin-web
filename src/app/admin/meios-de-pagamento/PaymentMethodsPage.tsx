@@ -80,11 +80,7 @@ export function PaymentMethodsPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader
-                description={t('paymentMethods.description')}
-                kicker={t('paymentMethods.kicker')}
-                title={t('paymentMethods.title')}
-            />
+            <PageHeader description={t('paymentMethods.description')} title={t('paymentMethods.title')} />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>

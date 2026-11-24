@@ -142,7 +142,6 @@ export function ProfitPage() {
                     </>
                 }
                 description={t('profit.description')}
-                kicker={t('profit.kicker')}
                 title={t('profit.title')}
             />
 

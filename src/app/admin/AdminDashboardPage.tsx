@@ -108,7 +108,6 @@ export function AdminDashboardPage() {
         <div className="grid gap-7">
             <PageHeader
                 description={t('dashboard.description')}
-                kicker={t('dashboard.kicker')}
                 title={t('dashboard.title')}
                 actions={queue && !queueError && <OverdueSummary count={overdueTotal} />}
             />

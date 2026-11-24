@@ -19,11 +19,12 @@ import { DescriptionList } from '@/components/admin/DescriptionList';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { LazySection } from '@/components/admin/LazySection';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
+import { PageActions } from '@/components/admin/PageActions';
 import { PageHeader } from '@/components/admin/PageHeader';
+import { PageNotices } from '@/components/admin/PageNotices';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { orderStatusTone, packageStatusTone, StatusPill, userStatusTone } from '@/components/admin/StatusPill';
-import { Button, ButtonLink } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
@@ -188,75 +189,70 @@ export function UserDetailPage() {
                         )}
                     </span>
                 }
-                kicker={t('users.detail.kicker')}
                 meta={`@${user.username} · ${user.email}`}
                 title={user.name}
                 actions={
-                    <>
-                        {isActive && (
-                            <ButtonLink
-                                href={`/admin/pedidos/novo?usuario=${user.id}`}
-                                leadingIcon={<ClipboardPlus className="h-4 w-4" aria-hidden="true" />}
-                                variant="secondary"
-                            >
-                                {t('orders.create.fromUserButton')}
-                            </ButtonLink>
-                        )}
-                        <Button
-                            leadingIcon={<PackagePlus className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('create-package')}
-                            variant="secondary"
-                        >
-                            {t('users.createPackage.title')}
-                        </Button>
-                        {user.accountType === 'WHOLESALE' && (
-                            <Button
-                                leadingIcon={<Store className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('revoke-wholesale')}
-                                variant="secondary"
-                            >
-                                {t('users.detail.revokeWholesaleButton')}
-                            </Button>
-                        )}
-                        {!user.passwordResetRequiredAt && (
-                            <Button
-                                leadingIcon={<KeyRound className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('request-password-reset')}
-                                variant="secondary"
-                            >
-                                {t('users.detail.requestPasswordResetButton')}
-                            </Button>
-                        )}
-                        {isActive ? (
-                            <Button
-                                leadingIcon={<ShieldOff className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('suspend')}
-                                variant="danger"
-                            >
-                                {t('users.detail.suspendButton')}
-                            </Button>
-                        ) : (
-                            <Button
-                                leadingIcon={<ShieldCheck className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('reactivate')}
-                            >
-                                {t('users.detail.reactivateButton')}
-                            </Button>
-                        )}
-                    </>
+                    <PageActions
+                        actions={[
+                            isActive && {
+                                key: 'create-order',
+                                label: t('orders.create.fromUserButton'),
+                                icon: ClipboardPlus,
+                                inline: true,
+                                href: `/admin/pedidos/novo?usuario=${user.id}`,
+                            },
+                            {
+                                key: 'create-package',
+                                label: t('users.createPackage.title'),
+                                icon: PackagePlus,
+                                inline: true,
+                                onClick: () => setDialog('create-package'),
+                            },
+                            !user.passwordResetRequiredAt && {
+                                key: 'request-password-reset',
+                                label: t('users.detail.requestPasswordResetButton'),
+                                icon: KeyRound,
+                                onClick: () => setDialog('request-password-reset'),
+                            },
+                            user.accountType === 'WHOLESALE' && {
+                                key: 'revoke-wholesale',
+                                label: t('users.detail.revokeWholesaleButton'),
+                                icon: Store,
+                                tone: 'danger',
+                                onClick: () => setDialog('revoke-wholesale'),
+                            },
+                            isActive
+                                ? {
+                                      key: 'suspend',
+                                      label: t('users.detail.suspendButton'),
+                                      icon: ShieldOff,
+                                      tone: 'danger',
+                                      onClick: () => setDialog('suspend'),
+                                  }
+                                : {
+                                      key: 'reactivate',
+                                      label: t('users.detail.reactivateButton'),
+                                      icon: ShieldCheck,
+                                      tone: 'primary',
+                                      onClick: () => setDialog('reactivate'),
+                                  },
+                        ]}
+                    />
                 }
             />
 
-            {user.passwordResetRequiredAt && (
-                <Alert
-                    tone="warning"
-                    title={t('users.detail.fields.passwordResetPendingSince', {
-                        date: formatDate(user.passwordResetRequiredAt),
-                    })}
-                >
-                    <p>{t('users.detail.fields.passwordResetHint')}</p>
-                </Alert>
-            )}
+            <PageNotices
+                notices={[
+                    Boolean(user.passwordResetRequiredAt) && {
+                        key: 'password-reset',
+                        tone: 'warning',
+                        title: t('users.detail.fields.passwordResetPendingSince', {
+                            date: formatDate(user.passwordResetRequiredAt),
+                        }),
+                        body: t('users.detail.fields.passwordResetHint'),
+                    },
+                ]}
+            />
 
             <SectionCard title={t('users.detail.accountSection')}>
                 <DescriptionList

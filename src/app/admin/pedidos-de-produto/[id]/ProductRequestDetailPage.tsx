@@ -4,15 +4,14 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ExternalLink, MessageSquare, Pencil, ShoppingBag } from 'lucide-react';
-import { ActionBar } from '@/components/admin/ActionBar';
 import { Alert } from '@/components/admin/Alert';
 import { MessageThread } from '@/components/admin/MessageThread';
+import { PageActions } from '@/components/admin/PageActions';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { productRequestStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { SummaryList } from '@/components/admin/SummaryList';
-import { Button, ButtonLink } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
@@ -72,15 +71,36 @@ export function ProductRequestDetailPage() {
     }
 
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-4">
             <PageHeader
                 {...header}
+                actions={
+                    <PageActions
+                        actions={[
+                            // Com o produto na loja, a equipe pode montar o pedido
+                            // para o cliente só aceitar e pagar.
+                            {
+                                key: 'create-order',
+                                label: t('productRequests.detail.createOrder'),
+                                icon: ShoppingBag,
+                                inline: true,
+                                href: `/admin/pedidos/novo?usuario=${request.userId}`,
+                            },
+                            {
+                                key: 'update',
+                                label: t('productRequests.updateButton'),
+                                icon: Pencil,
+                                tone: 'primary',
+                                onClick: () => setEditing(true),
+                            },
+                        ]}
+                    />
+                }
                 badge={
                     <StatusPill tone={productRequestStatusTone(request.status)}>
                         {productRequestStatusLabel(request.status)}
                     </StatusPill>
                 }
-                kicker={t('productRequests.detail.titleFallback')}
                 title={`#${request.id.slice(0, 8)}`}
                 meta={
                     <>
@@ -94,31 +114,6 @@ export function ProductRequestDetailPage() {
                     </>
                 }
             />
-
-            <ActionBar
-                description={t('productRequests.detail.actionBarDescription')}
-                title={t('productRequests.detail.actionBarTitle', {
-                    status: productRequestStatusLabel(request.status),
-                })}
-            >
-                <Button
-                    leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
-                    onClick={() => setEditing(true)}
-                    size="small"
-                    variant="secondary"
-                >
-                    {t('productRequests.updateButton')}
-                </Button>
-                {/* Com o produto na loja, a equipe pode montar o pedido para o cliente só aceitar e pagar. */}
-                <ButtonLink
-                    href={`/admin/pedidos/novo?usuario=${request.userId}`}
-                    leadingIcon={<ShoppingBag className="h-4 w-4" aria-hidden="true" />}
-                    size="small"
-                    variant="secondary"
-                >
-                    {t('productRequests.detail.createOrder')}
-                </ButtonLink>
-            </ActionBar>
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
                 <div className="grid min-w-0 gap-5">

@@ -258,7 +258,6 @@ export function CouponsListPage() {
             <PageHeader
                 actions={<Button onClick={() => setEditing({})}>{t('coupons.newCoupon')}</Button>}
                 description={t('coupons.description')}
-                kicker={t('coupons.kicker')}
                 title={t('coupons.title')}
             />
 

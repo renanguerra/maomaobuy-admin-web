@@ -309,7 +309,6 @@ export function BulkImportProductsPage() {
                 backHref="/admin/produtos"
                 backLabel={t('products.bulkImport.backLink')}
                 description={t('products.bulkImport.description')}
-                kicker={t('products.bulkImport.kicker')}
                 title={t('products.bulkImport.title')}
             />
 

@@ -20,11 +20,12 @@ import { Alert } from '@/components/admin/Alert';
 import { DescriptionList } from '@/components/admin/DescriptionList';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
+import { PageActions } from '@/components/admin/PageActions';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { StatusPill } from '@/components/admin/StatusPill';
-import { Button, ButtonLink } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
@@ -228,26 +229,26 @@ export function SupplierDetailPage() {
         <div className="grid gap-6">
             <PageHeader
                 actions={
-                    <>
-                        {admin?.role === 'SUPERADMIN' && (
-                            <Button
-                                leadingIcon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
-                                loading={busy === 'delete'}
-                                onClick={() => void removeSupplier(supplier)}
-                                variant="dangerGhost"
-                            >
-                                {t('suppliers.detail.delete')}
-                            </Button>
-                        )}
-                        {canWrite && (
-                            <ButtonLink
-                                href={`/admin/fornecedores/${supplier.id}/editar`}
-                                leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
-                            >
-                                {t('suppliers.detail.edit')}
-                            </ButtonLink>
-                        )}
-                    </>
+                    <PageActions
+                        actions={[
+                            admin?.role === 'SUPERADMIN' && {
+                                key: 'delete',
+                                label: t('suppliers.detail.delete'),
+                                icon: Trash2,
+                                tone: 'danger',
+                                inline: true,
+                                loading: busy === 'delete',
+                                onClick: () => void removeSupplier(supplier),
+                            },
+                            canWrite && {
+                                key: 'edit',
+                                label: t('suppliers.detail.edit'),
+                                icon: Pencil,
+                                tone: 'primary',
+                                href: `/admin/fornecedores/${supplier.id}/editar`,
+                            },
+                        ]}
+                    />
                 }
                 backHref="/admin/fornecedores"
                 backLabel={t('suppliers.detail.back')}
@@ -256,7 +257,7 @@ export function SupplierDetailPage() {
                         {t(`suppliers.statuses.${supplier.status}`)}
                     </StatusPill>
                 }
-                kicker={`${t('suppliers.title')} · ${t(`suppliers.kinds.${supplier.kind}`)}`}
+                kicker={t(`suppliers.kinds.${supplier.kind}`)}
                 title={supplier.name}
             />
 

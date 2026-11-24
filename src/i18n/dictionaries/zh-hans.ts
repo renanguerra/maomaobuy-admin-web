@@ -11,6 +11,10 @@ export const zhHans: Messages = {
             add: '添加',
             confirm: '确认',
             clearFilters: '清除筛选',
+            moreActions: '更多操作',
+            copy: '复制',
+            copied: '已复制',
+            copyError: '无法复制，请选中文字后手动复制。',
             clearSearch: '清除搜索',
             open: '打开',
         },
@@ -115,7 +119,6 @@ export const zhHans: Messages = {
         queueErrorTitle: '无法加载工作队列',
         queueError: '请重试以查看待办事项。',
         queueStale: '显示的是上次查询的数据，可能已过期。',
-        kicker: '管理后台',
         title: '待办',
         error: '无法加载面板数据。',
         loading: '正在加载队列…',
@@ -170,7 +173,6 @@ export const zhHans: Messages = {
     },
     users: {
         list: {
-            kicker: '运营',
             title: '用户',
             searchPlaceholder: '按姓名、用户名或邮箱搜索',
             error: '无法加载用户列表。',
@@ -367,7 +369,6 @@ export const zhHans: Messages = {
     },
     productKinds: {
         STORE: {
-            kicker: '商店',
             listTitle: '商店商品',
             listDescription: '显示在商店、搜索和购物车中的商品。所有商品均为自营库存。',
             newButton: '新建商店商品',
@@ -376,7 +377,6 @@ export const zhHans: Messages = {
             backLink: '返回商店商品',
         },
         COIN_SHOP: {
-            kicker: '积分商城',
             listTitle: '积分商城',
             listDescription: '用 MaoMaoCoin 兑换的奖励，不在商店、搜索和购物车中显示。',
             newButton: '新建兑换品',
@@ -385,7 +385,6 @@ export const zhHans: Messages = {
             backLink: '返回积分商城',
         },
         CHECKOUT_ADDON: {
-            kicker: '顺手带',
             listTitle: '顺手带',
             listDescription: '购物车结账时推荐的商品，不在商店显示，不参与优惠券，积分加倍。',
             newButton: '新建顺手带商品',
@@ -396,7 +395,6 @@ export const zhHans: Messages = {
     },
     products: {
         list: {
-            kicker: '商品目录',
             title: '商品',
             newButton: '新增商品',
             categoryLabel: '分类',
@@ -454,7 +452,6 @@ export const zhHans: Messages = {
             },
         },
         bulkImport: {
-            kicker: '商品目录',
             title: '批量导入商品',
             backLink: '返回商品列表',
             description: '粘贴或上传一个包含商品列表的 JSON 文件，一次性创建多个商品。',
@@ -494,7 +491,6 @@ export const zhHans: Messages = {
             downloadFailedButton: '下载失败项',
         },
         bulkEditor: {
-            kicker: '商品目录',
             title: '批量编辑商品',
             backLink: '返回商品列表',
             description: '按筛选条件导出商品为 JSON 文件，编辑需要修改的字段，再把文件传回来一次性应用所有修改。',
@@ -549,7 +545,6 @@ export const zhHans: Messages = {
             backLink: '返回商品列表',
             error: '无法加载商品信息。',
             loading: '正在加载商品…',
-            kicker: '商品',
             editButton: '编辑',
             deleteButton: '删除',
             deleteConfirm: '确定要永久删除该商品吗？',
@@ -605,7 +600,6 @@ export const zhHans: Messages = {
         },
         new: {
             backLink: '返回商品列表',
-            kicker: '商品目录',
             title: '新增商品',
             steps: {
                 info: '基本信息',
@@ -773,7 +767,6 @@ export const zhHans: Messages = {
         },
     },
     categories: {
-        kicker: '商品目录',
         title: '分类',
         error: '无法加载分类列表。',
         loading: '正在加载分类…',
@@ -816,7 +809,6 @@ export const zhHans: Messages = {
     },
     orders: {
         list: {
-            kicker: '物流',
             title: '订单',
             description: '报价及链接购买订单的审核队列 — 批准、拒绝、确认人工付款并放行发货。',
             statusLabel: '状态',
@@ -860,7 +852,6 @@ export const zhHans: Messages = {
             emptyFilteredDescription: '目前没有处于该状态的订单。',
         },
         editItems: {
-            kicker: '团队创建的订单',
             title: '编辑订单 #{{id}} 的商品',
             description: '在客户确认前可添加、删除商品或修改数量。总额、服务费和预估运费会重新计算。',
             loading: '正在加载订单…',
@@ -877,7 +868,6 @@ export const zhHans: Messages = {
             customer: '客户',
         },
         create: {
-            kicker: '订单',
             title: '为客户新建订单',
             description: '用商城商品为客户组建订单。客户会收到含商品和总额的邮件，确认后用钱包余额付款。',
             newButton: '新建订单',
@@ -1103,10 +1093,6 @@ export const zhHans: Messages = {
                 customerNote: '客户要求：{{note}}',
                 adminNote: '团队备注：{{note}}',
             },
-            actionBar: {
-                title: '状态：{{status}}',
-                description: '以下是当前订单可执行的操作。',
-            },
         },
         media: {
             title: '素材',
@@ -1131,7 +1117,6 @@ export const zhHans: Messages = {
     },
     packages: {
         list: {
-            kicker: '物流',
             title: '包裹',
             description: '客户包裹的集运、运费审批、收费与发货管理。',
             statusLabel: '状态',
@@ -1171,6 +1156,8 @@ export const zhHans: Messages = {
                 selectAllAria: '选择本页所有包裹',
                 selectAria: '选择包裹 {{code}}',
                 selectedCount: '已选择 {{count}} 项',
+                copyTracking: '复制物流单号（{{count}}）',
+                withoutTracking: '{{count}} 个无单号',
                 clearSelection: '清除选择',
                 assemblySheet: '装箱单',
             },
@@ -1252,7 +1239,6 @@ export const zhHans: Messages = {
             backLink: '返回包裹列表',
             error: '无法加载包裹信息。',
             loading: '正在加载包裹…',
-            kicker: '包裹',
             actions: {
                 assemblySheet: '装箱单',
                 setShipping: '设置运费',
@@ -1284,17 +1270,40 @@ export const zhHans: Messages = {
                 trackingCode: '运单号',
                 weight: '重量',
                 dimensions: '尺寸（长×宽×高）',
-                createdAt: '创建时间',
-                shippedAt: '发货时间',
-                deliveredAt: '签收时间',
                 destination: '收货地址',
                 rejectionReason: '拒绝原因',
                 shippingFailureReason: '运输问题原因',
+            },
+            tabs: {
+                label: '包裹记录',
+                files: '文件',
+                history: '历史记录',
+            },
+            history: {
+                created: '包裹已创建',
+                reviewed: '已核对',
+                approved: '已批准',
+                rejected: '已拒绝',
+                cancelled: '已取消',
+                freightSet: '已设定运费',
+                paid: '运费已支付',
+                measurements: '已更正重量和尺寸',
+                dispatched: '已发货',
+                trackingCorrected: '已更正物流单号',
+                shippingFailure: '已登记运输问题',
+                statusOverridden: '已手动更改状态',
+                carrierCreated: '已在 Westlink 创建运单',
+                carrierCancelled: '已在 Westlink 取消运单',
+                delivered: '已送达',
+                other: '团队操作',
+                team: '团队',
+                error: '无法加载团队操作，以下仅显示包裹日期。',
             },
             replacement: {
                 replacesTitle: '替代包裹 {{code}}',
                 replacesDescription:
                     '因运输问题创建，运费已在原包裹支付。请核对商品：移出的商品可用于其他包裹、取消或退款。审批后直接进入待发货。',
+                replacesSummary: '因运输问题创建，运费已在原包裹支付。',
                 replacedTitle: '包裹因运输问题已关闭',
                 replacedDescription: '仅供查询。商品已转入包裹 {{code}}。',
                 open: '打开 {{code}}',
@@ -1490,15 +1499,9 @@ export const zhHans: Messages = {
                 },
             },
             shippingSection: '运输',
-            datesSection: '日期',
-            actionBar: {
-                title: '状态：{{status}}',
-                description: '以下是当前包裹可执行的操作。',
-            },
         },
     },
     unpacked: {
-        kicker: '物流',
         title: '在仓未打包',
         description:
             '已可发货但尚未加入任何包裹的商品，按客户分组，最早到仓的在前。包裹由客户创建；这里用来在仓储费开始前提醒客户。',
@@ -1517,7 +1520,6 @@ export const zhHans: Messages = {
         createPackage: '创建包裹',
     },
     finance: {
-        kicker: '财务',
         title: '财务',
         description: '退款申请审核队列。',
         sectionTitle: '退款',
@@ -1579,7 +1581,6 @@ export const zhHans: Messages = {
         },
     },
     emails: {
-        kicker: '系统',
         title: '已发送邮件',
         description: '事务邮件的发送队列。无需打开服务商后台即可确认“客户是否已被通知”。',
         sectionTitle: '发送队列',
@@ -1609,7 +1610,6 @@ export const zhHans: Messages = {
         },
     },
     topUps: {
-        kicker: '财务',
         title: '充值记录',
         description: '余额充值历史：客户支付了多少、钱包到账多少以及处理结果。内部账号显示在列表中，但不计入合计。',
         sectionTitle: '历史记录',
@@ -1661,7 +1661,6 @@ export const zhHans: Messages = {
         },
     },
     paymentMethods: {
-        kicker: '财务',
         title: '支付方式',
         description:
             '谁可以用 Pix 和信用卡充值。每种方式都有自己的开关：全部开启、全部关闭、仅部分客户或除部分客户外全部开启。',
@@ -1706,7 +1705,6 @@ export const zhHans: Messages = {
         addedAt: '加入时间 {{date}}',
     },
     productRequests: {
-        kicker: '商品请求',
         title: '商品请求',
         description: '客户想要但店里没有的商品。',
         sectionTitle: '请求列表',
@@ -1744,8 +1742,6 @@ export const zhHans: Messages = {
             backLink: '商品请求',
             loading: '正在加载商品请求…',
             titleFallback: '商品请求',
-            actionBarTitle: '状态：{{status}}',
-            actionBarDescription: '通过对话向客户确认细节，决定后再更新状态。',
             requestSection: '客户想要的商品',
             reference: '参考链接',
             summarySection: '概要',
@@ -1791,7 +1787,6 @@ export const zhHans: Messages = {
     },
     admins: {
         list: {
-            kicker: '系统',
             title: '管理员',
             error: '无法加载管理员列表。',
             loading: '正在加载管理员…',
@@ -1875,7 +1870,6 @@ export const zhHans: Messages = {
         error: '验证码无效。请核对应用中的验证码后重试。',
     },
     optionalServices: {
-        kicker: '商务',
         title: '增值服务',
         description: '客户在支付订单时可选购的增值服务。试运行价格：直接在这里调整，无需发版。',
         error: '无法加载增值服务。',
@@ -1927,7 +1921,6 @@ export const zhHans: Messages = {
         },
     },
     profit: {
-        kicker: '财务',
         title: '成本与利润',
         description: '本期收入、支出与结余。金额以人民币计；雷亚尔等值按今日汇率换算。不含内部账号。',
         error: '无法加载报表。',
@@ -2141,7 +2134,6 @@ export const zhHans: Messages = {
         },
     },
     coupons: {
-        kicker: '商务',
         title: '优惠券',
         description: '订单或运费优惠券：面向所有人或指定客户，可设数量、有效期和最低金额。',
         error: '无法加载优惠券。',
@@ -2301,7 +2293,6 @@ export const zhHans: Messages = {
         },
     },
     influencers: {
-        kicker: '商务',
         title: '达人推广',
         description: '达人申请、优惠码、佣金和等级。使用优惠码的顾客享受商品折扣；包裹从仓库发出后，达人获得佣金。',
         error: '无法加载达人列表。',
@@ -2501,7 +2492,6 @@ export const zhHans: Messages = {
         },
     },
     wholesale: {
-        kicker: '运营',
         title: '批发商',
         description: '批发商账号申请（CNPJ）。批准后开放批发；拒绝和要求补充会把您的说明通过邮件发给客户。',
         error: '无法加载批发商申请。',
@@ -2616,7 +2606,6 @@ export const zhHans: Messages = {
         },
     },
     storefront: {
-        kicker: '网站橱窗',
         feedbacksDescription: '首页“买家晒单”区块使用的 Instagram 开箱帖子。只有勾选了客户授权的帖子才会显示在网站上。',
         loadError: '无法加载首页橱窗。',
         saveError: '无法保存。',
@@ -2673,7 +2662,6 @@ export const zhHans: Messages = {
         },
     },
     suppliers: {
-        kicker: '运营',
         title: '供应商',
         description: '商品和运输供应商的内部管理：联系人、服务范围、合作条件以及合作心得。这里的内容不会展示给客户。',
         newSupplier: '新增供应商',
@@ -2833,7 +2821,6 @@ export const zhHans: Messages = {
         },
     },
     siteNotices: {
-        kicker: '沟通',
         title: '网站公告',
         description: '客户进入商城时弹出的公告。同一时间只显示一条：若两条在同一时段都启用，显示开始时间最晚的那条。',
         error: '无法加载公告。',
@@ -2918,7 +2905,6 @@ export const zhHans: Messages = {
         },
     },
     settings: {
-        kicker: '系统',
         title: '设置',
         description: '网站计算使用的费率、期限和限额 —— 在这里修改，避免直接操作数据库。',
         tableCaption: '设置列表',
@@ -2960,7 +2946,6 @@ export const zhHans: Messages = {
     },
     shippingBoxes: {
         page: {
-            kicker: '物流',
             title: '包装',
             description:
                 '仓库的纸箱和信封。启用的包装用于购物车运费估算：每个包裹使用能装下全部物品的最小包装。成本仅供内部记录。',
@@ -3022,7 +3007,6 @@ export const zhHans: Messages = {
     },
     shippingTable: {
         page: {
-            kicker: '物流',
             title: '运费表',
             description:
                 '运输方式使用我们自己的名称（客户可见），背后是各供应商的渠道。网站估算时，每个启用的运输方式取能接收该包裹且最便宜的启用渠道，并加上运费加价（{{markup}}）。',
@@ -3201,7 +3185,6 @@ export const zhHans: Messages = {
     },
     carrier: {
         page: {
-            kicker: '物流',
             title: '物流渠道',
             description:
                 '西游跨境（Westlink）巴西渠道。各渠道的价格、限制和时效在“运费表”中编辑。报价、面单和轨迹在每个包裹页面操作。',

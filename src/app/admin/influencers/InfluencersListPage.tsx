@@ -191,7 +191,6 @@ export function InfluencersListPage() {
                     </ButtonLink>
                 }
                 description={t('influencers.description')}
-                kicker={t('influencers.kicker')}
                 title={t('influencers.title')}
             />
 

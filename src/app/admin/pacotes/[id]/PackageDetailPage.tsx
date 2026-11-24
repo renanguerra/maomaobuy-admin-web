@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
@@ -9,12 +9,9 @@ import {
     CheckCircle2,
     ClipboardList,
     FileText,
-    Images,
     ListRestart,
-    MessageSquare,
     OctagonAlert,
     Package as PackageIcon,
-    Paperclip,
     Pencil,
     Plus,
     Ruler,
@@ -25,7 +22,6 @@ import {
     Wallet,
     XCircle,
 } from 'lucide-react';
-import { ActionBar } from '@/components/admin/ActionBar';
 import { PackageCostSheetDialog } from '@/components/admin/CostSheets';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { CarrierQuoteDialog, CarrierShipmentSection } from '@/components/admin/CarrierShipments';
@@ -35,14 +31,18 @@ import { EmptyState } from '@/components/admin/EmptyState';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
 import { MediaGrid, MediaTile } from '@/components/admin/MediaGrid';
 import { MessageThread } from '@/components/admin/MessageThread';
+import { PageActions } from '@/components/admin/PageActions';
 import { PageHeader } from '@/components/admin/PageHeader';
+import { PageNotices } from '@/components/admin/PageNotices';
+import { CopyButton } from '@/components/admin/CopyButton';
 import { DeferredSection } from '@/components/admin/DeferredSection';
 import { PackageInternalControl } from '@/components/admin/PackageInternalControl';
 import { SectionCard } from '@/components/admin/SectionCard';
+import { SectionTabs } from '@/components/admin/SectionTabs';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { packageStatusTone, StatusPill } from '@/components/admin/StatusPill';
 import { SummaryList } from '@/components/admin/SummaryList';
-import { Button, ButtonLink } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
@@ -52,12 +52,12 @@ import type { ShippingBox } from '@/types/shipping-box';
 import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import { api, ApiError, uploadToPresignedUrl } from '@/services/api';
 import {
-    formatCpf,
     formatDate,
     formatPhone,
     lineTotalMinor,
     money,
     packageStatusLabel,
+    recipientTaxIdLabel,
     totalUnits,
     type AdminPackage,
     type AdminPackageAttachment,
@@ -66,6 +66,7 @@ import {
 } from '@/types/api';
 import { QuantityBadge } from '@/components/admin/QuantityBadge';
 import { AddPackageItemsDialog } from './AddPackageItemsDialog';
+import { PackageHistory } from './PackageHistory';
 import { RemovePackageItemDialog } from './RemovePackageItemDialog';
 
 type DialogKind =
@@ -143,6 +144,53 @@ function overrideTargets(pkg: AdminPackage): string[] {
             !(pkg.shippedAt && BEFORE_DISPATCH.includes(status)) &&
             !(pkg.paidAt && BEFORE_PAYMENT.includes(status)) &&
             !(status === 'AWAITING_FREIGHT_PAYMENT' && !pkg.shippingAmountMinor),
+    );
+}
+
+/** O destino linha a linha: é o que a tela mostra e o que o botão copia. */
+function destinationLines(pkg: AdminPackage): string[] {
+    const { destination } = pkg;
+    return [
+        destination.recipientFullName,
+        destination.recipientCompanyName !== destination.recipientFullName ? destination.recipientCompanyName : null,
+        formatPhone(destination.phoneE164),
+        pkg.userEmail,
+        recipientTaxIdLabel(destination),
+        [destination.addressLine1, destination.addressLine2].filter(Boolean).join(', '),
+        destination.district,
+        `${destination.locality}/${destination.administrativeArea}`,
+        `${destination.postalCode} · ${destination.countryCode}`,
+        destination.deliveryInstructions,
+    ].filter((line): line is string => Boolean(line));
+}
+
+/** Um tipo de arquivo dentro da aba Arquivos. */
+function FileGroup({
+    title,
+    description,
+    actions,
+    empty,
+    isEmpty,
+    children,
+}: {
+    title: string;
+    description: string;
+    actions: ReactNode;
+    empty: string;
+    isEmpty: boolean;
+    children: ReactNode;
+}) {
+    return (
+        <section className="grid gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                    <h3 className="mm-display m-0 text-sm">{title}</h3>
+                    <p className="mt-0.5 mb-0 text-xs text-muted dark:text-night-muted">{description}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">{actions}</div>
+            </div>
+            {isEmpty ? <p className="m-0 text-sm text-muted dark:text-night-muted">{empty}</p> : children}
+        </section>
     );
 }
 
@@ -508,9 +556,6 @@ export function PackageDetailPage() {
     const canCorrectDispatch = pkg.shippedAt !== null && !CLOSED_STATUSES.includes(pkg.status);
     const statusTargets = isDraft || CLOSED_STATUSES.includes(pkg.status) ? [] : overrideTargets(pkg);
     const canOverrideStatus = statusTargets.length > 0;
-    // Peso e medidas podem ser corrigidos a qualquer momento, em qualquer
-    // status: a rota própria não recota o frete nem avisa o cliente.
-    const canEditMeasurements = true;
     // Medida já gravada; sem ela, a da embalagem escolhida no controle interno.
     const chosenBox = boxes.find((box) => box.id === pkg.shippingBoxId);
     const suggestedSide = (side: 'length' | 'width' | 'height') => {
@@ -521,24 +566,13 @@ export function PackageDetailPage() {
     };
     // O backend aceita armazém, financeiro e SUPERADMIN; para os outros o campo só mostra.
     const canEditPackaging = ['WAREHOUSE', 'FINANCE', 'SUPERADMIN'].includes(admin?.role ?? '');
-    const hasActions =
-        canEditMeasurements ||
-        canEditItems ||
-        canQuoteCarrier ||
-        canCancel ||
-        pkg.status === 'READY_FOR_DISPATCH' ||
-        canCorrectDispatch ||
-        Boolean(trackingStep) ||
-        canOverrideStatus ||
-        canFailShipment;
 
     return (
-        <div className="grid gap-6">
+        <div className="grid gap-4">
             <PageHeader
                 backHref="/admin/pacotes"
                 backLabel={t('packages.detail.backLink')}
                 badge={<StatusPill tone={packageStatusTone(pkg.status)}>{packageStatusLabel(pkg.status)}</StatusPill>}
-                kicker={t('packages.detail.kicker')}
                 title={pkg.packageCode}
                 meta={
                     <>
@@ -552,18 +586,87 @@ export function PackageDetailPage() {
                     </>
                 }
                 actions={
-                    <>
-                        <ButtonLink
-                            href={`/impressao/pacotes?ids=${pkg.id}`}
-                            leadingIcon={<ClipboardList className="h-4 w-4" aria-hidden="true" />}
-                            rel="noopener"
-                            size="small"
-                            target="_blank"
-                            variant="secondary"
-                        >
-                            {t('packages.detail.actions.assemblySheet')}
-                        </ButtonLink>
-                    </>
+                    <PageActions
+                        actions={[
+                            {
+                                key: 'assembly-sheet',
+                                label: t('packages.detail.actions.assemblySheet'),
+                                icon: ClipboardList,
+                                href: `/impressao/pacotes?ids=${pkg.id}`,
+                                newTab: true,
+                                inline: true,
+                            },
+                            isDraft && {
+                                key: 'submit',
+                                label: t('packages.detail.actions.submitForApproval'),
+                                icon: ArrowUpRight,
+                                tone: 'primary',
+                                loading: busy === 'submit',
+                                onClick: () => void submitPackage(),
+                            },
+                            isAwaitingApproval && {
+                                key: 'reject',
+                                label: t('packages.detail.actions.reject'),
+                                icon: XCircle,
+                                tone: 'danger',
+                                inline: true,
+                                onClick: () => setDialog('reject'),
+                            },
+                            isAwaitingApproval && {
+                                key: 'approve',
+                                label: t('packages.detail.actions.approve'),
+                                icon: CheckCircle2,
+                                tone: 'primary',
+                                onClick: () => setDialog('approve'),
+                            },
+                            pkg.status === 'AWAITING_FREIGHT_QUOTE' && {
+                                key: 'quote-freight',
+                                label: t('packages.detail.actions.quoteFreight'),
+                                icon: Wallet,
+                                tone: 'primary',
+                                onClick: () => setDialog('shipment'),
+                            },
+                            // Com envio Westlink criado, o despacho é pelo envio
+                            // (mesmo rastreio da etiqueta); o manual fica no card.
+                            pkg.status === 'READY_FOR_DISPATCH' &&
+                                !hasCarrierShipment && {
+                                    key: 'dispatch',
+                                    label: t('packages.detail.actions.dispatch'),
+                                    icon: Send,
+                                    tone: 'primary',
+                                    onClick: () => setDialog('dispatch'),
+                                },
+                            trackingStep && {
+                                key: 'tracking',
+                                label: t(trackingStep.labelKey),
+                                icon: Send,
+                                tone: 'primary',
+                                loading: busy === 'tracking',
+                                onClick: () => void advanceTracking(trackingStep.status),
+                            },
+                            canOverrideStatus && {
+                                key: 'override-status',
+                                label: t('packages.detail.actions.overrideStatus'),
+                                icon: ListRestart,
+                                onClick: () => setDialog('override-status'),
+                            },
+                            canCancel &&
+                                !isAwaitingApproval && {
+                                    key: 'cancel',
+                                    label: t('packages.detail.actions.cancel'),
+                                    icon: XCircle,
+                                    tone: 'danger',
+                                    onClick: () => setDialog('cancel'),
+                                },
+                            canFailShipment && {
+                                key: 'shipping-failure',
+                                label: t('packages.detail.actions.shippingFailure'),
+                                icon: OctagonAlert,
+                                tone: 'danger',
+                                onClick: () => setDialog('shipping-failure'),
+                            },
+                        ]}
+                    />
                 }
             />
             <PackageCostSheetDialog
@@ -572,204 +675,46 @@ export function PackageDetailPage() {
                 packageId={costSheetOpen ? pkg.id : null}
             />
 
-            {pkg.replacedByPackage && (
-                <Alert
-                    tone="danger"
-                    title={t('packages.detail.replacement.replacedTitle')}
-                    action={
-                        <ButtonLink
-                            href={`/admin/pacotes/${pkg.replacedByPackage.id}`}
-                            size="small"
-                            variant="secondary"
-                        >
-                            {t('packages.detail.replacement.open', { code: pkg.replacedByPackage.packageCode })}
-                        </ButtonLink>
-                    }
-                >
-                    <p>
-                        {t('packages.detail.replacement.replacedDescription', {
+            <PageNotices
+                notices={[
+                    pkg.replacedByPackage && {
+                        key: 'replaced',
+                        tone: 'danger',
+                        title: t('packages.detail.replacement.replacedTitle'),
+                        body: t('packages.detail.replacement.replacedDescription', {
                             code: pkg.replacedByPackage.packageCode,
-                        })}
-                    </p>
-                </Alert>
-            )}
-            {pkg.replacesPackage && (
-                <Alert
-                    tone="info"
-                    title={t('packages.detail.replacement.replacesTitle', { code: pkg.replacesPackage.packageCode })}
-                    action={
-                        <ButtonLink href={`/admin/pacotes/${pkg.replacesPackage.id}`} size="small" variant="secondary">
-                            {t('packages.detail.replacement.open', { code: pkg.replacesPackage.packageCode })}
-                        </ButtonLink>
-                    }
-                >
-                    <p>{t('packages.detail.replacement.replacesDescription')}</p>
-                </Alert>
-            )}
-
-            {pkg.rejectionReason && (
-                <Alert
-                    tone="danger"
-                    title={
-                        pkg.status === 'SHIPPING_FAILED'
-                            ? t('packages.detail.fields.shippingFailureReason')
-                            : t('packages.detail.fields.rejectionReason')
-                    }
-                >
-                    <p>{pkg.rejectionReason}</p>
-                </Alert>
-            )}
-
-            {hasActions && (
-                <ActionBar
-                    description={t('packages.detail.actionBar.description')}
-                    title={t('packages.detail.actionBar.title', { status: packageStatusLabel(pkg.status) })}
-                >
-                    {canEditItems && !freightPaid && (
-                        <Button
-                            leadingIcon={<Ruler className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('shipment')}
-                            size="small"
-                            variant="secondary"
-                        >
-                            {t('packages.detail.actions.setShipping')}
-                        </Button>
-                    )}
-                    {isDraft && (
-                        <Button
-                            leadingIcon={<ArrowUpRight className="h-4 w-4" aria-hidden="true" />}
-                            loading={busy === 'submit'}
-                            onClick={submitPackage}
-                            size="small"
-                        >
-                            {t('packages.detail.actions.submitForApproval')}
-                        </Button>
-                    )}
-                    {isAwaitingApproval && (
-                        <>
-                            <Button
-                                leadingIcon={<CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('approve')}
-                                size="small"
-                            >
-                                {t('packages.detail.actions.approve')}
-                            </Button>
-                            <Button
-                                leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('reject')}
-                                size="small"
-                                variant="danger"
-                            >
-                                {t('packages.detail.actions.reject')}
-                            </Button>
-                        </>
-                    )}
-                    {pkg.status === 'AWAITING_FREIGHT_QUOTE' && (
-                        <Button
-                            leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('shipment')}
-                            size="small"
-                        >
-                            {t('packages.detail.actions.quoteFreight')}
-                        </Button>
-                    )}
-                    {canQuoteCarrier && (
-                        <Button
-                            leadingIcon={<Truck className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('carrier-quote')}
-                            size="small"
-                            variant="secondary"
-                        >
-                            {t('carrier.quote.action')}
-                        </Button>
-                    )}
-                    {canRequoteFreight && (
-                        <Button
-                            leadingIcon={<Ruler className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('shipment')}
-                            size="small"
-                            variant="secondary"
-                        >
-                            {t('packages.detail.actions.requoteFreight')}
-                        </Button>
-                    )}
-                    {canEditMeasurements && (
-                        <Button
-                            leadingIcon={<Ruler className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('measurements')}
-                            size="small"
-                            variant="secondary"
-                        >
-                            {t('packages.detail.actions.editMeasurements')}
-                        </Button>
-                    )}
-                    {canCancel && !isAwaitingApproval && (
-                        <Button
-                            leadingIcon={<XCircle className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('cancel')}
-                            size="small"
-                            variant="danger"
-                        >
-                            {t('packages.detail.actions.cancel')}
-                        </Button>
-                    )}
-                    {pkg.status === 'READY_FOR_DISPATCH' && (
-                        // Com envio Westlink criado, o despacho é pelo envio
-                        // (mesmo rastreio da etiqueta); o manual fica de lado.
-                        <Button
-                            leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('dispatch')}
-                            size="small"
-                            variant={hasCarrierShipment ? 'ghost' : 'primary'}
-                        >
-                            {hasCarrierShipment
-                                ? t('carrier.section.manualDispatch')
-                                : t('packages.detail.actions.dispatch')}
-                        </Button>
-                    )}
-                    {trackingStep && (
-                        <Button
-                            leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
-                            loading={busy === 'tracking'}
-                            onClick={() => advanceTracking(trackingStep.status)}
-                            size="small"
-                            variant="secondary"
-                        >
-                            {t(trackingStep.labelKey)}
-                        </Button>
-                    )}
-                    {canCorrectDispatch && (
-                        <Button
-                            leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('correct-dispatch')}
-                            size="small"
-                            variant="ghost"
-                        >
-                            {t('packages.detail.actions.correctDispatch')}
-                        </Button>
-                    )}
-                    {canOverrideStatus && (
-                        <Button
-                            leadingIcon={<ListRestart className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('override-status')}
-                            size="small"
-                            variant="ghost"
-                        >
-                            {t('packages.detail.actions.overrideStatus')}
-                        </Button>
-                    )}
-                    {canFailShipment && (
-                        <Button
-                            leadingIcon={<OctagonAlert className="h-4 w-4" aria-hidden="true" />}
-                            onClick={() => setDialog('shipping-failure')}
-                            size="small"
-                            variant="danger"
-                        >
-                            {t('packages.detail.actions.shippingFailure')}
-                        </Button>
-                    )}
-                </ActionBar>
-            )}
+                        }),
+                        link: {
+                            href: `/admin/pacotes/${pkg.replacedByPackage.id}`,
+                            label: t('packages.detail.replacement.open', { code: pkg.replacedByPackage.packageCode }),
+                        },
+                    },
+                    Boolean(pkg.rejectionReason) && {
+                        key: 'reason',
+                        tone: 'danger',
+                        title:
+                            pkg.status === 'SHIPPING_FAILED'
+                                ? t('packages.detail.fields.shippingFailureReason')
+                                : t('packages.detail.fields.rejectionReason'),
+                        body: pkg.rejectionReason,
+                    },
+                    pkg.replacesPackage && {
+                        key: 'replaces',
+                        tone: 'info',
+                        title: t('packages.detail.replacement.replacesTitle', {
+                            code: pkg.replacesPackage.packageCode,
+                        }),
+                        // A orientação de conferência só vale até aprovar.
+                        body: canEditItems
+                            ? t('packages.detail.replacement.replacesDescription')
+                            : t('packages.detail.replacement.replacesSummary'),
+                        link: {
+                            href: `/admin/pacotes/${pkg.replacesPackage.id}`,
+                            label: t('packages.detail.replacement.open', { code: pkg.replacesPackage.packageCode }),
+                        },
+                    },
+                ]}
+            />
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
                 <div className="grid min-w-0 gap-5">
@@ -911,163 +856,199 @@ export function PackageDetailPage() {
                         />
                     )}
 
-                    <SectionCard
-                        description={t('packages.detail.attachmentsSection.description')}
-                        flush={pkg.attachments.length > 0}
-                        icon={<Paperclip aria-hidden="true" />}
-                        title={t('packages.detail.attachmentsSection.title')}
-                        action={
-                            <>
-                                <input
-                                    accept={ATTACHMENT_ACCEPT}
-                                    className="sr-only"
-                                    multiple
-                                    onChange={(event) => {
-                                        const files = Array.from(event.target.files ?? []);
-                                        if (files.length > 0) void uploadAttachments(files);
-                                    }}
-                                    ref={attachmentInputRef}
-                                    type="file"
-                                />
-                                <Button
-                                    leadingIcon={<FileText className="h-4 w-4" aria-hidden="true" />}
-                                    onClick={() => setInvoiceOpen(true)}
-                                    size="small"
-                                    type="button"
-                                    variant="secondary"
-                                >
-                                    {t('packages.detail.invoice.openButton')}
-                                </Button>
-                                <Button
-                                    leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
-                                    loading={attaching}
-                                    onClick={() => attachmentInputRef.current?.click()}
-                                    size="small"
-                                    type="button"
-                                    variant="secondary"
-                                >
-                                    {attaching
-                                        ? t('packages.detail.attachmentsSection.uploadingButton')
-                                        : t('packages.detail.attachmentsSection.uploadButton')}
-                                </Button>
-                            </>
-                        }
-                    >
-                        {pkg.attachments.length === 0 ? (
-                            <EmptyState icon={Paperclip} title={t('packages.detail.attachmentsSection.empty')} />
-                        ) : (
-                            <ListRows>
-                                {pkg.attachments.map((attachment) => (
-                                    <li key={attachment.id}>
-                                        <ListRow
-                                            leading={<FileText className="h-4 w-4" aria-hidden="true" />}
-                                            title={
-                                                <a className="hover:underline" href={attachment.url}>
-                                                    {attachment.fileName}
-                                                </a>
-                                            }
-                                            meta={
-                                                attachment.sizeBytes < 1024 * 1024
-                                                    ? t('packages.detail.attachmentsSection.sizeKilobytes', {
-                                                          size: Math.max(1, Math.round(attachment.sizeBytes / 1024)),
-                                                      })
-                                                    : t('packages.detail.attachmentsSection.sizeMegabytes', {
-                                                          size: (attachment.sizeBytes / (1024 * 1024)).toFixed(1),
-                                                      })
-                                            }
+                    <SectionTabs
+                        label={t('packages.detail.tabs.label')}
+                        tabs={[
+                            {
+                                key: 'messages',
+                                label: t('messages.title'),
+                                content: <MessageThread endpoint={`/packages/${params.id}/messages`} />,
+                            },
+                            {
+                                key: 'files',
+                                label: t('packages.detail.tabs.files'),
+                                count: pkg.attachments.length + pkg.photoUrls.length,
+                                content: (
+                                    <div className="grid gap-6">
+                                        <FileGroup
                                             actions={
-                                                <Button
-                                                    aria-label={t('packages.detail.attachmentsSection.removeAria', {
-                                                        name: attachment.fileName,
-                                                    })}
-                                                    iconOnly
-                                                    loading={busy === `remove-attachment:${attachment.id}`}
-                                                    onClick={() => removeAttachment(attachment)}
-                                                    size="small"
-                                                    variant="dangerGhost"
-                                                >
-                                                    <Trash2 className="h-4 w-4" aria-hidden="true" />
-                                                </Button>
-                                            }
-                                        />
-                                    </li>
-                                ))}
-                            </ListRows>
-                        )}
-                    </SectionCard>
-
-                    <SectionCard
-                        description={t('packages.detail.photosSection.description')}
-                        icon={<Images aria-hidden="true" />}
-                        title={t('packages.detail.photosSection.title')}
-                        action={
-                            <>
-                                <input
-                                    accept="image/jpeg,image/png,image/webp,image/avif"
-                                    className="sr-only"
-                                    multiple
-                                    onChange={(event) => {
-                                        const files = Array.from(event.target.files ?? []);
-                                        if (files.length > 0) void uploadPhotos(files);
-                                    }}
-                                    ref={fileInputRef}
-                                    type="file"
-                                />
-                                <Button
-                                    leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
-                                    loading={uploading}
-                                    onClick={() => fileInputRef.current?.click()}
-                                    size="small"
-                                    type="button"
-                                    variant="secondary"
-                                >
-                                    {uploading
-                                        ? t('packages.detail.photosSection.uploadingButton')
-                                        : t('packages.detail.photosSection.uploadButton')}
-                                </Button>
-                            </>
-                        }
-                    >
-                        {pkg.photoUrls.length === 0 ? (
-                            <EmptyState icon={Images} title={t('packages.detail.photosSection.empty')} />
-                        ) : (
-                            <MediaGrid>
-                                {pkg.photoUrls.map((url, index) => {
-                                    const key = pkg.photoKeys[index];
-                                    return (
-                                        <MediaTile
-                                            alt={t('packages.detail.photosSection.photoAlt')}
-                                            key={key ?? url}
-                                            kind="IMAGE"
-                                            openLabel={t('common.actions.open')}
-                                            url={url}
-                                            footer={
-                                                key ? (
+                                                <>
+                                                    <input
+                                                        accept={ATTACHMENT_ACCEPT}
+                                                        className="sr-only"
+                                                        multiple
+                                                        onChange={(event) => {
+                                                            const files = Array.from(event.target.files ?? []);
+                                                            if (files.length > 0) void uploadAttachments(files);
+                                                        }}
+                                                        ref={attachmentInputRef}
+                                                        type="file"
+                                                    />
                                                     <Button
-                                                        leadingIcon={<Trash2 className="h-4 w-4" aria-hidden="true" />}
-                                                        loading={busy === `remove-photo:${key}`}
-                                                        onClick={() => removePhoto(key)}
+                                                        leadingIcon={
+                                                            <FileText className="h-4 w-4" aria-hidden="true" />
+                                                        }
+                                                        onClick={() => setInvoiceOpen(true)}
                                                         size="small"
-                                                        variant="dangerGhost"
+                                                        type="button"
+                                                        variant="secondary"
                                                     >
-                                                        {t('packages.detail.photosSection.remove')}
+                                                        {t('packages.detail.invoice.openButton')}
                                                     </Button>
-                                                ) : undefined
+                                                    <Button
+                                                        leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
+                                                        loading={attaching}
+                                                        onClick={() => attachmentInputRef.current?.click()}
+                                                        size="small"
+                                                        type="button"
+                                                        variant="secondary"
+                                                    >
+                                                        {attaching
+                                                            ? t('packages.detail.attachmentsSection.uploadingButton')
+                                                            : t('packages.detail.attachmentsSection.uploadButton')}
+                                                    </Button>
+                                                </>
                                             }
-                                        />
-                                    );
-                                })}
-                            </MediaGrid>
-                        )}
-                    </SectionCard>
-
-                    <DeferredSection
-                        description={t('messages.description')}
-                        icon={<MessageSquare aria-hidden="true" />}
-                        title={t('messages.title')}
-                    >
-                        <MessageThread endpoint={`/packages/${params.id}/messages`} />
-                    </DeferredSection>
+                                            description={t('packages.detail.attachmentsSection.description')}
+                                            empty={t('packages.detail.attachmentsSection.empty')}
+                                            isEmpty={pkg.attachments.length === 0}
+                                            title={t('packages.detail.attachmentsSection.title')}
+                                        >
+                                            <ListRows>
+                                                {pkg.attachments.map((attachment) => (
+                                                    <li key={attachment.id}>
+                                                        <ListRow
+                                                            leading={
+                                                                <FileText className="h-4 w-4" aria-hidden="true" />
+                                                            }
+                                                            title={
+                                                                <a className="hover:underline" href={attachment.url}>
+                                                                    {attachment.fileName}
+                                                                </a>
+                                                            }
+                                                            meta={
+                                                                attachment.sizeBytes < 1024 * 1024
+                                                                    ? t(
+                                                                          'packages.detail.attachmentsSection.sizeKilobytes',
+                                                                          {
+                                                                              size: Math.max(
+                                                                                  1,
+                                                                                  Math.round(
+                                                                                      attachment.sizeBytes / 1024,
+                                                                                  ),
+                                                                              ),
+                                                                          },
+                                                                      )
+                                                                    : t(
+                                                                          'packages.detail.attachmentsSection.sizeMegabytes',
+                                                                          {
+                                                                              size: (
+                                                                                  attachment.sizeBytes /
+                                                                                  (1024 * 1024)
+                                                                              ).toFixed(1),
+                                                                          },
+                                                                      )
+                                                            }
+                                                            actions={
+                                                                <Button
+                                                                    aria-label={t(
+                                                                        'packages.detail.attachmentsSection.removeAria',
+                                                                        {
+                                                                            name: attachment.fileName,
+                                                                        },
+                                                                    )}
+                                                                    iconOnly
+                                                                    loading={
+                                                                        busy === `remove-attachment:${attachment.id}`
+                                                                    }
+                                                                    onClick={() => removeAttachment(attachment)}
+                                                                    size="small"
+                                                                    variant="dangerGhost"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                                                </Button>
+                                                            }
+                                                        />
+                                                    </li>
+                                                ))}
+                                            </ListRows>
+                                        </FileGroup>
+                                        <FileGroup
+                                            actions={
+                                                <>
+                                                    <input
+                                                        accept="image/jpeg,image/png,image/webp,image/avif"
+                                                        className="sr-only"
+                                                        multiple
+                                                        onChange={(event) => {
+                                                            const files = Array.from(event.target.files ?? []);
+                                                            if (files.length > 0) void uploadPhotos(files);
+                                                        }}
+                                                        ref={fileInputRef}
+                                                        type="file"
+                                                    />
+                                                    <Button
+                                                        leadingIcon={<Upload className="h-4 w-4" aria-hidden="true" />}
+                                                        loading={uploading}
+                                                        onClick={() => fileInputRef.current?.click()}
+                                                        size="small"
+                                                        type="button"
+                                                        variant="secondary"
+                                                    >
+                                                        {uploading
+                                                            ? t('packages.detail.photosSection.uploadingButton')
+                                                            : t('packages.detail.photosSection.uploadButton')}
+                                                    </Button>
+                                                </>
+                                            }
+                                            description={t('packages.detail.photosSection.description')}
+                                            empty={t('packages.detail.photosSection.empty')}
+                                            isEmpty={pkg.photoUrls.length === 0}
+                                            title={t('packages.detail.photosSection.title')}
+                                        >
+                                            <MediaGrid>
+                                                {pkg.photoUrls.map((url, index) => {
+                                                    const key = pkg.photoKeys[index];
+                                                    return (
+                                                        <MediaTile
+                                                            alt={t('packages.detail.photosSection.photoAlt')}
+                                                            key={key ?? url}
+                                                            kind="IMAGE"
+                                                            openLabel={t('common.actions.open')}
+                                                            url={url}
+                                                            footer={
+                                                                key ? (
+                                                                    <Button
+                                                                        leadingIcon={
+                                                                            <Trash2
+                                                                                className="h-4 w-4"
+                                                                                aria-hidden="true"
+                                                                            />
+                                                                        }
+                                                                        loading={busy === `remove-photo:${key}`}
+                                                                        onClick={() => removePhoto(key)}
+                                                                        size="small"
+                                                                        variant="dangerGhost"
+                                                                    >
+                                                                        {t('packages.detail.photosSection.remove')}
+                                                                    </Button>
+                                                                ) : undefined
+                                                            }
+                                                        />
+                                                    );
+                                                })}
+                                            </MediaGrid>
+                                        </FileGroup>
+                                    </div>
+                                ),
+                            },
+                            {
+                                key: 'history',
+                                label: t('packages.detail.tabs.history'),
+                                content: <PackageHistory pkg={pkg} />,
+                            },
+                        ]}
+                    />
                 </div>
 
                 <div className="grid min-w-0 gap-5">
@@ -1141,6 +1122,94 @@ export function PackageDetailPage() {
                                 },
                             ]}
                         />
+                        {/* O que muda os dados do envio fica junto deles; o próximo
+                            passo do pacote continua no cabeçalho. */}
+                        <div className="mt-3 grid gap-2 border-t border-line pt-4 dark:border-night-line">
+                            {canEditItems && !freightPaid && (
+                                <Button
+                                    fullWidth
+                                    leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
+                                    onClick={() => setDialog('shipment')}
+                                    size="small"
+                                    variant="secondary"
+                                >
+                                    {t('packages.detail.actions.setShipping')}
+                                </Button>
+                            )}
+                            {canRequoteFreight && (
+                                <Button
+                                    fullWidth
+                                    leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
+                                    onClick={() => setDialog('shipment')}
+                                    size="small"
+                                    variant="secondary"
+                                >
+                                    {t('packages.detail.actions.requoteFreight')}
+                                </Button>
+                            )}
+                            {canQuoteCarrier && (
+                                <Button
+                                    fullWidth
+                                    leadingIcon={<Truck className="h-4 w-4" aria-hidden="true" />}
+                                    onClick={() => setDialog('carrier-quote')}
+                                    size="small"
+                                    variant="secondary"
+                                >
+                                    {t('carrier.quote.action')}
+                                </Button>
+                            )}
+                            {pkg.status === 'READY_FOR_DISPATCH' && hasCarrierShipment && (
+                                <Button
+                                    fullWidth
+                                    leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
+                                    onClick={() => setDialog('dispatch')}
+                                    size="small"
+                                    variant="secondary"
+                                >
+                                    {t('carrier.section.manualDispatch')}
+                                </Button>
+                            )}
+                            {canCorrectDispatch && (
+                                <Button
+                                    fullWidth
+                                    leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
+                                    onClick={() => setDialog('correct-dispatch')}
+                                    size="small"
+                                    variant="secondary"
+                                >
+                                    {t('packages.detail.actions.correctDispatch')}
+                                </Button>
+                            )}
+                            <Button
+                                fullWidth
+                                leadingIcon={<Ruler className="h-4 w-4" aria-hidden="true" />}
+                                onClick={() => setDialog('measurements')}
+                                size="small"
+                                variant="secondary"
+                            >
+                                {t('packages.detail.actions.editMeasurements')}
+                            </Button>
+                        </div>
+                    </SectionCard>
+
+                    <SectionCard
+                        action={<CopyButton label={t('common.actions.copy')} text={destinationLines(pkg).join('\n')} />}
+                        dense
+                        title={t('packages.detail.fields.destination')}
+                    >
+                        <address className="m-0 text-sm leading-relaxed break-words text-ink not-italic dark:text-night-text">
+                            {destinationLines(pkg).map((line, index) =>
+                                index === 0 ? (
+                                    <strong className="block" key={line}>
+                                        {line}
+                                    </strong>
+                                ) : (
+                                    <span className="block" key={line}>
+                                        {line}
+                                    </span>
+                                ),
+                            )}
+                        </address>
                     </SectionCard>
 
                     <DeferredSection
@@ -1161,35 +1230,6 @@ export function PackageDetailPage() {
                             sheetVersion={sheetVersion}
                         />
                     </DeferredSection>
-
-                    <SectionCard dense title={t('packages.detail.datesSection')}>
-                        <SummaryList
-                            rows={[
-                                { label: t('packages.detail.fields.createdAt'), value: formatDate(pkg.createdAt) },
-                                { label: t('packages.detail.fields.shippedAt'), value: formatDate(pkg.shippedAt) },
-                                { label: t('packages.detail.fields.deliveredAt'), value: formatDate(pkg.deliveredAt) },
-                            ]}
-                        />
-                    </SectionCard>
-
-                    <SectionCard dense title={t('packages.detail.fields.destination')}>
-                        <address className="m-0 text-sm leading-relaxed text-ink not-italic dark:text-night-text">
-                            <strong className="block">{pkg.destination.recipientFullName}</strong>
-                            <span className="block">{formatPhone(pkg.destination.phoneE164)}</span>
-                            {pkg.destination.recipientTaxId && (
-                                <span className="block">CPF {formatCpf(pkg.destination.recipientTaxId)}</span>
-                            )}
-                            <span className="mt-1.5 block">
-                                {pkg.destination.addressLine1}
-                                {pkg.destination.addressLine2 ? `, ${pkg.destination.addressLine2}` : ''}
-                                {pkg.destination.district ? ` — ${pkg.destination.district}` : ''}
-                            </span>
-                            <span className="block">
-                                {pkg.destination.locality}/{pkg.destination.administrativeArea} ·{' '}
-                                {pkg.destination.postalCode} · {pkg.destination.countryCode}
-                            </span>
-                        </address>
-                    </SectionCard>
                 </div>
             </div>
 

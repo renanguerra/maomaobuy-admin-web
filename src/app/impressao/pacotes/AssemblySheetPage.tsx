@@ -10,7 +10,6 @@ import { Button, ButtonLink } from '@/components/ui/Button';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
 import {
-    formatCpf,
     formatDate,
     formatPhone,
     orderStatusLabel,
@@ -19,6 +18,7 @@ import {
     type AdminPackageAssembly,
     type AdminPackageAssemblyItem,
     type AdminPackageAssemblyOrder,
+    recipientTaxIdLabel,
 } from '@/types/api';
 
 /**
@@ -232,7 +232,7 @@ function Sheet({ sheet, page, total, generatedAt }: SheetProps) {
                         <strong className="block text-xs">{destination.recipientFullName}</strong>
                         <span className="mm-data block">{formatPhone(destination.phoneE164)}</span>
                         {destination.recipientTaxId && (
-                            <span className="mm-data block">CPF {formatCpf(destination.recipientTaxId)}</span>
+                            <span className="mm-data block">{recipientTaxIdLabel(destination)}</span>
                         )}
                         <span className="block">
                             {destination.addressLine1}
