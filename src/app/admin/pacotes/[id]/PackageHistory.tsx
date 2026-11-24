@@ -102,6 +102,7 @@ export function PackageHistory({ pkg }: { pkg: AdminPackage }) {
             title: t('packages.detail.history.dispatched'),
             skip: recorded.has('DISPATCH_PACKAGE'),
         },
+        { key: 'import-tax', at: pkg.importTaxRecordedAt, title: t('packages.detail.history.importTax') },
         { key: 'delivered', at: pkg.deliveredAt, title: t('packages.detail.history.delivered') },
     ];
     for (const { key, at, title, skip } of milestones) {

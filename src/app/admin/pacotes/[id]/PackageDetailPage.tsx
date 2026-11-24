@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
     Calculator,
+    Landmark,
     ArrowUpRight,
     CheckCircle2,
     ClipboardList,
@@ -48,6 +49,7 @@ import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import type { MessageKey } from '@/i18n/translations';
+import { useDispatchFields } from '@/services/admin/shipping-modalities';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
 import type { ShippingBox } from '@/types/shipping-box';
 import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
@@ -83,6 +85,7 @@ type DialogKind =
     | 'override-status'
     | 'carrier-quote'
     | 'shipping-failure'
+    | 'import-tax'
     | null;
 
 /** Situações finais do pacote — nada mais é anexado depois delas. */
@@ -147,6 +150,11 @@ function overrideTargets(pkg: AdminPackage): string[] {
             !(pkg.paidAt && BEFORE_PAYMENT.includes(status)) &&
             !(status === 'AWAITING_FREIGHT_PAYMENT' && !pkg.shippingAmountMinor),
     );
+}
+
+/** Dias entre o despacho e a entrega; no mesmo dia conta um. */
+function transitDays(shippedAt: string, deliveredAt: string): number {
+    return Math.max(1, Math.round((Date.parse(deliveredAt) - Date.parse(shippedAt)) / 86_400_000));
 }
 
 /** O destino linha a linha: é o que a tela mostra e o que o botão copia. */
@@ -238,6 +246,10 @@ export function PackageDetailPage() {
     const attachmentInputRef = useRef<HTMLInputElement>(null);
     const [invoiceOpen, setInvoiceOpen] = useState(false);
 
+    const { carrierField, modalityField } = useDispatchFields(
+        dialog === 'dispatch' || dialog === 'correct-dispatch' || dialog === 'override-status',
+    );
+
     const load = useCallback(() => {
         api<AdminPackage>(`/packages/${params.id}`)
             .then((loaded) => {
@@ -279,6 +291,7 @@ export function PackageDetailPage() {
                     notifyCustomer: values.notifyCustomer === 'yes',
                     carrier: values.carrier || undefined,
                     trackingCode: values.trackingCode || undefined,
+                    shippingModalityId: values.shippingModalityId || undefined,
                 }),
             });
             applyUpdate(updated, t('packages.detail.feedback.statusOverridden'));
@@ -295,6 +308,20 @@ export function PackageDetailPage() {
             notify({ tone: 'success', title: t('packages.detail.feedback.shippingFailure') });
             void refreshPendingCounts();
             router.push(`/admin/pacotes/${replacement.id}`);
+            return;
+        }
+
+        if (action === 'import-tax') {
+            if (values.outcome === 'charged' && Number(values.amountMinor || '0') === 0)
+                throw new Error(t('packages.detail.dialogs.importTax.amountRequired'));
+            const updated = await api<AdminPackage>(`/packages/${params.id}/import-tax`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    amountMinor:
+                        values.outcome === 'charged' ? values.amountMinor : values.outcome === 'none' ? '0' : null,
+                }),
+            });
+            applyUpdate(updated, t('packages.detail.feedback.importTax'));
             return;
         }
 
@@ -566,6 +593,7 @@ export function PackageDetailPage() {
         const fromBox = chosenBox?.[`${side}Mm`];
         return fromBox ? String(fromBox) : undefined;
     };
+    const shipsToBrazil = pkg.destination.countryCode === 'BR';
     // O backend aceita armazém, financeiro e SUPERADMIN; para os outros o campo só mostra.
     const canEditPackaging = ['WAREHOUSE', 'FINANCE', 'SUPERADMIN'].includes(admin?.role ?? '');
 
@@ -1116,6 +1144,41 @@ export function PackageDetailPage() {
                                     label: t('packages.detail.fields.trackingCode'),
                                     value: pkg.trackingCode ?? t('common.dash'),
                                 },
+                                ...(pkg.shippedAt
+                                    ? [
+                                          {
+                                              label: t('packages.detail.fields.shippedAt'),
+                                              value: formatDate(pkg.shippedAt),
+                                          },
+                                          {
+                                              label: t('packages.detail.fields.deliveredAt'),
+                                              value: pkg.deliveredAt ? formatDate(pkg.deliveredAt) : t('common.dash'),
+                                          },
+                                          ...(pkg.deliveredAt
+                                              ? [
+                                                    {
+                                                        label: t('packages.detail.fields.transitTime'),
+                                                        value: t('packages.detail.fields.transitDays', {
+                                                            count: transitDays(pkg.shippedAt, pkg.deliveredAt),
+                                                        }),
+                                                    },
+                                                ]
+                                              : []),
+                                          ...(shipsToBrazil
+                                              ? [
+                                                    {
+                                                        label: t('packages.detail.fields.importTax'),
+                                                        value:
+                                                            pkg.importTaxAmountMinor === null
+                                                                ? t('packages.detail.fields.importTaxUnknown')
+                                                                : pkg.importTaxAmountMinor === '0'
+                                                                  ? t('packages.detail.fields.importTaxNone')
+                                                                  : money(pkg.importTaxAmountMinor, 'BRL'),
+                                                    },
+                                                ]
+                                              : []),
+                                      ]
+                                    : []),
                                 {
                                     label: t('packages.detail.fields.weight'),
                                     value: pkg.weightGrams ? `${pkg.weightGrams} g` : t('common.dash'),
@@ -1185,6 +1248,17 @@ export function PackageDetailPage() {
                                     variant="secondary"
                                 >
                                     {t('packages.detail.actions.correctDispatch')}
+                                </Button>
+                            )}
+                            {pkg.shippedAt && shipsToBrazil && canEditPackaging && (
+                                <Button
+                                    fullWidth
+                                    leadingIcon={<Landmark className="h-4 w-4" aria-hidden="true" />}
+                                    onClick={() => setDialog('import-tax')}
+                                    size="small"
+                                    variant="secondary"
+                                >
+                                    {t('packages.detail.actions.importTax')}
                                 </Button>
                             )}
                             <Button
@@ -1398,26 +1472,15 @@ export function PackageDetailPage() {
                 open={dialog === 'dispatch'}
                 title={t('packages.detail.dialogs.dispatch.title')}
                 fields={[
-                    {
-                        name: 'carrier',
-                        label: t('packages.detail.dialogs.dispatch.carrier'),
-                        placeholder: t('packages.detail.dialogs.dispatch.carrierPlaceholder'),
-                        minLength: 2,
-                        maxLength: 120,
-                    },
+                    modalityField(pkg),
+                    carrierField(),
                     {
                         name: 'trackingCode',
                         label: t('packages.detail.dialogs.dispatch.trackingCode'),
                         placeholder: t('packages.detail.dialogs.dispatch.trackingCodePlaceholder'),
                         minLength: 2,
                         maxLength: 100,
-                    },
-                    {
-                        name: 'carrierService',
-                        label: t('packages.detail.dialogs.dispatch.carrierService'),
-                        placeholder: t('packages.detail.dialogs.dispatch.carrierServicePlaceholder'),
-                        optional: true,
-                        maxLength: 120,
+                        wide: true,
                     },
                 ]}
             />
@@ -1429,26 +1492,15 @@ export function PackageDetailPage() {
                 open={dialog === 'correct-dispatch'}
                 title={t('packages.detail.dialogs.correctDispatch.title')}
                 fields={[
-                    {
-                        name: 'carrier',
-                        label: t('packages.detail.dialogs.dispatch.carrier'),
-                        defaultValue: pkg.carrier ?? undefined,
-                        minLength: 2,
-                        maxLength: 120,
-                    },
+                    modalityField(pkg),
+                    carrierField({ defaultValue: pkg.carrier ?? undefined }),
                     {
                         name: 'trackingCode',
                         label: t('packages.detail.dialogs.dispatch.trackingCode'),
                         defaultValue: pkg.trackingCode ?? undefined,
                         minLength: 2,
                         maxLength: 100,
-                    },
-                    {
-                        name: 'carrierService',
-                        label: t('packages.detail.dialogs.dispatch.carrierService'),
-                        defaultValue: pkg.carrierService ?? undefined,
-                        optional: true,
-                        maxLength: 120,
+                        wide: true,
                     },
                 ]}
             />
@@ -1482,13 +1534,12 @@ export function PackageDetailPage() {
                     ...(pkg.shippedAt
                         ? []
                         : [
-                              {
-                                  name: 'carrier',
-                                  label: t('packages.detail.dialogs.dispatch.carrier'),
+                              modalityField(pkg, { optional: true }),
+                              carrierField({
                                   hint: t('packages.detail.dialogs.overrideStatus.carrierHint'),
+                                  minLength: undefined,
                                   optional: true,
-                                  maxLength: 120,
-                              },
+                              }),
                               {
                                   name: 'trackingCode',
                                   label: t('packages.detail.dialogs.dispatch.trackingCode'),
@@ -1497,6 +1548,39 @@ export function PackageDetailPage() {
                                   maxLength: 100,
                               },
                           ]),
+                ]}
+            />
+            <ActionDialog
+                confirmLabel={t('packages.detail.dialogs.importTax.confirmLabel')}
+                description={t('packages.detail.dialogs.importTax.description')}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleActionConfirm}
+                open={dialog === 'import-tax'}
+                requireTotp={false}
+                title={t('packages.detail.dialogs.importTax.title')}
+                fields={[
+                    {
+                        name: 'outcome',
+                        kind: 'select',
+                        label: t('packages.detail.dialogs.importTax.outcome'),
+                        defaultValue: pkg.importTaxAmountMinor === '0' ? 'none' : 'charged',
+                        options: [
+                            { value: 'charged', label: t('packages.detail.dialogs.importTax.charged') },
+                            { value: 'none', label: t('packages.detail.dialogs.importTax.none') },
+                            ...(pkg.importTaxAmountMinor === null
+                                ? []
+                                : [{ value: 'unknown', label: t('packages.detail.dialogs.importTax.unknown') }]),
+                        ],
+                    },
+                    {
+                        name: 'amountMinor',
+                        kind: 'currency',
+                        label: t('packages.detail.dialogs.importTax.amount'),
+                        hint: t('packages.detail.dialogs.importTax.amountHint'),
+                        suffix: 'BRL',
+                        optional: true,
+                        defaultValue: pkg.importTaxAmountMinor ?? '0',
+                    },
                 ]}
             />
             {dialog === 'carrier-quote' && (

@@ -143,6 +143,38 @@ export interface ShippingSimulation {
     }[];
 }
 
+/** Modalidades para o despacho escolher (`GET /shipping-table/dispatch-options`). */
+export interface DispatchOptions {
+    modalities: Pick<ShippingModality, 'id' | 'name' | 'isActive'>[];
+    /** Código da linha da Westlink (BR025) → modalidade. */
+    westlinkModalities: Record<string, string>;
+}
+
+/** Prazo real e imposto do histórico (`GET /shipping-table/performance`). */
+export interface ShippingPerformanceEntry {
+    /** `null` = envios sem modalidade cadastrada (ou o total geral). */
+    modalityId: string | null;
+    modalityName: string | null;
+    deliveries: number;
+    averageDays: number | null;
+    medianDays: number | null;
+    minDays: number | null;
+    maxDays: number | null;
+    /** Envios com imposto informado, inclusive os não taxados. */
+    taxReported: number;
+    taxCharged: number;
+    /** Média só dos taxados, em centavos de real. */
+    averageTaxAmountMinor: string | null;
+}
+
+export interface ShippingPerformance {
+    modalities: ShippingPerformanceEntry[];
+    overall: ShippingPerformanceEntry;
+}
+
+/** Transportadoras que usamos; o campo aceita outra, mas sugere estas. */
+export const SHIPPING_CARRIERS = ['China Post', 'EMS', 'DHL', 'FedEx', 'UPS', 'Correios'] as const;
+
 /** Quem pode mexer na tabela (o backend é a fonte da verdade). */
 export function canWriteShippingTable(role: string | undefined): boolean {
     return role === 'SUPERADMIN' || role === 'WAREHOUSE' || role === 'FINANCE';
