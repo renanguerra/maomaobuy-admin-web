@@ -5,7 +5,10 @@ import type { MenuItemKey } from './AdminSidebar.types';
  * `apps/admin`). Leitura é aberta a todo admin, mas mostrar no menu uma área
  * em que a pessoa só vai tomar 403 ao clicar em qualquer botão é pior do que
  * escondê-la. `SUPERADMIN` vê tudo; quem não está listado aqui é porque a
- * área é balcão comum (pedidos, e-mails, painel).
+ * área é balcão comum (pedidos, itens sem pacote, painel).
+ *
+ * `emails` é a exceção: ninguém escreve lá, mas a tela responde "o cliente
+ * foi avisado?", que é pergunta de atendimento.
  */
 const WRITE_ROLES: Partial<Record<MenuItemKey, readonly string[]>> = {
     packages: ['WAREHOUSE'],
@@ -15,8 +18,10 @@ const WRITE_ROLES: Partial<Record<MenuItemKey, readonly string[]>> = {
     wholesale: ['SUPPORT'],
     siteNotices: ['SUPPORT'],
     suppliers: ['CATALOG', 'WAREHOUSE', 'FINANCE'],
-    shippingTable: ['WAREHOUSE', 'FINANCE'],
-    shippingBoxes: ['WAREHOUSE', 'FINANCE'],
+    freight: ['WAREHOUSE', 'FINANCE'],
+    storefrontFeedbacks: ['CATALOG', 'SUPPORT'],
+    emails: ['SUPPORT', 'FINANCE'],
+    profit: ['FINANCE', 'WAREHOUSE', 'CATALOG'],
     products: ['CATALOG'],
     coinShop: ['CATALOG'],
     checkoutAddons: ['CATALOG'],

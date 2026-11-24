@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { homeHref } from '@/components/admin/AdminSidebar/menu';
 import { Alert } from '@/components/admin/Alert';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -25,8 +26,8 @@ export function LoginPage() {
         setSubmitting(true);
         setError(undefined);
         try {
-            await loginAdminAccount(String(data.get('email') ?? ''), String(data.get('password') ?? ''));
-            router.replace('/admin');
+            const admin = await loginAdminAccount(String(data.get('email') ?? ''), String(data.get('password') ?? ''));
+            router.replace(homeHref(admin.role));
         } catch (err) {
             setError(err instanceof ApiError ? err.message : t('login.genericError'));
         } finally {

@@ -27,6 +27,7 @@ import { ActionDialog } from '@/components/admin/ActionDialog';
 import { CarrierQuoteDialog, CarrierShipmentSection } from '@/components/admin/CarrierShipments';
 import { Alert } from '@/components/admin/Alert';
 import { CommercialInvoiceDialog } from '@/components/admin/CommercialInvoice';
+import { CustomerCard } from '@/components/admin/CustomerCard';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
 import { MediaGrid, MediaTile } from '@/components/admin/MediaGrid';
@@ -50,6 +51,7 @@ import type { MessageKey } from '@/i18n/translations';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
 import type { ShippingBox } from '@/types/shipping-box';
 import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
+import { customerHref } from '@/services/admin/customer-link';
 import { api, ApiError, uploadToPresignedUrl } from '@/services/api';
 import {
     formatDate,
@@ -578,7 +580,7 @@ export function PackageDetailPage() {
                     <>
                         <Link
                             className="font-semibold text-primary no-underline hover:underline dark:text-night-accent"
-                            href={`/admin/usuarios/${pkg.userId}`}
+                            href={customerHref(pkg.userId, 'pacote', pkg.id)}
                         >
                             {pkg.userName}
                         </Link>{' '}
@@ -1052,6 +1054,11 @@ export function PackageDetailPage() {
                 </div>
 
                 <div className="grid min-w-0 gap-5">
+                    <CustomerCard
+                        href={customerHref(pkg.userId, 'pacote', pkg.id)}
+                        name={pkg.userName}
+                        userId={pkg.userId}
+                    />
                     <SectionCard dense title={t('packages.detail.shippingSection')}>
                         <SummaryList
                             rows={[

@@ -21,6 +21,7 @@ import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import { OrderCostSheetDialog } from '@/components/admin/CostSheets';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
+import { CustomerCard } from '@/components/admin/CustomerCard';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
 import { MessageThread } from '@/components/admin/MessageThread';
@@ -37,6 +38,7 @@ import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import type { MessageKey } from '@/i18n/translations';
+import { customerHref } from '@/services/admin/customer-link';
 import { api, ApiError } from '@/services/api';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
 import {
@@ -331,7 +333,7 @@ export function OrderDetailPage() {
                     <>
                         <Link
                             className="font-semibold text-primary no-underline hover:underline dark:text-night-accent"
-                            href={`/admin/usuarios/${order.userId}`}
+                            href={customerHref(order.userId, 'pedido', order.id)}
                         >
                             {order.userName}
                         </Link>{' '}
@@ -634,6 +636,11 @@ export function OrderDetailPage() {
                 </div>
 
                 <div className="grid min-w-0 gap-5">
+                    <CustomerCard
+                        href={customerHref(order.userId, 'pedido', order.id)}
+                        name={order.userName}
+                        userId={order.userId}
+                    />
                     <SectionCard dense title={t('orders.detail.summarySection')}>
                         <SummaryList
                             rows={[

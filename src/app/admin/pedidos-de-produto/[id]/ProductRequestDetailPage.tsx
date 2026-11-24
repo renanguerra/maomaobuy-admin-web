@@ -15,6 +15,7 @@ import { SummaryList } from '@/components/admin/SummaryList';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
+import { customerHref } from '@/services/admin/customer-link';
 import { api } from '@/services/api';
 import { formatDate, productRequestStatusLabel, type AdminProductRequest } from '@/types/api';
 import { ProductRequestStatusDialog } from '../ProductRequestStatusDialog';
@@ -106,7 +107,7 @@ export function ProductRequestDetailPage() {
                     <>
                         <Link
                             className="font-semibold text-primary no-underline hover:underline dark:text-night-accent"
-                            href={`/admin/usuarios/${request.userId}`}
+                            href={customerHref(request.userId, 'encomenda', request.id)}
                         >
                             {request.userName ?? request.userId.slice(0, 8)}
                         </Link>
