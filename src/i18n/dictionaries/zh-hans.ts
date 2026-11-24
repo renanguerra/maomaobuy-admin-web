@@ -1725,6 +1725,29 @@ export const zhHans: Messages = {
             pilotListTitle: '试点客户',
             pilotListInactive: '试点客户（未生效：未选择试点服务商）',
         },
+        fxMode: {
+            title: 'Pix 汇率',
+            current: {
+                BRL: '按雷亚尔收款：以 BRL 收款，换成人民币之前的汇率风险由我们承担。',
+                LOCKED: '锁定汇率：以人民币收款，客户按服务商的锁定报价支付雷亚尔，报价在付款结束前有效。',
+            },
+            noEffect: '{{provider}} 不支持锁定汇率：此设置会保留，但不生效。',
+            partial: '此设置只对通过 {{provider}} 付款的客户生效。',
+            lockedFees: '锁定汇率的费用：每笔 Pix {{fee}}，另加人民币入账费 {{settlement}}。',
+            changeTo: {
+                BRL: '改为按雷亚尔收款',
+                LOCKED: '改为锁定汇率',
+            },
+            dialogTitle: {
+                BRL: 'Pix 改为按雷亚尔收款',
+                LOCKED: 'Pix 改为锁定汇率',
+            },
+            dialogDescription: {
+                BRL: '从下一次报价开始生效，客户价格会变化。付款到换汇之间的汇率风险改由我们承担。已创建的 Pix 和已接受的报价保持原来的方式。',
+                LOCKED: '从下一次报价开始生效，客户价格会变化：客户将承担服务商的换汇加价。如果服务商无法报价，Pix 将暂时不可用，不会自动改回雷亚尔。已创建的 Pix 和已接受的报价保持原来的方式。',
+            },
+            onlySuperadmin: '只有 SUPERADMIN 可以更改 Pix 汇率方式。',
+        },
         providerNames: {
             ABACATEPAY: 'AbacatePay',
             AIRWALLEX: 'Airwallex',

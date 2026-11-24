@@ -1784,6 +1784,29 @@ export const ptBR = {
             pilotListTitle: 'Clientes do piloto',
             pilotListInactive: 'Clientes do piloto (sem efeito: nenhum piloto escolhido)',
         },
+        fxMode: {
+            title: 'Câmbio do Pix',
+            current: {
+                BRL: 'Em reais: cobrado em BRL. O câmbio até a conversão para yuan é risco nosso.',
+                LOCKED: 'Câmbio travado: cobrado em yuan, e o cliente paga em reais na cotação do provedor, válida até o fim do pagamento.',
+            },
+            noEffect: '{{provider}} não trava o câmbio: o modo fica guardado, sem efeito.',
+            partial: 'O modo só vale para quem paga por {{provider}}.',
+            lockedFees: 'Taxas do modo travado: {{fee}} por Pix e {{settlement}} de recebimento em yuan.',
+            changeTo: {
+                BRL: 'Cobrar em reais',
+                LOCKED: 'Travar o câmbio',
+            },
+            dialogTitle: {
+                BRL: 'Cobrar o Pix em reais',
+                LOCKED: 'Travar o câmbio do Pix',
+            },
+            dialogDescription: {
+                BRL: 'Vale para a próxima cotação e muda o preço dos clientes. O câmbio entre o pagamento e a conversão passa a ser risco nosso. Pix já aberto e cotação já aceita seguem no modo em que nasceram.',
+                LOCKED: 'Vale para a próxima cotação e muda o preço dos clientes, que passam a pagar a margem de conversão do provedor. Se o provedor não der a cotação, o Pix fica indisponível em vez de voltar para reais. Pix já aberto e cotação já aceita seguem no modo em que nasceram.',
+            },
+            onlySuperadmin: 'Só o SUPERADMIN troca o câmbio do Pix.',
+        },
         providerNames: {
             ABACATEPAY: 'AbacatePay',
             AIRWALLEX: 'Airwallex',

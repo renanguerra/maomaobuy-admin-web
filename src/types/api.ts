@@ -1052,6 +1052,9 @@ export const PAYMENT_METHOD_ACCESS_MODES = ['ENABLED', 'DISABLED', 'ONLY_LISTED'
 
 export type PaymentMethodAccessMode = (typeof PAYMENT_METHOD_ACCESS_MODES)[number];
 
+/** Pix cobrado em reais ou em yuan com o câmbio travado pelo provedor. */
+export type PaymentFxMode = 'BRL' | 'LOCKED';
+
 /** `GET /payment-methods`: a chave de um meio de pagamento da recarga. */
 export interface AdminPaymentMethod {
     method: PaymentMethod;
@@ -1077,6 +1080,12 @@ export interface AdminPaymentMethod {
     availableProviders: string[];
     /** A rota aponta para um provedor desligado: o meio some para os clientes. */
     providerUnavailable: boolean;
+    /** Só no Pix. Backend anterior ao modo de câmbio não manda. */
+    fxMode?: PaymentFxMode | null;
+    /** Provedores ligados que travam o câmbio do Pix; vazio = o modo não tem efeito. */
+    lockedFxProviders?: string[];
+    /** Taxas do modo travado no provedor deste Pix; nulo se ele não trava. */
+    lockedFees?: { feeBasisPoints: number; feeFixedCnyMinor: string; settlementBasisPoints: number } | null;
 }
 
 export interface AdminTopUpsPage extends Page<AdminTopUp> {

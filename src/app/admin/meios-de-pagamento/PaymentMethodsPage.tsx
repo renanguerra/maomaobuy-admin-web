@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { CreditCard, QrCode, Repeat, UserMinus, UserPlus } from 'lucide-react';
+import { ArrowLeftRight, CreditCard, QrCode, Repeat, UserMinus, UserPlus } from 'lucide-react';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
 import { PageHeader } from '@/components/admin/PageHeader';
@@ -21,6 +21,7 @@ import {
     brl,
     formatDate,
     type AdminPaymentMethod,
+    type PaymentFxMode,
     type PaymentMethodAccessMode,
 } from '@/types/api';
 
@@ -42,7 +43,8 @@ const MODE_TONES: Record<PaymentMethodAccessMode, StatusTone> = {
  *
  * Cada meio também diz qual provedor cobra. Trocar é do SUPERADMIN, com TOTP,
  * entre os provedores que o deploy ligou; a lista de piloto manda alguns
- * clientes para outro provedor antes de virar para todos.
+ * clientes para outro provedor antes de virar para todos. No Pix de um provedor
+ * que trava o câmbio, o SUPERADMIN escolhe entre cobrar em reais ou travado.
  */
 export function PaymentMethodsPage() {
     const { t } = useTranslation();
@@ -137,6 +139,14 @@ export function PaymentMethodsPage() {
                             }),
                         )
                     }
+                    onFxMode={(body) =>
+                        mutate(
+                            api<AdminPaymentMethod[]>(`/payment-methods/${method.method}/fx-mode`, {
+                                method: 'PATCH',
+                                body: JSON.stringify(body),
+                            }),
+                        )
+                    }
                     onAddPilot={(email) =>
                         mutate(
                             api<AdminPaymentMethod[]>(`/payment-methods/${method.method}/pilot-users`, {
@@ -164,12 +174,18 @@ interface ProviderChange {
     totpCode: string;
 }
 
+interface FxModeChange {
+    fxMode: PaymentFxMode;
+    totpCode: string;
+}
+
 function MethodCard({
     method,
     onMode,
     onAdd,
     onRemove,
     onProvider,
+    onFxMode,
     onAddPilot,
     onRemovePilot,
 }: {
@@ -178,6 +194,7 @@ function MethodCard({
     onAdd: (email: string) => Promise<void>;
     onRemove: (userId: string) => Promise<void>;
     onProvider: (change: ProviderChange) => Promise<void>;
+    onFxMode: (change: FxModeChange) => Promise<void>;
     onAddPilot: (email: string) => Promise<void>;
     onRemovePilot: (userId: string) => Promise<void>;
 }) {
@@ -267,6 +284,8 @@ function MethodCard({
                 {method.providerName && (
                     <>
                         <ProviderSection method={method} busy={busy} onProvider={onProvider} />
+
+                        {method.fxMode && <FxModeSection method={method} busy={busy} onFxMode={onFxMode} />}
 
                         <UserList
                             active={method.pilotProviderName !== null}
@@ -392,6 +411,85 @@ function ProviderSection({
                         pilotProviderName: values.pilotProviderName || null,
                         totpCode: values.totpCode,
                     });
+                    setOpen(false);
+                }}
+            />
+        </div>
+    );
+}
+
+/**
+ * Pix em reais ou com câmbio travado. Só tem efeito no provedor que sabe
+ * travar; com outro, a tela diz que o modo está guardado e sem efeito. O
+ * backend confere provedor e taxas antes de pedir o código.
+ */
+function FxModeSection({
+    method,
+    busy,
+    onFxMode,
+}: {
+    method: AdminPaymentMethod;
+    busy: boolean;
+    onFxMode: (change: FxModeChange) => Promise<void>;
+}) {
+    const { t } = useTranslation();
+    const { admin } = useAdminAccountAuth();
+    const label = useProviderLabel();
+    const [open, setOpen] = useState(false);
+    const current: PaymentFxMode = method.fxMode ?? 'BRL';
+    const next: PaymentFxMode = current === 'BRL' ? 'LOCKED' : 'BRL';
+    const locking = method.lockedFxProviders ?? [];
+    const forAll = locking.includes(method.providerName);
+    const forPilot = method.pilotProviderName !== null && locking.includes(method.pilotProviderName);
+    const canLock = forAll || forPilot;
+    const canChange = admin?.role === 'SUPERADMIN' && (next === 'BRL' || canLock);
+
+    const scope = !canLock
+        ? t('paymentMethods.fxMode.noEffect', { provider: label(method.providerName) })
+        : forAll && (forPilot || !method.pilotProviderName)
+          ? null
+          : t('paymentMethods.fxMode.partial', {
+                provider: label(forAll ? method.providerName : (method.pilotProviderName ?? '')),
+            });
+
+    return (
+        <div className="grid gap-2">
+            <h3 className="m-0 text-sm font-semibold text-ink dark:text-night-text">
+                {t('paymentMethods.fxMode.title')}
+            </h3>
+            <div className="grid gap-1 text-sm text-muted dark:text-night-muted">
+                <p className="m-0">{t(`paymentMethods.fxMode.current.${current}`)}</p>
+                {scope && <p className="m-0">{scope}</p>}
+                {method.lockedFees && (
+                    <p className="m-0">
+                        {t('paymentMethods.fxMode.lockedFees', {
+                            fee: `${PERCENT.format(method.lockedFees.feeBasisPoints / 100)}% + ${cny(method.lockedFees.feeFixedCnyMinor)}`,
+                            settlement: `${PERCENT.format(method.lockedFees.settlementBasisPoints / 100)}%`,
+                        })}
+                    </p>
+                )}
+            </div>
+            {admin?.role === 'SUPERADMIN' ? (
+                <div>
+                    <Button disabled={busy || !canChange} onClick={() => setOpen(true)} variant="secondary">
+                        <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+                        {t(`paymentMethods.fxMode.changeTo.${next}`)}
+                    </Button>
+                </div>
+            ) : (
+                <p className="m-0 text-xs text-muted dark:text-night-subtle">
+                    {t('paymentMethods.fxMode.onlySuperadmin')}
+                </p>
+            )}
+            <ActionDialog
+                open={open}
+                title={t(`paymentMethods.fxMode.dialogTitle.${next}`)}
+                description={t(`paymentMethods.fxMode.dialogDescription.${next}`)}
+                confirmLabel={t(`paymentMethods.fxMode.changeTo.${next}`)}
+                fields={[]}
+                onCancel={() => setOpen(false)}
+                onConfirm={async (values) => {
+                    await onFxMode({ fxMode: next, totpCode: values.totpCode });
                     setOpen(false);
                 }}
             />
