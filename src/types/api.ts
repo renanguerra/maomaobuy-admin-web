@@ -247,7 +247,7 @@ export interface AdminProductSubcategoryRef {
 }
 
 /** Loja, Coin Shop ou "Leve junto" — fixo depois de criado. */
-export type ProductKind = 'STORE' | 'COIN_SHOP' | 'CHECKOUT_ADDON';
+export type ProductKind = 'STORE' | 'COIN_SHOP' | 'CHECKOUT_ADDON' | 'BOX';
 
 export type ProductSalesChannel = 'RETAIL_ONLY' | 'WHOLESALE_ONLY' | 'BOTH';
 
@@ -297,6 +297,10 @@ export interface AdminProduct {
     coinAvailableUntil: string | null;
     /** Produto adicional do checkout ("Leve junto"). */
     isCheckoutAddon: boolean;
+    /** Box: janela de venda e quantas estão montadas (vendidas incluídas). */
+    boxAvailableFrom: string | null;
+    boxAvailableUntil: string | null;
+    boxUnitsTotal: number;
     /** Varejo, atacado ou os dois. Só produto da loja vende no atacado. */
     salesChannel: ProductSalesChannel;
     /** Preço de atacado em fen: da caixa no só atacado, da unidade nos dois canais. */
@@ -310,6 +314,41 @@ export interface AdminProduct {
     subcategories: AdminProductSubcategoryRef[];
     createdAt: string;
     updatedAt: string;
+}
+
+/** Um produto dentro da box, como está agora. */
+export interface AdminBoxItem {
+    productId: string;
+    name: string;
+    variantExternalId: string;
+    variantLabel: string | null;
+    quantity: number;
+    isGift: boolean;
+    /** Nulo quando o produto não se vende sozinho: não entra na soma. */
+    unitAmountMinor: string | null;
+    unitCostAmountMinor: string | null;
+    stock: number;
+    weightGrams: number | null;
+    thumbnailUrl: string | null;
+    problem: string | null;
+}
+
+export interface AdminBox {
+    productId: string;
+    items: AdminBoxItem[];
+    amountMinor: string;
+    regularAmountMinor: string;
+    savingsMinor: string;
+    savingsBasisPoints: number;
+    costAmountMinor: string | null;
+    contentsWeightGrams: number | null;
+    buildable: number;
+    stock: number;
+    unitsTotal: number;
+    /** Presas em pedidos não pagos (ausente em backend antigo). */
+    reserved?: number;
+    sold: number;
+    locked: boolean;
 }
 
 export interface PresignedUpload {
@@ -379,12 +418,20 @@ export function orderStatusLabel(status: string) {
     return ORDER_STATUS_LABELS[getStoreLocale()][status as OrderStatus] ?? status;
 }
 
+export interface BoxContent {
+    name: string;
+    variantLabel: string | null;
+    quantity: number;
+}
+
 export interface AdminOrderItem {
     id: string;
     productName: string;
     quantity: number;
     currency: string;
     unitAmountMinor: string;
+    /** O que vinha na box comprada (ausente em backend antigo). */
+    boxContents?: BoxContent[] | null;
     storeProductId: string | null;
     storeProductVariantExternalId: string | null;
     marketplace: string | null;

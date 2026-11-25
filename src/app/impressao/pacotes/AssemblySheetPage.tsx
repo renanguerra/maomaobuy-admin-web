@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, ImageOff, LoaderCircle, Printer } from 'lucide-react';
+import { BoxContents } from '@/components/admin/BoxContents';
 import { Alert } from '@/components/admin/Alert';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { useTranslation } from '@/i18n/LanguageProvider';
@@ -418,6 +419,7 @@ function ItemRow({ index, item, order }: ItemRowProps) {
                         .filter(Boolean)
                         .join(' · ')}
                 </span>
+                <BoxContents className="text-[10px] font-semibold" contents={orderItem.boxContents} />
                 {orderItem.marketplaceUrl && (
                     <span className="mm-data mt-0.5 block break-all text-[9px] text-warm-600">
                         {orderItem.marketplaceUrl}

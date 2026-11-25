@@ -15,6 +15,7 @@ export type MenuItemKey =
     | 'products'
     | 'coinShop'
     | 'checkoutAddons'
+    | 'boxes'
     | 'categories'
     | 'storefrontFeedbacks'
     | 'siteNotices'

@@ -187,82 +187,84 @@ export function NewProductPage({ kind = 'STORE' }: { kind?: ProductKind }) {
 
             {step === 'info' && (
                 <form className="grid gap-5" onSubmit={handleCreateDraft}>
-                    <ProductFormFields categories={categories} form={form} />
+                    <ProductFormFields categories={categories} creating form={form} />
 
-                    <SectionCard
-                        description={t('products.new.variants.description')}
-                        flush
-                        title={t('products.new.variants.title')}
-                        action={
-                            <Button
-                                leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setEditingVariant('new')}
-                                size="small"
-                                type="button"
-                                variant="secondary"
-                            >
-                                {t('products.new.variants.addButton')}
-                            </Button>
-                        }
-                    >
-                        {variants.length === 0 ? (
-                            <EmptyState
-                                description={t('products.new.variants.emptyDescription')}
-                                icon={Layers}
-                                title={t('products.new.variants.empty')}
-                            />
-                        ) : (
-                            <ListRows>
-                                {variants.map((variant) => (
-                                    <li key={variant.key}>
-                                        <ListRow
-                                            meta={`${variant.externalId} · ${minorToAmount(variant.amountAdjustmentMinor)}`}
-                                            title={variant.label}
-                                            pill={
-                                                <StatusPill tone={variant.isAvailable ? 'success' : 'neutral'}>
-                                                    {variant.isAvailable
-                                                        ? t('products.detail.variants.available_state')
-                                                        : t('products.detail.variants.unavailable_state')}
-                                                </StatusPill>
-                                            }
-                                            actions={
-                                                <>
-                                                    <Button
-                                                        aria-label={t('products.detail.variants.editAria', {
-                                                            name: variant.label,
-                                                        })}
-                                                        iconOnly
-                                                        onClick={() => setEditingVariant(variant)}
-                                                        size="small"
-                                                        type="button"
-                                                        variant="ghost"
-                                                    >
-                                                        <Pencil className="h-4 w-4" aria-hidden="true" />
-                                                    </Button>
-                                                    <Button
-                                                        aria-label={t('products.detail.variants.deleteAria', {
-                                                            name: variant.label,
-                                                        })}
-                                                        iconOnly
-                                                        onClick={() =>
-                                                            setVariants((current) =>
-                                                                current.filter((item) => item.key !== variant.key),
-                                                            )
-                                                        }
-                                                        size="small"
-                                                        type="button"
-                                                        variant="dangerGhost"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                                                    </Button>
-                                                </>
-                                            }
-                                        />
-                                    </li>
-                                ))}
-                            </ListRows>
-                        )}
-                    </SectionCard>
+                    {kind !== 'BOX' && (
+                        <SectionCard
+                            description={t('products.new.variants.description')}
+                            flush
+                            title={t('products.new.variants.title')}
+                            action={
+                                <Button
+                                    leadingIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
+                                    onClick={() => setEditingVariant('new')}
+                                    size="small"
+                                    type="button"
+                                    variant="secondary"
+                                >
+                                    {t('products.new.variants.addButton')}
+                                </Button>
+                            }
+                        >
+                            {variants.length === 0 ? (
+                                <EmptyState
+                                    description={t('products.new.variants.emptyDescription')}
+                                    icon={Layers}
+                                    title={t('products.new.variants.empty')}
+                                />
+                            ) : (
+                                <ListRows>
+                                    {variants.map((variant) => (
+                                        <li key={variant.key}>
+                                            <ListRow
+                                                meta={`${variant.externalId} · ${minorToAmount(variant.amountAdjustmentMinor)}`}
+                                                title={variant.label}
+                                                pill={
+                                                    <StatusPill tone={variant.isAvailable ? 'success' : 'neutral'}>
+                                                        {variant.isAvailable
+                                                            ? t('products.detail.variants.available_state')
+                                                            : t('products.detail.variants.unavailable_state')}
+                                                    </StatusPill>
+                                                }
+                                                actions={
+                                                    <>
+                                                        <Button
+                                                            aria-label={t('products.detail.variants.editAria', {
+                                                                name: variant.label,
+                                                            })}
+                                                            iconOnly
+                                                            onClick={() => setEditingVariant(variant)}
+                                                            size="small"
+                                                            type="button"
+                                                            variant="ghost"
+                                                        >
+                                                            <Pencil className="h-4 w-4" aria-hidden="true" />
+                                                        </Button>
+                                                        <Button
+                                                            aria-label={t('products.detail.variants.deleteAria', {
+                                                                name: variant.label,
+                                                            })}
+                                                            iconOnly
+                                                            onClick={() =>
+                                                                setVariants((current) =>
+                                                                    current.filter((item) => item.key !== variant.key),
+                                                                )
+                                                            }
+                                                            size="small"
+                                                            type="button"
+                                                            variant="dangerGhost"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                                                        </Button>
+                                                    </>
+                                                }
+                                            />
+                                        </li>
+                                    ))}
+                                </ListRows>
+                            )}
+                        </SectionCard>
+                    )}
 
                     <div className="flex justify-end">
                         <Button loading={submitting} type="submit">

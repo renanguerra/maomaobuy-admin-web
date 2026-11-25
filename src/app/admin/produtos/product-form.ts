@@ -47,6 +47,9 @@ export interface ProductFormValues {
     /** `YYYY-MM-DDTHH:mm`, como o `<input type="datetime-local">` entrega. */
     coinAvailableFrom: string;
     coinAvailableUntil: string;
+    /** Janela de venda da box, em horário de Brasília (o do cliente). */
+    boxAvailableFrom: string;
+    boxAvailableUntil: string;
     /** Peso embalado em gramas — obrigatório no "Leve junto". */
     weightGrams: string;
     /** Só na loja. Termos em string porque vêm de inputs; vazio = sem valor. */
@@ -87,6 +90,8 @@ const EMPTY: ProductFormValues = {
     coinRedeemLimitPerUser: '',
     coinAvailableFrom: '',
     coinAvailableUntil: '',
+    boxAvailableFrom: '',
+    boxAvailableUntil: '',
     weightGrams: '',
     salesChannel: 'RETAIL_ONLY',
     wholesaleAmountMinor: '0',
@@ -127,6 +132,8 @@ function fromProduct(product: AdminProduct): ProductFormValues {
         coinRedeemLimitPerUser: product.coinRedeemLimitPerUser ? String(product.coinRedeemLimitPerUser) : '',
         coinAvailableFrom: toLocalInput(product.coinAvailableFrom),
         coinAvailableUntil: toLocalInput(product.coinAvailableUntil),
+        boxAvailableFrom: toBrasiliaInput(product.boxAvailableFrom),
+        boxAvailableUntil: toBrasiliaInput(product.boxAvailableUntil),
         weightGrams: product.weightGrams ? String(product.weightGrams) : '',
         salesChannel: product.salesChannel ?? 'RETAIL_ONLY',
         wholesaleAmountMinor: product.wholesaleAmountMinor ?? '0',
@@ -199,6 +206,7 @@ export type ProductForm = ReturnType<typeof useProductForm>;
 export function toProductPayload(values: ProductFormValues) {
     const isStore = values.kind === 'STORE';
     const isCoinShop = values.kind === 'COIN_SHOP';
+    const isBox = values.kind === 'BOX';
     return {
         name: values.name,
         slug: values.slug,
@@ -235,6 +243,10 @@ export function toProductPayload(values: ProductFormValues) {
             isCoinShop && values.coinRedeemLimitPerUser ? Number(values.coinRedeemLimitPerUser) : null,
         coinAvailableFrom: isCoinShop ? fromLocalInput(values.coinAvailableFrom) : null,
         coinAvailableUntil: isCoinShop ? fromLocalInput(values.coinAvailableUntil) : null,
+        // Período de venda só na box. Estoque e custo dela vêm da montagem: o
+        // backend ignora os que forem daqui.
+        boxAvailableFrom: isBox ? fromBrasiliaInput(values.boxAvailableFrom) : null,
+        boxAvailableUntil: isBox ? fromBrasiliaInput(values.boxAvailableUntil) : null,
         // Vazio não apaga um peso que veio da importação em lote.
         weightGrams: values.weightGrams ? Number(values.weightGrams) : undefined,
         // Canal só na loja (Coin Shop e "Leve junto" são só varejo). Os
@@ -256,6 +268,21 @@ export function toProductPayload(values: ProductFormValues) {
         categoryIds: values.categoryIds,
         subcategoryIds: values.subcategoryIds,
     };
+}
+
+/**
+ * O período da box é no horário de Brasília, seja qual for o fuso do painel:
+ * a equipe trabalha na China e "até 24/12 23h59" é o relógio do cliente. O
+ * Brasil não tem horário de verão desde 2019.
+ */
+const BRASILIA_OFFSET_MS = 3 * 60 * 60_000;
+
+function toBrasiliaInput(value: string | null | undefined): string {
+    return value ? new Date(new Date(value).getTime() - BRASILIA_OFFSET_MS).toISOString().slice(0, 16) : '';
+}
+
+function fromBrasiliaInput(value: string): string | null {
+    return value ? new Date(`${value}:00-03:00`).toISOString() : null;
 }
 
 /** ISO do backend → valor de `<input type="datetime-local">`, no fuso do navegador. */

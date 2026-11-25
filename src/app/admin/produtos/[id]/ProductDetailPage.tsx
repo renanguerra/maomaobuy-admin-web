@@ -16,12 +16,26 @@ import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api, ApiError } from '@/services/api';
 import type { AdminCategory, AdminProduct, ProductKind } from '@/types/api';
+import { BoxContentsManager } from './BoxContentsManager';
 import { ProductFormFields } from '../ProductFormFields';
 import { ProductMediaManager } from '../ProductMediaManager';
 import { productPath } from '../product-kind';
 import { toProductPayload, useProductForm } from '../product-form';
 import { ProductVariantsManager } from './ProductVariantsManager';
 import { minorToAmount } from './ProductDetailPage.utils';
+
+/** "05/12/2026 00:00 → 25/12/2026 00:00", sempre em horário de Brasília. */
+function periodLabel(product: AdminProduct, empty: string) {
+    const format = (value: string) =>
+        new Date(value).toLocaleString('pt-BR', {
+            dateStyle: 'short',
+            timeStyle: 'short',
+            timeZone: 'America/Sao_Paulo',
+        });
+    const from = product.boxAvailableFrom ? format(product.boxAvailableFrom) : null;
+    const until = product.boxAvailableUntil ? format(product.boxAvailableUntil) : null;
+    return [from, until].some(Boolean) ? `${from ?? '…'} → ${until ?? '…'}` : empty;
+}
 
 /**
  * Detalhe de um produto no endereço do tipo dele. Aberto pelo endereço de
@@ -257,6 +271,14 @@ export function ProductDetailPage({ kind = 'STORE' }: { kind?: ProductKind }) {
                                       },
                                   ]
                                 : []),
+                            ...(product.kind === 'BOX'
+                                ? [
+                                      {
+                                          label: t('products.box.period'),
+                                          value: periodLabel(product, t('products.box.noPeriod')),
+                                      },
+                                  ]
+                                : []),
                             { label: t('products.detail.view.stock'), value: product.stock, numeric: true },
                             ...(product.kind === 'STORE'
                                 ? [
@@ -298,7 +320,11 @@ export function ProductDetailPage({ kind = 'STORE' }: { kind?: ProductKind }) {
 
             {!editing && (
                 <>
-                    <ProductVariantsManager onChanged={load} productId={product.id} variants={product.variants} />
+                    {product.kind === 'BOX' ? (
+                        <BoxContentsManager onChanged={load} product={product} />
+                    ) : (
+                        <ProductVariantsManager onChanged={load} productId={product.id} variants={product.variants} />
+                    )}
                     <ProductMediaManager media={product.media} onChanged={load} productId={product.id} />
                 </>
             )}

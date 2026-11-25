@@ -15,6 +15,8 @@ export interface ProductFormFieldsProps {
     categories: readonly AdminCategory[];
     /** Avisa que o slug já está no ar — mudá-lo quebra os links compartilhados. */
     slugIsPublished?: boolean;
+    /** Tela de criação: a box ainda não tem conteúdo para publicar. */
+    creating?: boolean;
 }
 
 /**
@@ -24,12 +26,18 @@ export interface ProductFormFieldsProps {
  * produto decide os blocos: Coin Shop e "Leve junto" são sempre estoque
  * próprio pronto, sem pré-venda, sob demanda nem categorias da vitrine.
  */
-export function ProductFormFields({ form, categories, slugIsPublished = false }: ProductFormFieldsProps) {
+export function ProductFormFields({
+    form,
+    categories,
+    slugIsPublished = false,
+    creating = false,
+}: ProductFormFieldsProps) {
     const { t } = useTranslation();
     const { values, patch, setName, setSlug, toggleCategory, toggleSubcategory } = form;
     const isStore = values.kind === 'STORE';
     const isCoinShop = values.kind === 'COIN_SHOP';
     const isCheckoutAddon = values.kind === 'CHECKOUT_ADDON';
+    const isBox = values.kind === 'BOX';
 
     return (
         <>
@@ -66,6 +74,30 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                             onChange={(event) => patch({ coinAvailableUntil: event.target.value })}
                             type="datetime-local"
                             value={values.coinAvailableUntil}
+                        />
+                    </div>
+                </SectionCard>
+            )}
+
+            {isBox && (
+                <SectionCard
+                    description={t('products.new.box.periodDescription')}
+                    title={t('products.new.box.periodTitle')}
+                >
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Input
+                            hint={t('products.new.box.periodHint')}
+                            label={t('products.new.box.from')}
+                            onChange={(event) => patch({ boxAvailableFrom: event.target.value })}
+                            type="datetime-local"
+                            value={values.boxAvailableFrom}
+                        />
+                        <Input
+                            hint={t('products.new.box.periodHint')}
+                            label={t('products.new.box.until')}
+                            onChange={(event) => patch({ boxAvailableUntil: event.target.value })}
+                            type="datetime-local"
+                            value={values.boxAvailableUntil}
                         />
                     </div>
                 </SectionCard>
@@ -136,15 +168,22 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                             onMinorChange={(minor) => patch({ sourceAmountMinor: minor })}
                             required={!isCoinShop}
                         />
-                        <CurrencyInput
-                            currency="CNY"
-                            hint={t('products.new.originPrice.costHint')}
-                            label={t('products.new.originPrice.cost')}
-                            minor={values.costAmountMinor}
-                            onMinorChange={(minor) => patch({ costAmountMinor: minor })}
-                        />
+                        {!isBox && (
+                            <CurrencyInput
+                                currency="CNY"
+                                hint={t('products.new.originPrice.costHint')}
+                                label={t('products.new.originPrice.cost')}
+                                minor={values.costAmountMinor}
+                                onMinorChange={(minor) => patch({ costAmountMinor: minor })}
+                            />
+                        )}
                     </div>
-                    {!isCoinShop && (
+                    {isBox && (
+                        <p className="m-0 text-xs text-muted dark:text-night-muted">
+                            {t('products.new.box.priceNote')}
+                        </p>
+                    )}
+                    {!isCoinShop && !isBox && (
                         <p className="mt-2 text-xs text-muted dark:text-night-muted">
                             {unitMarginLabel(values.sourceAmountMinor, values.costAmountMinor, t)}
                         </p>
@@ -225,41 +264,48 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                             onMinorChange={(minor) => patch({ estimatedShippingAmountMinor: minor })}
                         />
                     )}
-                    <Input
-                        hint={t('products.new.shippingStock.stockHint')}
-                        label={t('products.new.shippingStock.stock')}
-                        min={0}
-                        onChange={(event) => patch({ stock: event.target.value })}
-                        placeholder="0"
-                        required
-                        step={1}
-                        type="number"
-                        value={values.stock}
-                    />
+                    {!isBox && (
+                        <Input
+                            hint={t('products.new.shippingStock.stockHint')}
+                            label={t('products.new.shippingStock.stock')}
+                            min={0}
+                            onChange={(event) => patch({ stock: event.target.value })}
+                            placeholder="0"
+                            required
+                            step={1}
+                            type="number"
+                            value={values.stock}
+                        />
+                    )}
                     <Input
                         hint={
-                            isCheckoutAddon
-                                ? t('products.new.shippingStock.weightAddonHint')
-                                : t('products.new.shippingStock.weightHint')
+                            isBox
+                                ? t('products.new.box.weightHint')
+                                : isCheckoutAddon
+                                  ? t('products.new.shippingStock.weightAddonHint')
+                                  : t('products.new.shippingStock.weightHint')
                         }
                         label={t('products.new.shippingStock.weight')}
                         min={1}
                         onChange={(event) => patch({ weightGrams: event.target.value })}
-                        required={isCheckoutAddon}
+                        required={isCheckoutAddon || isBox}
                         step={1}
                         type="number"
                         value={values.weightGrams}
                     />
                 </div>
 
-                <Checkbox
-                    boxed
-                    checked={values.isPublished}
-                    className="mt-4"
-                    description={t('products.new.publishHint')}
-                    label={t('products.new.publishCheckbox')}
-                    onChange={(event) => patch({ isPublished: event.target.checked })}
-                />
+                {/* A box nasce rascunho: só vai ao ar depois de montada. */}
+                {(!isBox || !creating) && (
+                    <Checkbox
+                        boxed
+                        checked={values.isPublished}
+                        className="mt-4"
+                        description={t('products.new.publishHint')}
+                        label={t('products.new.publishCheckbox')}
+                        onChange={(event) => patch({ isPublished: event.target.checked })}
+                    />
+                )}
                 {isStore && (
                     <Checkbox
                         boxed
@@ -270,7 +316,7 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                         onChange={(event) => patch({ isChinaExclusive: event.target.checked })}
                     />
                 )}
-                {isStore && (
+                {(isStore || isBox) && (
                     <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <Select
                             hint={t('products.new.languageHint')}
@@ -451,7 +497,7 @@ export function ProductFormFields({ form, categories, slugIsPublished = false }:
                 </SectionCard>
             )}
 
-            {isStore && categories.length > 0 && (
+            {(isStore || isBox) && categories.length > 0 && (
                 <SectionCard
                     description={t('products.new.categoriesDescription')}
                     title={t('products.new.categoriesTitle')}
