@@ -594,6 +594,11 @@ export const ptBR = {
             dismantleTitle: 'Desmontar {{count}} box(es)?',
             dismantleConfirm: 'As unidades voltam para o estoque dos produtos.',
             dismantleToast: '{{count}} box(es) desmontada(s).',
+            reserved: 'Reservadas (pagamento pendente)',
+            restock: 'Recolocar à venda',
+            restockTitle: 'Recolocar {{count}} box(es) à venda?',
+            restockConfirm: 'Use quando uma compra de box foi cancelada e a caixa voltou para a prateleira.',
+            restockToast: '{{count}} box(es) de volta à venda.',
             duplicate: 'Duplicar box',
             duplicateName: '{{name}} (cópia)',
             duplicateDescription:

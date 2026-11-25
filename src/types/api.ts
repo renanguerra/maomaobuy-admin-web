@@ -345,6 +345,8 @@ export interface AdminBox {
     buildable: number;
     stock: number;
     unitsTotal: number;
+    /** Presas em pedidos não pagos (ausente em backend antigo). */
+    reserved?: number;
     sold: number;
     locked: boolean;
 }

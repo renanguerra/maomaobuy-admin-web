@@ -29,6 +29,8 @@ interface BoxContentsManagerProps {
     onChanged: () => void;
 }
 
+type BoxMove = 'build' | 'dismantle' | 'restock';
+
 const percent = (value: number) => `${value.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
 
 /**
@@ -44,7 +46,7 @@ export function BoxContentsManager({ product, onChanged }: BoxContentsManagerPro
     const [loadFailed, setLoadFailed] = useState(false);
     const [draft, setDraft] = useState<BoxDraftLine[]>();
     const [quantity, setQuantity] = useState('1');
-    const [busy, setBusy] = useState<'save' | 'build' | 'dismantle'>();
+    const [busy, setBusy] = useState<'save' | BoxMove>();
     const [duplicating, setDuplicating] = useState(false);
 
     useEffect(() => {
@@ -84,7 +86,7 @@ export function BoxContentsManager({ product, onChanged }: BoxContentsManagerPro
     const units = Number(quantity);
     const validUnits = Number.isInteger(units) && units > 0;
 
-    async function run(action: 'save' | 'build' | 'dismantle', request: () => Promise<AdminBox>, message: string) {
+    async function run(action: 'save' | BoxMove, request: () => Promise<AdminBox>, message: string) {
         setBusy(action);
         try {
             setBox(await request());
@@ -116,7 +118,7 @@ export function BoxContentsManager({ product, onChanged }: BoxContentsManagerPro
             t('products.box.savedToast'),
         );
 
-    async function move(action: 'build' | 'dismantle') {
+    async function move(action: BoxMove) {
         const confirmed = await confirm({
             title: t(`products.box.${action}Title`, { count: units }),
             description: t(`products.box.${action}Confirm`),
@@ -324,6 +326,9 @@ export function BoxContentsManager({ product, onChanged }: BoxContentsManagerPro
                     items={[
                         { label: t('products.box.available'), value: box.stock, numeric: true },
                         { label: t('products.box.sold'), value: box.sold, numeric: true },
+                        ...(box.reserved
+                            ? [{ label: t('products.box.reserved'), value: box.reserved, numeric: true }]
+                            : []),
                         {
                             label: t('products.box.buildable'),
                             value: draft ? t('common.dash') : box.buildable,
@@ -355,6 +360,16 @@ export function BoxContentsManager({ product, onChanged }: BoxContentsManagerPro
                     >
                         {t('products.box.dismantle')}
                     </Button>
+                    {box.sold > 0 && (
+                        <Button
+                            disabled={!validUnits || units > box.sold || busy !== undefined}
+                            loading={busy === 'restock'}
+                            onClick={() => void move('restock')}
+                            variant="ghost"
+                        >
+                            {t('products.box.restock')}
+                        </Button>
+                    )}
                 </div>
                 {draft && (
                     <p className="mt-3 mb-0 text-xs text-muted dark:text-night-muted">{t('products.box.saveFirst')}</p>
