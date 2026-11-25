@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Ban, FileDown, FileText, RefreshCw, Send, Truck } from 'lucide-react';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
-import { EmptyState } from '@/components/admin/EmptyState';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { StatusPill } from '@/components/admin/StatusPill';
 import { SummaryList, type SummaryRow } from '@/components/admin/SummaryList';
@@ -70,7 +69,9 @@ export function CarrierShipmentSection({
         onActiveChange?.(hasActive);
     }, [hasActive, onActiveChange]);
     const cancelled = shipments?.filter((shipment) => shipment.status === 'CANCELLED') ?? [];
-    const canCreate = !active && pkg.status === 'READY_FOR_DISPATCH';
+    const canCreate = Boolean(shipments) && !active && pkg.status === 'READY_FOR_DISPATCH';
+    // Despachado por outra transportadora e sem nada na Westlink: não há o que mostrar.
+    const hasBody = Boolean(loadError || active || cancelled.length > 0);
 
     function reportError(err: unknown) {
         notify({
@@ -154,70 +155,70 @@ export function CarrierShipmentSection({
         }
     }
 
+    if (!hasBody && !canCreate) return null;
+
     return (
-        <SectionCard
-            description={t('carrier.section.description')}
-            icon={<Truck aria-hidden="true" />}
-            title={t('carrier.section.title')}
-            action={
-                canCreate ? (
-                    <Button
-                        leadingIcon={<Truck className="h-4 w-4" aria-hidden="true" />}
-                        onClick={() => setDialog('create')}
-                        size="small"
-                    >
-                        {t('carrier.section.create')}
-                    </Button>
-                ) : undefined
-            }
-        >
-            {loadError && (
-                <Alert tone="danger">
-                    <p>{loadError}</p>
-                </Alert>
-            )}
+        <>
+            <SectionCard
+                description={t('carrier.section.description')}
+                icon={<Truck aria-hidden="true" />}
+                title={t('carrier.section.title')}
+                action={
+                    canCreate ? (
+                        <Button
+                            leadingIcon={<Truck className="h-4 w-4" aria-hidden="true" />}
+                            onClick={() => setDialog('create')}
+                            size="small"
+                        >
+                            {t('carrier.section.create')}
+                        </Button>
+                    ) : undefined
+                }
+            >
+                {hasBody && (
+                    <>
+                        {loadError && (
+                            <Alert tone="danger">
+                                <p>{loadError}</p>
+                            </Alert>
+                        )}
 
-            {shipments && !active && (
-                <EmptyState
-                    icon={Truck}
-                    title={
-                        pkg.status === 'READY_FOR_DISPATCH' || pkg.shippedAt
-                            ? t('carrier.section.empty')
-                            : t('carrier.section.notReady')
-                    }
-                />
-            )}
+                        {active && (
+                            <ActiveShipment
+                                busy={busy}
+                                canCancel={pkg.shippedAt === null}
+                                canDispatch={pkg.status === 'READY_FOR_DISPATCH'}
+                                onCancel={() => setDialog('cancel')}
+                                onDispatch={() => setDialog('dispatch')}
+                                onLabel={() => openLabel(active)}
+                                onProof={(type) => downloadProof(active, type)}
+                                onRefresh={() => refresh(active)}
+                                pkg={pkg}
+                                shipment={active}
+                            />
+                        )}
 
-            {active && (
-                <ActiveShipment
-                    busy={busy}
-                    canCancel={pkg.shippedAt === null}
-                    canDispatch={pkg.status === 'READY_FOR_DISPATCH'}
-                    onCancel={() => setDialog('cancel')}
-                    onDispatch={() => setDialog('dispatch')}
-                    onLabel={() => openLabel(active)}
-                    onProof={(type) => downloadProof(active, type)}
-                    onRefresh={() => refresh(active)}
-                    pkg={pkg}
-                    shipment={active}
-                />
-            )}
-
-            {cancelled.length > 0 && (
-                <details className="mt-4">
-                    <summary className="cursor-pointer text-xs font-semibold text-muted dark:text-night-muted">
-                        {t('carrier.section.cancelled', { count: cancelled.length })}
-                    </summary>
-                    <ul className="m-0 mt-2 grid list-none gap-1 p-0 text-xs text-muted dark:text-night-muted">
-                        {cancelled.map((shipment) => (
-                            <li key={shipment.id}>
-                                <span className="mm-data">{shipment.customerOrderNo}</span> · {shipment.channelCode} ·{' '}
-                                {t('carrier.section.cancelledAt', { date: formatDate(shipment.cancelledAt) })}
-                            </li>
-                        ))}
-                    </ul>
-                </details>
-            )}
+                        {cancelled.length > 0 && (
+                            <details className="mt-4">
+                                <summary className="cursor-pointer text-xs font-semibold text-muted dark:text-night-muted">
+                                    {t('carrier.section.cancelled', { count: cancelled.length })}
+                                </summary>
+                                <ul className="m-0 mt-2 grid list-none gap-1 p-0 text-xs text-muted dark:text-night-muted">
+                                    {cancelled.map((shipment) => (
+                                        <li key={shipment.id}>
+                                            <span className="mm-data">{shipment.customerOrderNo}</span> ·{' '}
+                                            {shipment.channelCode} ·{' '}
+                                            {t('carrier.section.cancelledAt', {
+                                                date: formatDate(shipment.cancelledAt),
+                                            })}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </details>
+                        )}
+                    </>
+                )}
+            </SectionCard>
 
             {dialog === 'create' && (
                 <CreateCarrierShipmentDialog
@@ -272,7 +273,7 @@ export function CarrierShipmentSection({
                 title={t('carrier.dialogs.cancel.title')}
                 variant="danger"
             />
-        </SectionCard>
+        </>
     );
 }
 

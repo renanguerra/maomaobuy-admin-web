@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { SectionCard } from '@/components/admin/SectionCard';
-import { SummaryList } from '@/components/admin/SummaryList';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
 import { cny, formatDate } from '@/types/api';
@@ -49,32 +48,29 @@ export function CustomerCard({ userId, name, href }: { userId: string; name: str
                     ))}
                 </p>
             )}
-            <SummaryList
-                className="mt-2"
-                rows={[
-                    { label: t('customers.stats.purchases'), value: summary.purchases },
-                    { label: t('customers.stats.spent'), value: cny(summary.spentAmountMinor) },
-                    {
-                        label: t('customers.stats.lastPurchase'),
-                        value: summary.lastPurchaseAt ? formatDate(summary.lastPurchaseAt) : t('common.dash'),
-                    },
-                    ...(summary.notes > 0
-                        ? [
-                              {
-                                  label: t('customers.notes.title'),
-                                  value: (
-                                      <Link
-                                          className="text-primary no-underline hover:underline dark:text-night-accent"
-                                          href={href}
-                                      >
-                                          {t('customers.notes.count', { count: summary.notes })}
-                                      </Link>
-                                  ),
-                              },
-                          ]
-                        : []),
-                ]}
-            />
+            <p className="mt-2 mb-0 text-sm font-semibold text-ink dark:text-night-text">
+                {summary.purchases === 1
+                    ? t('customers.card.onePurchase', { amount: cny(summary.spentAmountMinor) })
+                    : t('customers.card.purchases', {
+                          count: summary.purchases,
+                          amount: cny(summary.spentAmountMinor),
+                      })}
+            </p>
+            {(summary.lastPurchaseAt || summary.notes > 0) && (
+                <p className="mt-0.5 mb-0 flex flex-wrap gap-x-3 text-xs text-muted dark:text-night-muted">
+                    {summary.lastPurchaseAt && (
+                        <span>{t('customers.card.lastPurchase', { date: formatDate(summary.lastPurchaseAt) })}</span>
+                    )}
+                    {summary.notes > 0 && (
+                        <Link
+                            className="font-semibold text-primary no-underline hover:underline dark:text-night-accent"
+                            href={href}
+                        >
+                            {t('customers.notes.count', { count: summary.notes })}
+                        </Link>
+                    )}
+                </p>
+            )}
         </SectionCard>
     );
 }

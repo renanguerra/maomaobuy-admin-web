@@ -141,6 +141,14 @@ export function PackageInternalControl({
                             rows={[
                                 { label: t('shippingBoxes.package.revenue'), value: cny(sheet.revenue.totalMinor) },
                                 { label: t('shippingBoxes.package.freightCost'), value: cny(sheet.costs.freightMinor) },
+                                ...(pkg.freightMarkupBasisPoints === null
+                                    ? []
+                                    : [
+                                          {
+                                              label: t('shippingBoxes.package.freightMarkup'),
+                                              value: `${(pkg.freightMarkupBasisPoints / 100).toFixed(2)}%`,
+                                          },
+                                      ]),
                                 { label: t('shippingBoxes.package.otherCosts'), value: cny(sheet.costs.entriesMinor) },
                                 {
                                     label:

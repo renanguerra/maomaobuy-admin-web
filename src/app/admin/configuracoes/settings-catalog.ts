@@ -42,6 +42,8 @@ const KNOWN = {
     order_stock_reservation_minutes: { group: 'deadlines', unit: 'minutes' },
     stock_reservation_warning_minutes: { group: 'deadlines', unit: 'minutes' },
     freight_payment_reminder_days: { group: 'deadlines', unit: 'days' },
+    stored_items_reminder_days: { group: 'deadlines', unit: 'days' },
+    storage_ending_reminder_days: { group: 'deadlines', unit: 'days' },
     topup_quote_validity_seconds: { group: 'deadlines', unit: 'seconds' },
     purchase_quote_validity_minutes: { group: 'deadlines', unit: 'minutes' },
     coins_per_cny_basis_points: { group: 'coins', unit: 'multiplier' },

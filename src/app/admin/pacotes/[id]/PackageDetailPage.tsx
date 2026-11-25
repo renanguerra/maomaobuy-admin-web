@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import {
     Calculator,
-    Landmark,
     ArrowUpRight,
     CheckCircle2,
     ClipboardList,
@@ -15,7 +14,6 @@ import {
     Package as PackageIcon,
     Pencil,
     Plus,
-    Ruler,
     Send,
     Trash2,
     Truck,
@@ -43,7 +41,7 @@ import { SectionCard } from '@/components/admin/SectionCard';
 import { SectionTabs } from '@/components/admin/SectionTabs';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { packageStatusTone, StatusPill } from '@/components/admin/StatusPill';
-import { SummaryList } from '@/components/admin/SummaryList';
+import { SummaryList, type SummaryRow } from '@/components/admin/SummaryList';
 import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { useToast } from '@/components/ui/Toast';
@@ -597,6 +595,180 @@ export function PackageDetailPage() {
     // O backend aceita armazém, financeiro e SUPERADMIN; para os outros o campo só mostra.
     const canEditPackaging = ['WAREHOUSE', 'FINANCE', 'SUPERADMIN'].includes(admin?.role ?? '');
 
+    /** O valor e o lápis que o corrige, na mesma linha. */
+    const editable = (value: ReactNode, label: string, target: Exclude<DialogKind, null>, allowed: boolean) =>
+        allowed ? (
+            <span className="inline-flex items-center gap-1">
+                {value}
+                <Button
+                    aria-label={label}
+                    className="-my-2"
+                    iconOnly
+                    onClick={() => setDialog(target)}
+                    size="small"
+                    title={label}
+                    variant="ghost"
+                >
+                    <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                </Button>
+            </span>
+        ) : (
+            value
+        );
+    const dash = t('common.dash');
+    const hasSize = pkg.lengthMillimeters && pkg.widthMillimeters && pkg.heightMillimeters;
+    const transportRows: SummaryRow[] = [
+        { label: t('packages.detail.fields.carrier'), value: pkg.carrier ?? dash },
+        ...(pkg.carrierService
+            ? [{ label: t('packages.detail.fields.carrierService'), value: pkg.carrierService }]
+            : []),
+        {
+            label: t('packages.detail.fields.trackingCode'),
+            value: editable(
+                <span className="min-w-0 break-all">{pkg.trackingCode ?? dash}</span>,
+                t('packages.detail.actions.correctDispatch'),
+                'correct-dispatch',
+                canCorrectDispatch,
+            ),
+        },
+        {
+            label: t('packages.detail.fields.weight'),
+            value: editable(
+                pkg.weightGrams ? `${pkg.weightGrams} g` : dash,
+                t('packages.detail.actions.editMeasurements'),
+                'measurements',
+                true,
+            ),
+        },
+        {
+            label: t('packages.detail.fields.dimensions'),
+            value: hasSize ? `${pkg.lengthMillimeters} × ${pkg.widthMillimeters} × ${pkg.heightMillimeters} mm` : dash,
+        },
+        ...(pkg.shippedAt
+            ? [
+                  { label: t('packages.detail.fields.shippedAt'), value: formatDate(pkg.shippedAt) },
+                  ...(pkg.deliveredAt
+                      ? [
+                            { label: t('packages.detail.fields.deliveredAt'), value: formatDate(pkg.deliveredAt) },
+                            {
+                                label: t('packages.detail.fields.transitTime'),
+                                value: t('packages.detail.fields.transitDays', {
+                                    count: transitDays(pkg.shippedAt, pkg.deliveredAt),
+                                }),
+                            },
+                        ]
+                      : []),
+              ]
+            : []),
+        ...(pkg.declaration
+            ? [
+                  {
+                      label: t('packages.detail.declarationSection.modeLabel'),
+                      value:
+                          pkg.declaration.mode === 'CUSTOM'
+                              ? t('packages.detail.declarationSection.modeCustom')
+                              : t('packages.detail.declarationSection.modeFull'),
+                  },
+              ]
+            : []),
+    ];
+    const chargeRows: SummaryRow[] = [
+        {
+            label: t('packages.detail.fields.shipping'),
+            value: editable(
+                pkg.shippingAmountMinor && pkg.shippingCurrency
+                    ? money(pkg.shippingAmountMinor, pkg.shippingCurrency)
+                    : dash,
+                t('packages.detail.actions.requoteFreight'),
+                'shipment',
+                canRequoteFreight,
+            ),
+        },
+        {
+            label: t('packages.detail.fields.storageFee'),
+            value: money(pkg.storageFeeAmountMinor, pkg.shippingCurrency ?? 'CNY'),
+        },
+        ...(pkg.couponCode
+            ? [
+                  {
+                      label: t('packages.detail.fields.coupon', { code: pkg.couponCode }),
+                      value: `−${money(pkg.discountAmountMinor, pkg.shippingCurrency ?? 'CNY')}`,
+                  },
+              ]
+            : []),
+        {
+            label: t('packages.detail.fields.totalDue'),
+            value:
+                pkg.totalDueAmountMinor && pkg.shippingCurrency
+                    ? money(pkg.totalDueAmountMinor, pkg.shippingCurrency)
+                    : dash,
+            emphasis: true,
+        },
+        ...(pkg.totalDueAmountMinor || pkg.paidAt
+            ? [
+                  {
+                      label: t('packages.detail.paymentStatus'),
+                      value: pkg.paidAt
+                          ? t('packages.detail.paidAt', { date: formatDate(pkg.paidAt) })
+                          : t('packages.detail.notPaid'),
+                  },
+              ]
+            : []),
+        ...(pkg.shippedAt && shipsToBrazil
+            ? [
+                  {
+                      label: t('packages.detail.fields.importTax'),
+                      value: editable(
+                          pkg.importTaxAmountMinor === null
+                              ? t('packages.detail.fields.importTaxUnknown')
+                              : pkg.importTaxAmountMinor === '0'
+                                ? t('packages.detail.fields.importTaxNone')
+                                : money(pkg.importTaxAmountMinor, 'BRL'),
+                          t('packages.detail.actions.importTax'),
+                          'import-tax',
+                          canEditPackaging,
+                      ),
+                  },
+              ]
+            : []),
+    ];
+    // O que ainda define o envio; corrigir um dado é o lápis da linha dele.
+    const shippingActions = [
+        canEditItems && !freightPaid && (
+            <Button
+                key="set-shipping"
+                leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
+                onClick={() => setDialog('shipment')}
+                size="small"
+                variant="secondary"
+            >
+                {t('packages.detail.actions.setShipping')}
+            </Button>
+        ),
+        canQuoteCarrier && (
+            <Button
+                key="carrier-quote"
+                leadingIcon={<Truck className="h-4 w-4" aria-hidden="true" />}
+                onClick={() => setDialog('carrier-quote')}
+                size="small"
+                variant="secondary"
+            >
+                {t('carrier.quote.action')}
+            </Button>
+        ),
+        pkg.status === 'READY_FOR_DISPATCH' && hasCarrierShipment && (
+            <Button
+                key="manual-dispatch"
+                leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
+                onClick={() => setDialog('dispatch')}
+                size="small"
+                variant="secondary"
+            >
+                {t('carrier.section.manualDispatch')}
+            </Button>
+        ),
+    ].filter(Boolean);
+
     return (
         <div className="grid gap-4">
             <PageHeader
@@ -612,6 +784,11 @@ export function PackageDetailPage() {
                         >
                             {pkg.userName}
                         </Link>{' '}
+                        {pkg.declaration && (
+                            <StatusPill hideDot tone="neutral">
+                                {t('users.accountTypes.WHOLESALE')}
+                            </StatusPill>
+                        )}{' '}
                         · {pkg.userEmail}
                     </>
                 }
@@ -829,41 +1006,42 @@ export function PackageDetailPage() {
                         )}
                     </SectionCard>
 
-                    {pkg.declaration && (
-                        <SectionCard
-                            description={t('packages.detail.declarationSection.description')}
-                            icon={<FileText aria-hidden="true" />}
-                            title={t('packages.detail.declarationSection.title')}
-                        >
-                            <SummaryList
-                                rows={[
-                                    {
-                                        label: t('packages.detail.declarationSection.modeLabel'),
-                                        value:
-                                            pkg.declaration.mode === 'CUSTOM'
-                                                ? t('packages.detail.declarationSection.modeCustom')
-                                                : t('packages.detail.declarationSection.modeFull'),
-                                    },
-                                    ...(pkg.declaration.description
-                                        ? [
-                                              {
-                                                  label: t('packages.detail.declarationSection.customText'),
-                                                  value: pkg.declaration.description,
-                                              },
-                                          ]
-                                        : []),
-                                    ...(pkg.declaration.riskAcceptedAt
-                                        ? [
-                                              {
-                                                  label: t('packages.detail.declarationSection.riskAccepted'),
-                                                  value: formatDate(pkg.declaration.riskAcceptedAt),
-                                              },
-                                          ]
-                                        : []),
-                                ]}
-                            />
-                        </SectionCard>
-                    )}
+                    <SectionCard
+                        action={shippingActions.length > 0 ? shippingActions : undefined}
+                        bodyClassName="grid gap-5"
+                        title={t('packages.detail.shippingSection')}
+                    >
+                        <div className="grid gap-x-10 gap-y-5 lg:grid-cols-2">
+                            <div className="min-w-0">
+                                <h3 className="m-0 mb-1 text-xs font-semibold text-muted dark:text-night-muted">
+                                    {t('packages.detail.transportBlock')}
+                                </h3>
+                                <SummaryList rows={transportRows} />
+                            </div>
+                            <div className="min-w-0">
+                                <h3 className="m-0 mb-1 text-xs font-semibold text-muted dark:text-night-muted">
+                                    {t('packages.detail.chargeBlock')}
+                                </h3>
+                                <SummaryList rows={chargeRows} />
+                            </div>
+                        </div>
+                        {pkg.declaration?.mode === 'CUSTOM' && (
+                            <div className="rounded-lg border border-line p-4 dark:border-night-line">
+                                <p className="m-0 text-xs text-muted dark:text-night-muted">
+                                    {t('packages.detail.declarationSection.customText')}
+                                </p>
+                                <p className="mt-1 mb-0 text-sm break-words whitespace-pre-line text-ink dark:text-night-text">
+                                    {pkg.declaration.description ?? t('common.dash')}
+                                </p>
+                                {pkg.declaration.riskAcceptedAt && (
+                                    <p className="mt-2 mb-0 text-xs text-muted dark:text-night-muted">
+                                        {t('packages.detail.declarationSection.riskAccepted')}{' '}
+                                        {formatDate(pkg.declaration.riskAcceptedAt)}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </SectionCard>
 
                     {(pkg.status === 'READY_FOR_DISPATCH' || pkg.shippedAt) && (
                         <CarrierShipmentSection
@@ -1082,197 +1260,6 @@ export function PackageDetailPage() {
                 </div>
 
                 <div className="grid min-w-0 gap-5">
-                    <CustomerCard
-                        href={customerHref(pkg.userId, 'pacote', pkg.id)}
-                        name={pkg.userName}
-                        userId={pkg.userId}
-                    />
-                    <SectionCard dense title={t('packages.detail.shippingSection')}>
-                        <SummaryList
-                            rows={[
-                                {
-                                    label: t('packages.detail.fields.freightCost'),
-                                    value:
-                                        pkg.freightCostAmountMinor && pkg.shippingCurrency
-                                            ? money(pkg.freightCostAmountMinor, pkg.shippingCurrency)
-                                            : t('common.dash'),
-                                },
-                                {
-                                    label: t('packages.detail.fields.freightMarkup'),
-                                    value:
-                                        pkg.freightMarkupBasisPoints === null
-                                            ? t('common.dash')
-                                            : `${(pkg.freightMarkupBasisPoints / 100).toFixed(2)}%`,
-                                },
-                                {
-                                    label: t('packages.detail.fields.shipping'),
-                                    value:
-                                        pkg.shippingAmountMinor && pkg.shippingCurrency
-                                            ? money(pkg.shippingAmountMinor, pkg.shippingCurrency)
-                                            : t('common.dash'),
-                                },
-                                {
-                                    label: t('packages.detail.fields.storageFee'),
-                                    value: money(pkg.storageFeeAmountMinor, pkg.shippingCurrency ?? 'CNY'),
-                                },
-                                ...(pkg.couponCode
-                                    ? [
-                                          {
-                                              label: t('packages.detail.fields.coupon', { code: pkg.couponCode }),
-                                              value: `−${money(pkg.discountAmountMinor, pkg.shippingCurrency ?? 'CNY')}`,
-                                          },
-                                      ]
-                                    : []),
-                                {
-                                    label: t('packages.detail.fields.totalDue'),
-                                    value:
-                                        pkg.totalDueAmountMinor && pkg.shippingCurrency
-                                            ? money(pkg.totalDueAmountMinor, pkg.shippingCurrency)
-                                            : t('common.dash'),
-                                    emphasis: true,
-                                },
-                                { label: t('packages.detail.fields.carrier'), value: pkg.carrier ?? t('common.dash') },
-                                ...(pkg.carrierService
-                                    ? [
-                                          {
-                                              label: t('packages.detail.fields.carrierService'),
-                                              value: pkg.carrierService,
-                                          },
-                                      ]
-                                    : []),
-                                {
-                                    label: t('packages.detail.fields.trackingCode'),
-                                    value: pkg.trackingCode ?? t('common.dash'),
-                                },
-                                ...(pkg.shippedAt
-                                    ? [
-                                          {
-                                              label: t('packages.detail.fields.shippedAt'),
-                                              value: formatDate(pkg.shippedAt),
-                                          },
-                                          {
-                                              label: t('packages.detail.fields.deliveredAt'),
-                                              value: pkg.deliveredAt ? formatDate(pkg.deliveredAt) : t('common.dash'),
-                                          },
-                                          ...(pkg.deliveredAt
-                                              ? [
-                                                    {
-                                                        label: t('packages.detail.fields.transitTime'),
-                                                        value: t('packages.detail.fields.transitDays', {
-                                                            count: transitDays(pkg.shippedAt, pkg.deliveredAt),
-                                                        }),
-                                                    },
-                                                ]
-                                              : []),
-                                          ...(shipsToBrazil
-                                              ? [
-                                                    {
-                                                        label: t('packages.detail.fields.importTax'),
-                                                        value:
-                                                            pkg.importTaxAmountMinor === null
-                                                                ? t('packages.detail.fields.importTaxUnknown')
-                                                                : pkg.importTaxAmountMinor === '0'
-                                                                  ? t('packages.detail.fields.importTaxNone')
-                                                                  : money(pkg.importTaxAmountMinor, 'BRL'),
-                                                    },
-                                                ]
-                                              : []),
-                                      ]
-                                    : []),
-                                {
-                                    label: t('packages.detail.fields.weight'),
-                                    value: pkg.weightGrams ? `${pkg.weightGrams} g` : t('common.dash'),
-                                },
-                                {
-                                    label: t('packages.detail.fields.dimensions'),
-                                    value:
-                                        pkg.lengthMillimeters && pkg.widthMillimeters && pkg.heightMillimeters
-                                            ? `${pkg.lengthMillimeters} × ${pkg.widthMillimeters} × ${pkg.heightMillimeters} mm`
-                                            : t('common.dash'),
-                                },
-                            ]}
-                        />
-                        {/* O que muda os dados do envio fica junto deles; o próximo
-                            passo do pacote continua no cabeçalho. */}
-                        <div className="mt-3 grid gap-2 border-t border-line pt-4 dark:border-night-line">
-                            {canEditItems && !freightPaid && (
-                                <Button
-                                    fullWidth
-                                    leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
-                                    onClick={() => setDialog('shipment')}
-                                    size="small"
-                                    variant="secondary"
-                                >
-                                    {t('packages.detail.actions.setShipping')}
-                                </Button>
-                            )}
-                            {canRequoteFreight && (
-                                <Button
-                                    fullWidth
-                                    leadingIcon={<Wallet className="h-4 w-4" aria-hidden="true" />}
-                                    onClick={() => setDialog('shipment')}
-                                    size="small"
-                                    variant="secondary"
-                                >
-                                    {t('packages.detail.actions.requoteFreight')}
-                                </Button>
-                            )}
-                            {canQuoteCarrier && (
-                                <Button
-                                    fullWidth
-                                    leadingIcon={<Truck className="h-4 w-4" aria-hidden="true" />}
-                                    onClick={() => setDialog('carrier-quote')}
-                                    size="small"
-                                    variant="secondary"
-                                >
-                                    {t('carrier.quote.action')}
-                                </Button>
-                            )}
-                            {pkg.status === 'READY_FOR_DISPATCH' && hasCarrierShipment && (
-                                <Button
-                                    fullWidth
-                                    leadingIcon={<Send className="h-4 w-4" aria-hidden="true" />}
-                                    onClick={() => setDialog('dispatch')}
-                                    size="small"
-                                    variant="secondary"
-                                >
-                                    {t('carrier.section.manualDispatch')}
-                                </Button>
-                            )}
-                            {canCorrectDispatch && (
-                                <Button
-                                    fullWidth
-                                    leadingIcon={<Pencil className="h-4 w-4" aria-hidden="true" />}
-                                    onClick={() => setDialog('correct-dispatch')}
-                                    size="small"
-                                    variant="secondary"
-                                >
-                                    {t('packages.detail.actions.correctDispatch')}
-                                </Button>
-                            )}
-                            {pkg.shippedAt && shipsToBrazil && canEditPackaging && (
-                                <Button
-                                    fullWidth
-                                    leadingIcon={<Landmark className="h-4 w-4" aria-hidden="true" />}
-                                    onClick={() => setDialog('import-tax')}
-                                    size="small"
-                                    variant="secondary"
-                                >
-                                    {t('packages.detail.actions.importTax')}
-                                </Button>
-                            )}
-                            <Button
-                                fullWidth
-                                leadingIcon={<Ruler className="h-4 w-4" aria-hidden="true" />}
-                                onClick={() => setDialog('measurements')}
-                                size="small"
-                                variant="secondary"
-                            >
-                                {t('packages.detail.actions.editMeasurements')}
-                            </Button>
-                        </div>
-                    </SectionCard>
-
                     <SectionCard
                         action={<CopyButton label={t('common.actions.copy')} text={destinationLines(pkg).join('\n')} />}
                         dense
@@ -1292,6 +1279,12 @@ export function PackageDetailPage() {
                             )}
                         </address>
                     </SectionCard>
+
+                    <CustomerCard
+                        href={customerHref(pkg.userId, 'pacote', pkg.id)}
+                        name={pkg.userName}
+                        userId={pkg.userId}
+                    />
 
                     <DeferredSection
                         description={t('shippingBoxes.package.sectionHint')}

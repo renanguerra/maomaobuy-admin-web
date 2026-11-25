@@ -212,6 +212,9 @@ export const ptBR = {
         emptyFilteredDescription: 'Nenhum cliente com esses filtros. Mude o grupo, a busca ou a etiqueta.',
         card: {
             title: 'Cliente',
+            onePurchase: '1 compra · {{amount}}',
+            purchases: '{{count}} compras · {{amount}}',
+            lastPurchase: 'Última em {{date}}',
         },
         stats: {
             purchases: 'Compras',
@@ -1514,12 +1517,9 @@ export const ptBR = {
                 increaseAria: 'Aumentar quantidade',
             },
             declarationSection: {
-                title: 'Envio PJ',
-                description:
-                    'Mesmas modalidades do varejo, sem peso mínimo. O envio começa a compensar a partir de 10 kg.',
                 modeLabel: 'Declaração',
-                modeFull: 'Declaração total',
-                modeCustom: 'Declaração personalizada',
+                modeFull: 'Total',
+                modeCustom: 'Personalizada',
                 customText: 'Como o cliente quer declarar',
                 riskAccepted: 'Custos de bloqueio aceitos em',
             },
@@ -1701,6 +1701,11 @@ export const ptBR = {
                 },
             },
             shippingSection: 'Envio',
+            transportBlock: 'Transporte',
+            chargeBlock: 'Cobrança',
+            paymentStatus: 'Pagamento',
+            paidAt: 'Pago em {{date}}',
+            notPaid: 'A pagar',
         },
     },
     unpacked: {
@@ -3205,6 +3210,8 @@ export const ptBR = {
             order_stock_reservation_minutes: 'Reserva de estoque até pagar',
             stock_reservation_warning_minutes: 'Aviso antes de a reserva vencer',
             freight_payment_reminder_days: 'Lembrete de frete não pago',
+            stored_items_reminder_days: 'Lembrete de itens parados no armazém',
+            storage_ending_reminder_days: 'Aviso de armazenagem grátis acabando',
             topup_quote_validity_seconds: 'Validade da cotação de pagamento',
             purchase_quote_validity_minutes: 'Validade da cotação de compra',
             coins_per_cny_basis_points: 'Moedas por yuan',
@@ -3273,6 +3280,7 @@ export const ptBR = {
             notPaid: 'Frete ainda não pago: a receita só conta depois do pagamento.',
             revenue: 'Receita (frete + armazenagem − cupom)',
             freightCost: 'Frete pago à transportadora',
+            freightMarkup: 'Margem aplicada no frete',
             otherCosts: 'Embalagem e outros custos',
             profit: 'Lucro',
             loss: 'Prejuízo',
@@ -3580,10 +3588,7 @@ export const ptBR = {
         },
         section: {
             title: 'Envio pela Westlink',
-            description:
-                'Pré-aviso, etiqueta e rastreio pela API da transportadora. O despacho manual continua disponível para outras transportadoras.',
-            empty: 'Nenhum envio criado na Westlink para este pacote.',
-            notReady: 'O envio pela Westlink é criado depois que o frete é pago (Pronto para despacho).',
+            description: 'Pré-aviso, etiqueta e rastreio pela API. Por outra transportadora, use Despachar.',
             loadError: 'Não foi possível carregar os envios da Westlink.',
             create: 'Gerar envio na Westlink',
             refresh: 'Atualizar',
