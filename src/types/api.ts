@@ -800,6 +800,11 @@ export interface AdminPackage {
     shippingBoxId: string | null;
     /** Margem aplicada naquela cotação, em pontos-base. */
     freightMarkupBasisPoints: number | null;
+    /** Modalidade cadastrada do envio; o nome está em `carrierService`. */
+    shippingModalityId: string | null;
+    /** Imposto pago à Receita, em centavos de real; `'0'` = não foi taxado. */
+    importTaxAmountMinor: string | null;
+    importTaxRecordedAt: string | null;
     /** Armazenagem dos pedidos do pacote, cobrada junto com o frete. */
     storageFeeAmountMinor: string;
     /** Cupom de frete aplicado ao pagar e quanto abateu. */

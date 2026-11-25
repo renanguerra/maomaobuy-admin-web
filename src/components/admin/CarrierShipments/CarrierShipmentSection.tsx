@@ -12,6 +12,7 @@ import { Timeline } from '@/components/admin/Timeline';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
+import { useDispatchFields } from '@/services/admin/shipping-modalities';
 import { api, ApiError } from '@/services/api';
 import { cny, formatDate, packageStatusLabel, type AdminPackage } from '@/types/api';
 import { carrierMoney, kilograms, usd, type CarrierRefresh, type CarrierShipment } from '@/types/carrier';
@@ -63,6 +64,7 @@ export function CarrierShipmentSection({
 
     const active = shipments?.find((shipment) => shipment.status === 'CREATED');
     const hasActive = Boolean(active);
+    const { modalityField } = useDispatchFields(dialog === 'dispatch');
 
     useEffect(() => {
         onActiveChange?.(hasActive);
@@ -239,12 +241,16 @@ export function CarrierShipmentSection({
                     if (!active) return;
                     const updated = await api<AdminPackage>(`/carrier-shipments/${active.id}/dispatch`, {
                         method: 'POST',
-                        body: JSON.stringify({ totpCode: values.totpCode }),
+                        body: JSON.stringify({
+                            totpCode: values.totpCode,
+                            shippingModalityId: values.shippingModalityId,
+                        }),
                     });
                     setDialog(null);
                     notify({ tone: 'success', title: t('carrier.section.dispatchedToast') });
                     onPackageChanged(updated);
                 }}
+                fields={[modalityField(pkg, { westlinkCode: active?.channelCode })]}
                 open={dialog === 'dispatch'}
                 title={t('carrier.dialogs.dispatch.title')}
             />

@@ -20,7 +20,10 @@ export interface ActionDialogField {
     max?: number;
     /** Sufixo fixo à direita (g, mm, BRL). */
     suffix?: string;
+    /** Só `select`; nele `placeholder` vira a primeira opção, vazia. */
     options?: readonly SelectOption[];
+    /** Só texto: sugestões que o campo completa, sem proibir outro valor. */
+    suggestions?: readonly string[];
     /** Ocupa as duas colunas do formulário. */
     wide?: boolean;
 }

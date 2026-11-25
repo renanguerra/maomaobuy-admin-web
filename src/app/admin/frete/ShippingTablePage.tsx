@@ -25,6 +25,7 @@ import { ApiCheckDialog } from './ApiCheckDialog';
 import { ModalityDialog } from './ModalityDialog';
 import { usePricingSummary } from './PricingEditor';
 import { RateLineDialog, type RateLinePreset } from './RateLineDialog';
+import { ShippingPerformanceSection } from './ShippingPerformanceSection';
 import { ShippingTableSimulator } from './ShippingTableSimulator';
 
 type Editing =
@@ -208,6 +209,8 @@ export function ShippingTablePage() {
                     )}
                 </SectionCard>
             )}
+
+            {table && <ShippingPerformanceSection />}
 
             {table && <ShippingTableSimulator modalityNames={modalityNames} />}
 

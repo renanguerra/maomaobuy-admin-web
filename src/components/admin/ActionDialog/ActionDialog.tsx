@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import { Alert } from '@/components/admin/Alert';
 import { TotpEnrollmentDialog } from '@/components/admin/TotpEnrollmentDialog';
 import { Button } from '@/components/ui/Button';
@@ -146,7 +146,9 @@ function ActionDialogForm({
                 <ActionField
                     amount={amounts[field.name] ?? '0'}
                     field={field}
-                    key={field.name}
+                    // Opções que chegam depois remontam o campo: o valor inicial
+                    // dele só vale na montagem.
+                    key={field.kind === 'select' ? `${field.name}:${field.options?.length ?? 0}` : field.name}
                     onAmountChange={(minor) => setAmounts((current) => ({ ...current, [field.name]: minor }))}
                 />
             ))}
@@ -200,6 +202,7 @@ function ActionField({
 }) {
     const fieldClassName = field.wide || field.kind === 'textarea' ? 'sm:col-span-2' : '';
     const required = !field.optional;
+    const suggestionsId = useId();
 
     if (field.kind === 'textarea') {
         return (
@@ -226,6 +229,7 @@ function ActionField({
                 label={field.label}
                 name={field.name}
                 options={field.options ?? []}
+                placeholderOption={field.placeholder}
                 required={required}
             />
         );
@@ -247,22 +251,32 @@ function ActionField({
     }
 
     return (
-        <Input
-            defaultValue={field.defaultValue}
-            fieldClassName={fieldClassName}
-            hint={field.hint}
-            inputMode={field.inputMode}
-            label={field.label}
-            max={field.max}
-            maxLength={field.maxLength}
-            min={field.min}
-            minLength={field.minLength}
-            name={field.name}
-            pattern={field.pattern}
-            placeholder={field.placeholder}
-            required={required}
-            suffix={field.suffix}
-            type={field.kind === 'number' ? 'number' : 'text'}
-        />
+        <>
+            <Input
+                defaultValue={field.defaultValue}
+                fieldClassName={fieldClassName}
+                hint={field.hint}
+                inputMode={field.inputMode}
+                label={field.label}
+                list={field.suggestions ? suggestionsId : undefined}
+                max={field.max}
+                maxLength={field.maxLength}
+                min={field.min}
+                minLength={field.minLength}
+                name={field.name}
+                pattern={field.pattern}
+                placeholder={field.placeholder}
+                required={required}
+                suffix={field.suffix}
+                type={field.kind === 'number' ? 'number' : 'text'}
+            />
+            {field.suggestions && (
+                <datalist id={suggestionsId}>
+                    {field.suggestions.map((value) => (
+                        <option key={value} value={value} />
+                    ))}
+                </datalist>
+            )}
+        </>
     );
 }
