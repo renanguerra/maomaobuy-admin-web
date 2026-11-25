@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { PackageCostSheetDialog } from '@/components/admin/CostSheets';
 import { ActionDialog } from '@/components/admin/ActionDialog';
+import { BoxContents } from '@/components/admin/BoxContents';
 import { CarrierQuoteDialog, CarrierShipmentSection } from '@/components/admin/CarrierShipments';
 import { Alert } from '@/components/admin/Alert';
 import { CommercialInvoiceDialog } from '@/components/admin/CommercialInvoice';
@@ -980,6 +981,7 @@ export function PackageDetailPage() {
                                                               size: item.orderItem.size,
                                                           })
                                                         : ''}
+                                                    <BoxContents contents={item.orderItem.boxContents} />
                                                 </>
                                             }
                                             leading={<QuantityBadge quantity={item.quantity} />}

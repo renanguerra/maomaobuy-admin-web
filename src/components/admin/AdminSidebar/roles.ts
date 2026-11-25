@@ -25,6 +25,7 @@ const WRITE_ROLES: Partial<Record<MenuItemKey, readonly string[]>> = {
     products: ['CATALOG'],
     coinShop: ['CATALOG'],
     checkoutAddons: ['CATALOG'],
+    boxes: ['CATALOG'],
     categories: ['CATALOG'],
     optionalServices: [],
     coupons: ['FINANCE'],

@@ -9,6 +9,7 @@ export const PRODUCT_KIND_BASE_PATH: Record<ProductKind, string> = {
     STORE: '/admin/produtos',
     COIN_SHOP: '/admin/coin-shop',
     CHECKOUT_ADDON: '/admin/leve-junto',
+    BOX: '/admin/boxes',
 };
 
 export function productPath(kind: ProductKind, id?: string) {

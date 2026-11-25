@@ -21,6 +21,7 @@ import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import { OrderCostSheetDialog } from '@/components/admin/CostSheets';
 import { ActionDialog } from '@/components/admin/ActionDialog';
 import { Alert } from '@/components/admin/Alert';
+import { BoxContents } from '@/components/admin/BoxContents';
 import { CustomerCard } from '@/components/admin/CustomerCard';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { ListRow, ListRows } from '@/components/admin/ListRow';
@@ -99,7 +100,16 @@ function itemRefundShare(order: AdminOrder, item: AdminOrderItem): string {
     const base = order.items.reduce((total, entry) => total + line(entry), BigInt(0));
     const paid = BigInt(order.totalAmountMinor) - BigInt(order.discountAmountMinor);
     if (base <= BigInt(0) || paid <= BigInt(0)) return '0';
-    return ((paid * line(item)) / base).toString();
+    // Box não recebeu desconto: o cupom se divide só entre os outros.
+    const boxes = order.items
+        .filter((entry) => entry.boxContents)
+        .reduce((total, entry) => total + line(entry), BigInt(0));
+    const discount = BigInt(order.discountAmountMinor);
+    if (boxes === BigInt(0) || discount === BigInt(0)) return ((paid * line(item)) / base).toString();
+    const gross = (BigInt(order.totalAmountMinor) * line(item)) / base;
+    if (item.boxContents) return gross.toString();
+    const share = gross - (discount * line(item)) / (base - boxes);
+    return (share > BigInt(0) ? share : BigInt(0)).toString();
 }
 
 export function OrderDetailPage() {
@@ -557,6 +567,7 @@ export function OrderDetailPage() {
                                                         {item.marketplaceUrl}
                                                     </a>
                                                 )}
+                                                <BoxContents contents={item.boxContents} />
                                             </>
                                         }
                                     />

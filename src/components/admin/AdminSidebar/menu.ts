@@ -3,6 +3,7 @@ import {
     ChartColumn,
     ClipboardList,
     Coins,
+    Gift,
     Contact,
     CreditCard,
     LayoutDashboard,
@@ -59,6 +60,7 @@ export const MENU_AREAS: readonly MenuArea[] = [
         icon: Store,
         items: [
             { key: 'products', href: '/admin/produtos', icon: Package },
+            { key: 'boxes', href: '/admin/boxes', icon: Gift },
             { key: 'coinShop', href: '/admin/coin-shop', icon: Coins },
             { key: 'checkoutAddons', href: '/admin/leve-junto', icon: ShoppingBasket },
             { key: 'categories', href: '/admin/categorias', icon: Tags },
