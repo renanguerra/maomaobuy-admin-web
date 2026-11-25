@@ -1038,12 +1038,39 @@ export interface AdminTopUp {
     pspFeeMinor: string;
     /** `MANUAL` = pagamento recebido por fora e lançado pelo painel. */
     providerName: string | null;
+    /** A cobrança no provedor, para achar no painel dele. */
+    providerPaymentId?: string | null;
+    /** Parada em conferência: o Financeiro credita ou encerra. */
+    reviewable?: boolean;
     paymentMethod: PaymentMethod;
     cardBrand: string | null;
     cardLastFour: string | null;
     createdAt: string;
     confirmedAt: string | null;
     expiresAt: string | null;
+}
+
+/** `GET /finance/top-ups/:id/provider-check`: a recarga em conferência, vista pelo provedor. */
+export interface AdminTopUpCheck {
+    providerName: string | null;
+    providerPaymentId: string | null;
+    state:
+        | 'PENDING'
+        | 'PAID'
+        | 'EXPIRED'
+        | 'CANCELLED'
+        | 'REFUNDED'
+        | 'DISPUTED'
+        | 'FAILED'
+        | 'UNREACHABLE'
+        | 'NOT_OPENED';
+    expectedAmountMinor: string;
+    /** Centavos; em outra moeda vem como `USD:10`. */
+    providerAmountMinor: string | null;
+    /** Só com câmbio travado, em fen. */
+    expectedYuanMinor: string | null;
+    providerYuanMinor: string | null;
+    canCredit: boolean;
 }
 
 export type PaymentMethod = 'PIX' | 'CARD';
