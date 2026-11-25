@@ -27,7 +27,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
     // no meio perderia o que a pessoa estava preenchendo.
     useEffect(() => {
         function handleKeyDown(event: KeyboardEvent) {
-            if (event.key.toLowerCase() !== 'k' || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey)
+            // `key` pode vir vazio: o Chrome dispara um keydown sem tecla ao
+            // escolher uma sugestão (`datalist`) ou preencher sozinho um campo.
+            if (event.key?.toLowerCase() !== 'k' || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey)
                 return;
             event.preventDefault();
             if (searchOpen) setSearchOpen(false);

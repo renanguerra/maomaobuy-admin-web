@@ -6,7 +6,8 @@ export interface SectionCardProps {
     /** Ícone decorativo à esquerda do título. */
     icon?: ReactNode;
     action?: ReactNode;
-    children: ReactNode;
+    /** Sem conteúdo (`false`/`null`), o cartão é só o cabeçalho. */
+    children?: ReactNode;
     /** Remove o padding do corpo — use com tabelas e listas divididas. */
     flush?: boolean;
     /** Cabeçalho e corpo mais compactos. */
@@ -27,13 +28,15 @@ export function SectionCard({
     className = '',
     bodyClassName = '',
 }: SectionCardProps) {
+    const hasBody = children !== undefined && children !== null && children !== false;
+
     return (
         <section className={['mm-card', className].filter(Boolean).join(' ')}>
             {(title || action) && (
                 <header
-                    className={`flex flex-wrap items-center justify-between gap-3 border-b border-line dark:border-night-line ${
-                        dense ? 'px-4 py-3' : 'px-5 py-4'
-                    }`}
+                    className={`flex flex-wrap items-center justify-between gap-3 ${
+                        hasBody ? 'border-b border-line dark:border-night-line' : ''
+                    } ${dense ? 'px-4 py-3' : 'px-5 py-4'}`}
                 >
                     <div className="flex min-w-0 items-center gap-3">
                         {icon && (
@@ -56,9 +59,11 @@ export function SectionCard({
                     {action && <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div>}
                 </header>
             )}
-            <div className={[flush ? '' : dense ? 'p-4' : 'p-5', bodyClassName].filter(Boolean).join(' ')}>
-                {children}
-            </div>
+            {hasBody && (
+                <div className={[flush ? '' : dense ? 'p-4' : 'p-5', bodyClassName].filter(Boolean).join(' ')}>
+                    {children}
+                </div>
+            )}
         </section>
     );
 }

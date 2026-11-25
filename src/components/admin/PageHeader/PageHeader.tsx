@@ -9,7 +9,7 @@ export interface PageHeaderProps {
     /** Selo ao lado do título (situação do pedido, do pacote, do usuário). */
     badge?: ReactNode;
     description?: ReactNode;
-    /** Contexto na linha do título (cliente, código, e-mail). */
+    /** Contexto na linha abaixo do título (cliente, código, e-mail). */
     meta?: ReactNode;
     actions?: ReactNode;
     backHref?: string;
@@ -19,8 +19,8 @@ export interface PageHeaderProps {
 
 /**
  * Cabeçalho padrão de toda tela do painel: quem sou, onde estou, o que posso
- * fazer daqui. Ocupa uma linha (mais a do link de voltar): título, situação e
- * contexto à esquerda, ações à direita. Em telas de detalhe as ações são um
+ * fazer daqui. Título e situação à esquerda, com o contexto na linha de baixo;
+ * ações à direita. Em telas de detalhe as ações são um
  * `PageActions` e os avisos, um `PageNotices` logo abaixo.
  */
 export function PageHeader({
@@ -53,16 +53,14 @@ export function PageHeader({
             )}
 
             <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-                {/* Cresce e encolhe até 24rem: o contexto desce para baixo do título
-                    antes de as ações saírem da linha dele. */}
                 <div className="min-w-0 sm:flex-[1_1_24rem]">
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <h1 className="mm-display m-0 text-xl break-words sm:text-2xl">{title}</h1>
                         {badge}
-                        {meta && (
-                            <div className="min-w-0 text-sm break-words text-muted dark:text-night-muted">{meta}</div>
-                        )}
                     </div>
+                    {meta && (
+                        <div className="mt-1 min-w-0 text-sm break-words text-muted dark:text-night-muted">{meta}</div>
+                    )}
                     {description && (
                         <p className="mt-1 mb-0 max-w-3xl text-sm leading-snug text-muted dark:text-night-muted">
                             {description}
