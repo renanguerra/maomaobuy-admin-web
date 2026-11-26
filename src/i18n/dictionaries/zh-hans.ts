@@ -1449,6 +1449,7 @@ export const zhHans: Messages = {
                 markOutForDelivery: '标记为派送中',
                 markDelivered: '标记为已签收',
                 quoteFreight: '录入重量和运费',
+                approveAndQuote: '批准并报价',
                 requoteFreight: '修改运费',
                 editMeasurements: '修正重量和尺寸',
                 dispatch: '发货',
@@ -1620,6 +1621,7 @@ export const zhHans: Messages = {
             },
             feedback: {
                 approve: '包裹已批准。',
+                approveAndQuote: '包裹已批准并报价，客户现在可以支付运费。',
                 reject: '包裹已拒绝并关闭；商品已重新可用。',
                 cancel: '包裹已取消；商品已重新可用。',
                 shipment: '运费信息已更新。',
@@ -1669,6 +1671,17 @@ export const zhHans: Messages = {
                     rateLinePlaceholder: '选择线路',
                     rateLineOnRequest: '需询价',
                     rateLineOther: '其他（无已登记线路）',
+                    tableCalculating: '正在按线路价格表计算…',
+                    tablePriced: '已按线路价格表计算。供应商报价不同时可以修改。',
+                    tableManual: '已手动填写。修改重量、尺寸或线路可恢复价格表的金额。',
+                    tableOnRequest: '该线路需询价：请填写供应商给出的金额。',
+                    tableRejected: '该线路价格表不接受此包裹：{{reason}}',
+                    tableFailed: '无法按价格表计算，请手动填写。',
+                },
+                approveQuote: {
+                    title: '批准并报价',
+                    description: '一次完成核对商品、登记重量尺寸并向客户发送报价。验证码用于报价。',
+                    confirmLabel: '批准并发送报价',
                 },
                 measurements: {
                     title: '修正重量和尺寸',

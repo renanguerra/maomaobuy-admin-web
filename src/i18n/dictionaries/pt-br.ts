@@ -1502,6 +1502,7 @@ export const ptBR = {
                 markOutForDelivery: 'Marcar saiu para entrega',
                 markDelivered: 'Marcar como entregue',
                 quoteFreight: 'Informar peso e frete',
+                approveAndQuote: 'Aprovar e cotar',
                 requoteFreight: 'Editar frete',
                 editMeasurements: 'Corrigir peso e medidas',
                 dispatch: 'Despachar',
@@ -1675,6 +1676,7 @@ export const ptBR = {
             },
             feedback: {
                 approve: 'Pacote aprovado.',
+                approveAndQuote: 'Pacote aprovado e cotado; o cliente já pode pagar o frete.',
                 reject: 'Pacote rejeitado e encerrado; os itens voltaram a ficar disponíveis.',
                 cancel: 'Pacote cancelado; os itens voltaram a ficar disponíveis.',
                 shipment: 'Dados de frete atualizados.',
@@ -1727,6 +1729,18 @@ export const ptBR = {
                     rateLinePlaceholder: 'Escolha a linha',
                     rateLineOnRequest: 'sob consulta',
                     rateLineOther: 'Outra (nenhuma linha cadastrada)',
+                    tableCalculating: 'Calculando pela tabela da linha…',
+                    tablePriced: 'Calculado pela tabela da linha. Pode ajustar se o fornecedor cobrou outro valor.',
+                    tableManual: 'Valor digitado. Mude peso, medidas ou linha para voltar ao valor da tabela.',
+                    tableOnRequest: 'Linha sob consulta: informe o valor que o fornecedor passou.',
+                    tableRejected: 'A tabela desta linha não aceita este pacote: {{reason}}',
+                    tableFailed: 'Não deu para calcular pela tabela. Informe o valor.',
+                },
+                approveQuote: {
+                    title: 'Aprovar e cotar',
+                    description:
+                        'Confere os itens, registra peso e medidas e manda a cotação ao cliente numa ação só. O código do autenticador vale para a cotação.',
+                    confirmLabel: 'Aprovar e enviar cotação',
                 },
                 measurements: {
                     title: 'Corrigir peso e medidas',
