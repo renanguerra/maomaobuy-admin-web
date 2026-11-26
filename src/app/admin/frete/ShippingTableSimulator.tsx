@@ -113,6 +113,8 @@ export function ShippingTableSimulator({ modalityNames }: { modalityNames: Map<s
                                                     {t('shippingTable.simulator.cost')} {yuan(row.costAmountMinor)}
                                                     {row.estimatedDays &&
                                                         ` · ${t('carrier.channel.daysValue', row.estimatedDays)}`}
+                                                    {row.estimatedFromSamples !== null &&
+                                                        ` · ${t('shippingTable.simulator.estimated', { count: row.estimatedFromSamples })}`}
                                                 </p>
                                             </>
                                         ) : (
@@ -186,6 +188,13 @@ export function ShippingTableSimulator({ modalityNames }: { modalityNames: Map<s
                                                     </td>
                                                     <td className="mm-data px-3 py-2 text-right font-semibold">
                                                         {yuan(row.quote.freightAmountMinor)}
+                                                        {row.quote.estimatedFromSamples !== null && (
+                                                            <span className="block text-xs font-normal text-muted dark:text-night-muted">
+                                                                {t('shippingTable.simulator.estimated', {
+                                                                    count: row.quote.estimatedFromSamples,
+                                                                })}
+                                                            </span>
+                                                        )}
                                                     </td>
                                                 </>
                                             ) : (

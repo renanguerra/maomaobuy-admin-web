@@ -14,6 +14,7 @@ import { PRICING_KINDS, yuan, type RatePricing, type RatePricingKind } from '@/t
 export function emptyPricing(kind: RatePricingKind): RatePricing {
     if (kind === 'WEIGHT_BANDS') return { kind, bands: [{ uptoGrams: 500, amountMinor: '0' }], beyond: null };
     if (kind === 'PER_KG') return { kind, ratePerKgMinor: '0', fixedFeeMinor: '0', feeBands: [], beyondFee: null };
+    if (kind === 'ON_REQUEST') return { kind, minSamples: 5, windowDays: 90 };
     return { kind, firstGrams: 500, firstAmountMinor: '0', stepGrams: 500, stepAmountMinor: '0' };
 }
 
@@ -26,6 +27,7 @@ export function usePricingSummary() {
                 count: pricing.bands.length,
                 max: kilograms(pricing.bands[pricing.bands.length - 1]?.uptoGrams ?? 0),
             });
+        if (pricing.kind === 'ON_REQUEST') return t('shippingTable.pricing.summaryOnRequest');
         if (pricing.kind === 'PER_KG') {
             const tiers = pricing.feeBands.length > 0 ? ` (+${pricing.feeBands.length})` : '';
             return `${t('shippingTable.pricing.summaryPerKg', {
@@ -265,6 +267,34 @@ export function PricingEditor({ value, onChange }: { value: RatePricing; onChang
                         />
                     )}
                 </>
+            )}
+
+            {value.kind === 'ON_REQUEST' && (
+                <div className="grid gap-2">
+                    <p className="m-0 text-sm text-muted dark:text-night-muted">
+                        {t('shippingTable.pricing.onRequestHint')}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                        <Input
+                            inputMode="numeric"
+                            label={t('shippingTable.pricing.minSamples')}
+                            max={100}
+                            min={2}
+                            onChange={(event) => onChange({ ...value, minSamples: gramsValue(event.target.value) })}
+                            type="number"
+                            value={value.minSamples || ''}
+                        />
+                        <Input
+                            inputMode="numeric"
+                            label={t('shippingTable.pricing.windowDays')}
+                            max={730}
+                            min={7}
+                            onChange={(event) => onChange({ ...value, windowDays: gramsValue(event.target.value) })}
+                            type="number"
+                            value={value.windowDays || ''}
+                        />
+                    </div>
+                </div>
             )}
 
             {value.kind === 'FIRST_PLUS_STEP' && (

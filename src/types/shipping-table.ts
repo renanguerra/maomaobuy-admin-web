@@ -23,13 +23,56 @@ export type RatePricing =
           firstAmountMinor: string;
           stepGrams: number;
           stepAmountMinor: string;
+      }
+    | {
+          /** Sem tabela: o preço sai dos fretes informados nos pacotes. */
+          kind: 'ON_REQUEST';
+          minSamples: number;
+          windowDays: number;
       };
+
+/** O que os fretes informados ensinaram (linha sob consulta). */
+export interface LearnedRatePricing {
+    method: 'LINEAR' | 'PER_KG';
+    fixedMinor: string;
+    perKgMinor: string;
+    minGrams: number;
+    maxGrams: number;
+    samples: number;
+    outliers: number;
+    windowDays: number;
+    computedAt: string;
+}
+
+/** Um frete informado na linha (`GET /shipping-table/lines/:id/learned`). */
+export interface LearnedRateSample {
+    packageId: string;
+    packageCode: string;
+    quotedAt: string;
+    weightGrams: number;
+    lengthMillimeters: number | null;
+    widthMillimeters: number | null;
+    heightMillimeters: number | null;
+    chargeableWeightGrams: number;
+    costAmountMinor: string;
+    excluded: boolean;
+    outlier: boolean;
+}
+
+export interface LearnedRate {
+    lineId: string;
+    onRequest: boolean;
+    minSamples: number | null;
+    windowDays: number | null;
+    learnedPricing: LearnedRatePricing | null;
+    samples: LearnedRateSample[];
+}
 
 export type RatePricingKind = RatePricing['kind'];
 export type TaxMode = 'DDP' | 'DDU' | 'RECIPIENT';
 export type TrackingLevel = 'LIMITED' | 'TRACKED' | 'SIGNED';
 
-export const PRICING_KINDS: RatePricingKind[] = ['WEIGHT_BANDS', 'PER_KG', 'FIRST_PLUS_STEP'];
+export const PRICING_KINDS: RatePricingKind[] = ['WEIGHT_BANDS', 'PER_KG', 'FIRST_PLUS_STEP', 'ON_REQUEST'];
 export const TAX_MODES: TaxMode[] = ['RECIPIENT', 'DDU', 'DDP'];
 export const TRACKING_LEVELS: TrackingLevel[] = ['TRACKED', 'SIGNED', 'LIMITED'];
 
@@ -103,6 +146,7 @@ export interface ShippingRateLine {
     isPreferred: boolean;
     ratesUpdatedAt: string | null;
     apiCheck: RateLineApiCheck | null;
+    learnedPricing: LearnedRatePricing | null;
     updatedAt: string;
 }
 
@@ -128,8 +172,10 @@ export interface ShippingSimulation {
             amountMinor: string;
             freightAmountMinor: string;
             breakdown: { label: string; amountMinor: string }[];
+            estimatedFromSamples: number | null;
         } | null;
         rejection: string | null;
+        onRequest: boolean;
     }[];
     modalities: {
         modalityId: string;
@@ -138,6 +184,8 @@ export interface ShippingSimulation {
         lineCode: string | null;
         costAmountMinor: string | null;
         freightAmountMinor: string | null;
+        estimatedFromSamples: number | null;
+        onRequest: boolean;
         estimatedDays: { min: number; max: number } | null;
         rejection: string | null;
     }[];
@@ -148,7 +196,21 @@ export interface DispatchOptions {
     modalities: Pick<ShippingModality, 'id' | 'name' | 'isActive'>[];
     /** Código da linha da Westlink (BR025) → modalidade. */
     westlinkModalities: Record<string, string>;
+    /** Linhas para a cotação dizer qual foi consultada. */
+    quoteLines: {
+        id: string;
+        integration: 'WESTLINK' | null;
+        code: string;
+        name: string;
+        modalityId: string | null;
+        destinationCountry: string;
+        isActive: boolean;
+        onRequest: boolean;
+    }[];
 }
+
+/** Valor do seletor de linha na cotação quando nenhuma cadastrada serviu. */
+export const OTHER_RATE_LINE = 'other';
 
 /** Prazo real e imposto do histórico (`GET /shipping-table/performance`). */
 export interface ShippingPerformanceEntry {
