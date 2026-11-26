@@ -1692,6 +1692,7 @@ export const zhHans: Messages = {
                     tablePriced: '已按线路价格表计算。供应商报价不同时可以修改。',
                     tableManual: '已手动填写。修改重量、尺寸或线路可恢复价格表的金额。',
                     tableOnRequest: '该线路需询价：请填写供应商给出的金额。',
+                    tableLearned: '该线路需询价：近期发货参考价为 {{amount}}。请填写供应商给出的金额。',
                     tableRejected: '该线路价格表不接受此包裹：{{reason}}',
                     tableFailed: '无法按价格表计算，请手动填写。',
                 },

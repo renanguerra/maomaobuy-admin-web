@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Alert } from '@/components/admin/Alert';
 import { useTotpEnrollmentGate, type ActionDialogField } from '@/components/admin/ActionDialog';
 import { TotpEnrollmentDialog } from '@/components/admin/TotpEnrollmentDialog';
@@ -11,6 +11,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Select';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
+import { cny } from '@/types/api';
 import { OTHER_RATE_LINE, type ShippingSimulation } from '@/types/shipping-table';
 
 const FORM_ID = 'freight-quote-form';
@@ -43,6 +44,8 @@ type TableCost =
     | { state: 'loading' }
     | { state: 'priced'; amountMinor: string }
     | { state: 'on-request' }
+    /** Sob consulta com histórico: o número é referência, não o custo. */
+    | { state: 'learned'; amountMinor: string }
     | { state: 'rejected'; reason: string }
     | { state: 'failed' };
 
@@ -84,6 +87,9 @@ function FreightQuoteForm({
     // Custo já informado (cotação anterior ou API da Westlink) não é trocado
     // pela tabela até alguém mexer no peso, nas medidas ou na linha.
     const [autoCost, setAutoCost] = useState(initialCost === '0');
+    // A resposta da tabela chega depois: ela lê o valor de agora, não o da
+    // hora do pedido (senão um custo digitado no meio era sobrescrito).
+    const autoCostRef = useRef(autoCost);
     const [tableResult, setTableResult] = useState<{ key: string; cost: TableCost }>();
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string>();
@@ -120,9 +126,12 @@ function FreightQuoteForm({
                     if (!current) return;
                     const line = simulation.lines.find((candidate) => candidate.lineId === lineId);
                     if (!line) return settle({ state: 'failed' });
-                    if (line.quote) {
+                    if (line.quote && line.quote.estimatedFromSamples !== null)
+                        // Linha sob consulta: a equipe informa o valor do fornecedor.
+                        settle({ state: 'learned', amountMinor: line.quote.amountMinor });
+                    else if (line.quote) {
                         settle({ state: 'priced', amountMinor: line.quote.amountMinor });
-                        if (autoCost) setCost(line.quote.amountMinor);
+                        if (autoCostRef.current) setCost(line.quote.amountMinor);
                     } else if (line.onRequest) settle({ state: 'on-request' });
                     else settle({ state: 'rejected', reason: line.rejection ?? '' });
                 })
@@ -132,12 +141,17 @@ function FreightQuoteForm({
             current = false;
             clearTimeout(timer);
         };
-        // `autoCost` fica de fora: desligar o automático não refaz a conta.
+        // A chave já resume peso, medidas e linha.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [parcelReady, lineReady, requestKey, destinationCountry]);
 
+    function setAuto(value: boolean) {
+        autoCostRef.current = value;
+        setAutoCost(value);
+    }
+
     function touchParcel() {
-        setAutoCost(true);
+        setAuto(true);
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -170,11 +184,13 @@ function FreightQuoteForm({
                   : t('packages.detail.dialogs.shipment.tableManual')
               : tableCost.state === 'on-request'
                 ? t('packages.detail.dialogs.shipment.tableOnRequest')
-                : tableCost.state === 'rejected'
-                  ? t('packages.detail.dialogs.shipment.tableRejected', { reason: tableCost.reason })
-                  : tableCost.state === 'failed'
-                    ? t('packages.detail.dialogs.shipment.tableFailed')
-                    : t('packages.detail.dialogs.shipment.amountHint');
+                : tableCost.state === 'learned'
+                  ? t('packages.detail.dialogs.shipment.tableLearned', { amount: cny(tableCost.amountMinor) })
+                  : tableCost.state === 'rejected'
+                    ? t('packages.detail.dialogs.shipment.tableRejected', { reason: tableCost.reason })
+                    : tableCost.state === 'failed'
+                      ? t('packages.detail.dialogs.shipment.tableFailed')
+                      : t('packages.detail.dialogs.shipment.amountHint');
 
     return (
         <Modal
@@ -258,7 +274,7 @@ function FreightQuoteForm({
                     name="freightCostAmountMinor"
                     onMinorChange={(minor) => {
                         setCost(minor);
-                        setAutoCost(false);
+                        setAuto(false);
                     }}
                     required
                 />

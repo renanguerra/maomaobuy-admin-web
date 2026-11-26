@@ -1751,6 +1751,7 @@ export const ptBR = {
                     tablePriced: 'Calculado pela tabela da linha. Pode ajustar se o fornecedor cobrou outro valor.',
                     tableManual: 'Valor digitado. Mude peso, medidas ou linha para voltar ao valor da tabela.',
                     tableOnRequest: 'Linha sob consulta: informe o valor que o fornecedor passou.',
+                    tableLearned: 'Linha sob consulta: os últimos envios sugerem {{amount}}. Informe o valor que o fornecedor passou.',
                     tableRejected: 'A tabela desta linha não aceita este pacote: {{reason}}',
                     tableFailed: 'Não deu para calcular pela tabela. Informe o valor.',
                 },
