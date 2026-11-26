@@ -3,7 +3,7 @@ import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
 import type { ActionDialogField } from '@/components/admin/ActionDialog';
 import type { AdminPackage } from '@/types/api';
-import { SHIPPING_CARRIERS, type DispatchOptions } from '@/types/shipping-table';
+import { OTHER_RATE_LINE, SHIPPING_CARRIERS, type DispatchOptions } from '@/types/shipping-table';
 
 /**
  * Modalidades cadastradas em Frete. Só busca com `enabled` (diálogo aberto):
@@ -45,6 +45,8 @@ export function useDispatchFields(enabled: boolean) {
         { optional = false, westlinkCode }: { optional?: boolean; westlinkCode?: string } = {},
     ): ActionDialogField {
         const modalities = options?.modalities ?? [];
+        // A linha consultada na cotação já diz a modalidade provável.
+        const quotedLineModality = options?.quoteLines.find((line) => line.id === pkg.freightRateLineId)?.modalityId;
         const currentIsListed = modalities.some((modality) => modality.id === pkg.shippingModalityId);
         const loading = !options && !failed;
         const hint = failed
@@ -63,7 +65,10 @@ export function useDispatchFields(enabled: boolean) {
             hint,
             optional,
             defaultValue:
-                pkg.shippingModalityId ?? (westlinkCode ? options?.westlinkModalities[westlinkCode] : undefined) ?? '',
+                pkg.shippingModalityId ??
+                (westlinkCode ? options?.westlinkModalities[westlinkCode] : undefined) ??
+                quotedLineModality ??
+                '',
             options: [
                 ...modalities.map((modality) => ({
                     value: modality.id,
@@ -90,5 +95,40 @@ export function useDispatchFields(enabled: boolean) {
         };
     }
 
-    return { modalityField, carrierField };
+    /**
+     * Linha de frete consultada para chegar no custo. Obrigatória: é o que
+     * ensina o preço das linhas sob consulta. "Outra" quando nenhuma
+     * cadastrada serviu. `channelCode` vem da cotação pela API da Westlink.
+     */
+    function quoteLineField(pkg: AdminPackage, channelCode?: string): ActionDialogField {
+        const country = pkg.destination?.countryCode || 'BR';
+        const lines = (options?.quoteLines ?? []).filter(
+            (line) => line.destinationCountry === country && (line.isActive || line.id === pkg.freightRateLineId),
+        );
+        // Código da Westlink só vale para a linha da Westlink: outra linha pode ter o mesmo código.
+        const fromApi = channelCode
+            ? lines.find((line) => line.integration === 'WESTLINK' && line.code === channelCode)?.id
+            : undefined;
+        return {
+            name: 'freightRateLineId',
+            kind: 'select',
+            label: t('packages.detail.dialogs.shipment.rateLine'),
+            hint: failed
+                ? t('packages.detail.dialogs.shipment.rateLineError')
+                : t('packages.detail.dialogs.shipment.rateLineHint'),
+            placeholder:
+                !options && !failed ? t('common.loading') : t('packages.detail.dialogs.shipment.rateLinePlaceholder'),
+            defaultValue: fromApi ?? pkg.freightRateLineId ?? '',
+            wide: true,
+            options: [
+                ...lines.map((line) => ({
+                    value: line.id,
+                    label: `${line.code} · ${line.name}${line.onRequest ? ` (${t('packages.detail.dialogs.shipment.rateLineOnRequest')})` : ''}`,
+                })),
+                { value: OTHER_RATE_LINE, label: t('packages.detail.dialogs.shipment.rateLineOther') },
+            ],
+        };
+    }
+
+    return { modalityField, carrierField, quoteLineField };
 }

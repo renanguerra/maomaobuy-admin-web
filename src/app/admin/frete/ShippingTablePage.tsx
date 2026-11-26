@@ -17,11 +17,13 @@ import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import { kilograms } from '@/types/carrier';
 import {
     canWriteShippingTable,
+    yuan,
     type ShippingModality,
     type ShippingRateLine,
     type ShippingTable,
 } from '@/types/shipping-table';
 import { ApiCheckDialog } from './ApiCheckDialog';
+import { LearnedRateDialog } from './LearnedRateDialog';
 import { ModalityDialog } from './ModalityDialog';
 import { usePricingSummary } from './PricingEditor';
 import { RateLineDialog, type RateLinePreset } from './RateLineDialog';
@@ -31,7 +33,8 @@ import { ShippingTableSimulator } from './ShippingTableSimulator';
 type Editing =
     | { type: 'modality'; modality: ShippingModality | null }
     | { type: 'line'; line: ShippingRateLine | null; preset?: RateLinePreset }
-    | { type: 'api'; line: ShippingRateLine };
+    | { type: 'api'; line: ShippingRateLine }
+    | { type: 'learned'; line: ShippingRateLine };
 
 /**
  * Tabela de frete: modalidades com o nosso nome e as linhas de fornecedor por
@@ -282,7 +285,24 @@ export function ShippingTablePage() {
                                                         )}
                                                     </span>
                                                 </th>
-                                                <td className="mm-data px-4 py-2">{summarize(line.pricing)}</td>
+                                                <td className="mm-data px-4 py-2">
+                                                    {summarize(line.pricing)}
+                                                    {line.pricing.kind === 'ON_REQUEST' && (
+                                                        <span className="block text-xs text-muted dark:text-night-muted">
+                                                            {line.learnedPricing &&
+                                                            line.learnedPricing.samples >= line.pricing.minSamples
+                                                                ? t('shippingTable.learned.short', {
+                                                                      fixed: yuan(line.learnedPricing.fixedMinor),
+                                                                      perKg: yuan(line.learnedPricing.perKgMinor),
+                                                                      count: line.learnedPricing.samples,
+                                                                  })
+                                                                : t('shippingTable.learned.shortMissing', {
+                                                                      count: line.learnedPricing?.samples ?? 0,
+                                                                      needed: line.pricing.minSamples,
+                                                                  })}
+                                                        </span>
+                                                    )}
+                                                </td>
                                                 <td className="mm-data px-4 py-2 whitespace-nowrap">
                                                     {kilograms(line.maxWeightGrams)}
                                                     {line.volumetricDivisor ? ` · ÷${line.volumetricDivisor}` : ''}
@@ -299,6 +319,13 @@ export function ShippingTablePage() {
                                                         : t('common.dash')}
                                                 </td>
                                                 <td className="px-4 py-2 text-right whitespace-nowrap">
+                                                    <Button
+                                                        onClick={() => setEditing({ type: 'learned', line })}
+                                                        size="small"
+                                                        variant="ghost"
+                                                    >
+                                                        {t('shippingTable.learned.open')}
+                                                    </Button>
                                                     {canWrite && line.integration === 'WESTLINK' && (
                                                         <Button
                                                             onClick={() => setEditing({ type: 'api', line })}
@@ -348,6 +375,14 @@ export function ShippingTablePage() {
             {table && editing?.type === 'api' && (
                 <ApiCheckDialog
                     configured={table.westlinkConfigured}
+                    line={editing.line}
+                    onChanged={() => load()}
+                    onClose={() => setEditing(undefined)}
+                />
+            )}
+            {editing?.type === 'learned' && (
+                <LearnedRateDialog
+                    canWrite={canWrite}
                     line={editing.line}
                     onChanged={() => load()}
                     onClose={() => setEditing(undefined)}

@@ -849,6 +849,9 @@ export interface AdminPackage {
     freightMarkupBasisPoints: number | null;
     /** Modalidade cadastrada do envio; o nome está em `carrierService`. */
     shippingModalityId: string | null;
+    /** Linha de frete consultada na cotação; nula = outra/não informada. */
+    freightRateLineId: string | null;
+    freightSampleExcluded: boolean;
     /** Imposto pago à Receita, em centavos de real; `'0'` = não foi taxado. */
     importTaxAmountMinor: string | null;
     importTaxRecordedAt: string | null;

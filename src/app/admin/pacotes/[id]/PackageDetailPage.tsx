@@ -49,6 +49,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import type { MessageKey } from '@/i18n/translations';
 import { useDispatchFields } from '@/services/admin/shipping-modalities';
+import { OTHER_RATE_LINE } from '@/types/shipping-table';
 import { refreshPendingCounts } from '@/services/admin/pending-counts';
 import type { ShippingBox } from '@/types/shipping-box';
 import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
@@ -245,8 +246,8 @@ export function PackageDetailPage() {
     const attachmentInputRef = useRef<HTMLInputElement>(null);
     const [invoiceOpen, setInvoiceOpen] = useState(false);
 
-    const { carrierField, modalityField } = useDispatchFields(
-        dialog === 'dispatch' || dialog === 'correct-dispatch' || dialog === 'override-status',
+    const { carrierField, modalityField, quoteLineField } = useDispatchFields(
+        dialog === 'dispatch' || dialog === 'correct-dispatch' || dialog === 'override-status' || dialog === 'shipment',
     );
 
     const load = useCallback(() => {
@@ -334,6 +335,24 @@ export function PackageDetailPage() {
             return;
         }
 
+        if (action === 'shipment') {
+            // "Outra" = nenhuma linha cadastrada serviu; o backend guarda nulo.
+            try {
+                const updated = await api<AdminPackage>(`/packages/${params.id}/shipment`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        ...values,
+                        freightRateLineId:
+                            values.freightRateLineId === OTHER_RATE_LINE ? null : values.freightRateLineId,
+                    }),
+                });
+                applyUpdate(updated, t('packages.detail.feedback.shipment'));
+                return;
+            } catch (err) {
+                throw err instanceof ApiError ? err : new Error(t('common.errors.generic'));
+            }
+        }
+
         // Corrigir o despacho é a mesma rota, só que PATCH: cria vs. ajusta.
         const correcting = action === 'correct-dispatch';
 
@@ -350,11 +369,9 @@ export function PackageDetailPage() {
                       ? t('packages.detail.feedback.reject')
                       : action === 'cancel'
                         ? t('packages.detail.feedback.cancel')
-                        : action === 'shipment'
-                          ? t('packages.detail.feedback.shipment')
-                          : correcting
-                            ? t('packages.detail.feedback.correctDispatch')
-                            : t('packages.detail.feedback.dispatch'),
+                        : correcting
+                          ? t('packages.detail.feedback.correctDispatch')
+                          : t('packages.detail.feedback.dispatch'),
             );
         } catch (err) {
             throw err instanceof ApiError ? err : new Error(t('common.errors.generic'));
@@ -1457,6 +1474,7 @@ export function PackageDetailPage() {
                         suffix: 'CNY',
                         defaultValue: shipmentDefaults.freightCostAmountMinor ?? '0',
                     },
+                    quoteLineField(pkg, carrierSelection?.channelCode),
                 ]}
             />
             <ActionDialog
