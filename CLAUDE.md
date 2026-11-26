@@ -24,7 +24,13 @@
   - **Feedbacks** (`/admin/vitrine/feedbacks`): posts de unboxing do Instagram.
   - **Avisos** (`/admin/avisos`).
   Tudo fala com `/home/*` no backend.
-- Toda gravação pede TOTP (`TotpModal` ou o campo no formulário); sem cadastro de TOTP, abre o cadastro antes. Imagens sobem por PUT presignado (`ImageUploadField`, alvo `BANNER`/`CATEGORY`/`FEEDBACK`) e só valem depois de salvas.
+- Feedbacks e fotos de categoria gravam sem TOTP desde 26/11/2026 (rotina); avisos do site continuam pedindo. Imagens sobem por PUT presignado (`ImageUploadField`, alvo `BANNER`/`CATEGORY`/`FEEDBACK`) e só valem depois de salvas.
 - Feedback só vai ao site com a autorização do cliente marcada. Banner e prateleiras escolhem só produtos da loja de varejo (o backend recusa CoinShop, "Leve junto" e só atacado).
 - O cadastro de produto tem idioma, estado (lacrado/avulso) e conteúdo da caixa — alimentam o card e os filtros da loja.
 - Textos do painel ficam nos dois dicionários (`pt-br.ts` e `zh-hans.ts`, namespace `storefront`).
+
+## TOTP (26/11/2026)
+
+- TOTP só em dinheiro, cancelamento, preço, permissão e conta. Ações de rotina passam `requireTotp={false}` no `ActionDialog`/`OrderAmountDialog`: aprovar pacote, peso e medidas, despachar, corrigir rastreio; aprovar pedido, pedir aprovação ao cliente, frete estimado do pedido; vitrine (feedbacks e categorias).
+- A regra vem do backend (`AdminRoutineActionDto`); não ligue TOTP no painel em ação cujo DTO não pede, nem desligue onde pede.
+

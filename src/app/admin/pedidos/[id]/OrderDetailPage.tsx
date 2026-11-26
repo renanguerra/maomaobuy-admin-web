@@ -704,6 +704,7 @@ export function OrderDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}
                 open={dialog === 'approve'}
+                requireTotp={false}
                 title={t('orders.detail.dialogs.approve.title')}
             />
             <ActionDialog
@@ -736,6 +737,7 @@ export function OrderDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}
                 open={dialog === 'request-customer-approval'}
+                requireTotp={false}
                 title={t('orders.detail.dialogs.requestCustomerApproval.title')}
             />
             <ActionDialog
@@ -848,6 +850,7 @@ export function OrderDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleShippingEstimateConfirm}
                 open={dialog === 'change-shipping-estimate'}
+                requireTotp={false}
                 title={t('orders.detail.dialogs.changeShippingEstimate.title')}
             />
         </div>

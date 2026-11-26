@@ -1332,6 +1332,7 @@ export function PackageDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleActionConfirm}
                 open={dialog === 'approve'}
+                requireTotp={false}
                 title={t('packages.detail.dialogs.approve.title')}
             />
             <ActionDialog
@@ -1370,6 +1371,7 @@ export function PackageDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleActionConfirm}
                 open={dialog === 'measurements'}
+                requireTotp={false}
                 title={t('packages.detail.dialogs.measurements.title')}
                 fields={[
                     {
@@ -1483,6 +1485,7 @@ export function PackageDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleActionConfirm}
                 open={dialog === 'dispatch'}
+                requireTotp={false}
                 title={t('packages.detail.dialogs.dispatch.title')}
                 fields={[
                     modalityField(pkg),
@@ -1503,6 +1506,7 @@ export function PackageDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleActionConfirm}
                 open={dialog === 'correct-dispatch'}
+                requireTotp={false}
                 title={t('packages.detail.dialogs.correctDispatch.title')}
                 fields={[
                     modalityField(pkg),
