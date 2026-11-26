@@ -813,6 +813,7 @@ export function OrderDetailPage() {
                 }
             />
             <OrderAmountDialog
+                currency={order.currency}
                 confirmLabel={t('orders.detail.dialogs.changePrice.confirmLabel')}
                 currentAmountMinor={order.totalAmountMinor}
                 description={t('orders.detail.dialogs.changePrice.description')}
@@ -842,6 +843,7 @@ export function OrderDetailPage() {
                 title={t('orders.detail.dialogs.cancelItem.title')}
             />
             <OrderAmountDialog
+                currency={order.currency}
                 confirmLabel={t('orders.detail.dialogs.changeShippingEstimate.confirmLabel')}
                 currentAmountMinor={order.shippingEstimateAmountMinor ?? '0'}
                 description={t('orders.detail.dialogs.changeShippingEstimate.description')}

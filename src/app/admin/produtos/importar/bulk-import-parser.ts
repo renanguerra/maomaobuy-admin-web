@@ -10,7 +10,6 @@ import {
     toAmountMinor,
     toInt,
     toNonEmptyString,
-    toOptionalAmountMinor,
     toNullableAmountMinor,
     toOptionalInt,
     type InvoiceFields,
@@ -29,7 +28,6 @@ export interface BulkImportProductBody extends InvoiceFields {
     slug: string;
     description: string;
     sourceAmountMinor: string;
-    estimatedShippingAmountMinor?: string;
     /** Custo unitário em fen, só no painel. */
     costAmountMinor?: string | null;
     stock: number;
@@ -138,10 +136,6 @@ function parseItem(raw: unknown, categories: readonly AdminCategory[]): BulkImpo
             slug,
             description,
             sourceAmountMinor: toAmountMinor(record.sourceAmountMinor, 'sourceAmountMinor'),
-            estimatedShippingAmountMinor: toOptionalAmountMinor(
-                record.estimatedShippingAmountMinor,
-                'estimatedShippingAmountMinor',
-            ),
             costAmountMinor: toNullableAmountMinor(record.costAmountMinor, 'costAmountMinor'),
             stock: toInt(record.stock, 'stock', 0),
             isChinaExclusive: isChinaExclusive ?? false,

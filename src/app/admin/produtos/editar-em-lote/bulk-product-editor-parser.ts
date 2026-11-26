@@ -11,7 +11,6 @@ import {
     toAmountMinor,
     toInt,
     toNonEmptyString,
-    toOptionalAmountMinor,
     toNullableAmountMinor,
     toOptionalInt,
     type InvoiceFields,
@@ -35,7 +34,6 @@ export interface BulkEditProductBody extends Partial<SalesChannelFields>, Invoic
     slug: string;
     description: string;
     sourceAmountMinor: string;
-    estimatedShippingAmountMinor?: string;
     /** `undefined` = não mexe; `null` apaga o custo. */
     costAmountMinor?: string | null;
     stock: number;
@@ -141,10 +139,6 @@ function parseEditItem(raw: unknown, categories: readonly AdminCategory[]): Bulk
         slug,
         description,
         sourceAmountMinor: toAmountMinor(record.sourceAmountMinor, 'sourceAmountMinor'),
-        estimatedShippingAmountMinor: toOptionalAmountMinor(
-            record.estimatedShippingAmountMinor,
-            'estimatedShippingAmountMinor',
-        ),
         costAmountMinor: toNullableAmountMinor(record.costAmountMinor, 'costAmountMinor'),
         stock: toInt(record.stock, 'stock', 0),
         weightGrams,

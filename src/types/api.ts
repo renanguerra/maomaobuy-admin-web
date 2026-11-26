@@ -259,7 +259,6 @@ export interface AdminProduct {
     description: string;
     sourceCurrency: string;
     sourceAmountMinor: string;
-    estimatedShippingAmountMinor: string | null;
     /** Custo unitário em fen — só o painel recebe. Nulo = não cadastrado. */
     costAmountMinor: string | null;
     stock: number;

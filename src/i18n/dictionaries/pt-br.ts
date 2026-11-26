@@ -773,7 +773,6 @@ export const ptBR = {
                 coinPrice: 'Preço em moedas',
                 coinLimit: 'Limite por cliente',
                 noLimit: 'Sem limite',
-                estimatedShipping: 'Frete estimado',
                 stock: 'Estoque',
                 description: 'Descrição',
                 categories: 'Categorias',
@@ -878,9 +877,6 @@ export const ptBR = {
             },
             shippingStock: {
                 title: 'Frete e estoque',
-                estimatedShipping: 'Frete estimado (CNY, opcional)',
-                estimatedShippingHint:
-                    'Só informativo — mostrado ao cliente na página do produto, não é cobrado com o pedido.',
                 stock: 'Estoque',
                 stockHint: 'Unidades disponíveis. Só é debitado quando o pedido é aprovado e liberado para pagamento.',
                 weight: 'Peso embalado (g)',

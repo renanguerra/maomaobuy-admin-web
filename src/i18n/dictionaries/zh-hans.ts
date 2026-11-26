@@ -750,7 +750,6 @@ export const zhHans: Messages = {
                 coinPrice: '积分价格',
                 coinLimit: '每位客户限兑',
                 noLimit: '不限',
-                estimatedShipping: '预估运费',
                 stock: '库存',
                 description: '描述',
                 categories: '分类',
@@ -853,8 +852,6 @@ export const zhHans: Messages = {
             },
             shippingStock: {
                 title: '运费与库存',
-                estimatedShipping: '预估运费（CNY，选填）',
-                estimatedShippingHint: '仅供参考，会显示在客户看到的商品页面，不计入订单收费。',
                 stock: '库存',
                 stockHint: '可用库存数量。仅在订单获批并进入付款流程时才会扣减。',
                 weight: '包装重量（克）',

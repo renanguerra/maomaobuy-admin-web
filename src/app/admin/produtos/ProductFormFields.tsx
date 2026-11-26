@@ -258,15 +258,6 @@ export function ProductFormFields({
 
             <SectionCard title={t('products.new.shippingStock.title')}>
                 <div className="grid gap-4 sm:grid-cols-2">
-                    {isStore && (
-                        <CurrencyInput
-                            currency="BRL"
-                            hint={t('products.new.shippingStock.estimatedShippingHint')}
-                            label={t('products.new.shippingStock.estimatedShipping')}
-                            minor={values.estimatedShippingAmountMinor}
-                            onMinorChange={(minor) => patch({ estimatedShippingAmountMinor: minor })}
-                        />
-                    )}
                     {!isBox && (
                         <Input
                             hint={t('products.new.shippingStock.stockHint')}

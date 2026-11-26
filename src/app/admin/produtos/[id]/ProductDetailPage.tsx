@@ -260,17 +260,6 @@ export function ProductDetailPage({ kind = 'STORE' }: { kind?: ProductKind }) {
                                       },
                                   ]
                                 : []),
-                            ...(product.kind === 'STORE'
-                                ? [
-                                      {
-                                          label: t('products.detail.view.estimatedShipping'),
-                                          value: product.estimatedShippingAmountMinor
-                                              ? `${minorToAmount(product.estimatedShippingAmountMinor)} BRL`
-                                              : t('common.dash'),
-                                          numeric: true,
-                                      },
-                                  ]
-                                : []),
                             ...(product.kind === 'BOX'
                                 ? [
                                       {
