@@ -1289,8 +1289,6 @@ export interface AdminCoinSummary {
         pending: number;
         lifetimeEarned: number;
         lifetimeSpent: number;
-        /** Prazo de resgate de quem virou lojista; no passado, o saldo já expirou. */
-        redeemDeadlineAt: string | null;
     };
     transactions: AdminCoinTransaction[];
 }

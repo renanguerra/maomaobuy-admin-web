@@ -55,8 +55,6 @@ const KNOWN = {
     influencer_discount_basis_points: { group: 'influencers', unit: 'percent' },
     influencer_commission_basis_points: { group: 'influencers', unit: 'percent' },
     influencer_coupon_max_uses_per_user: { group: 'influencers' },
-    wholesale_coin_redeem_grace_days: { group: 'wholesale', unit: 'days' },
-    wholesale_coin_reminder_days_before: { group: 'wholesale', unit: 'days' },
     user_address_limit: { group: 'other' },
 } as const satisfies Record<string, { group: SettingGroup; unit?: SettingUnit }>;
 

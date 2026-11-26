@@ -119,15 +119,6 @@ export function UserCoinsCard({ userId }: { userId: string }) {
                             value: String(summary.wallet.lifetimeSpent),
                             numeric: true,
                         },
-                        ...(summary.wallet.redeemDeadlineAt
-                            ? [
-                                  {
-                                      label: t('users.detail.coinsSection.redeemDeadline'),
-                                      value: formatDate(summary.wallet.redeemDeadlineAt),
-                                      numeric: true,
-                                  },
-                              ]
-                            : []),
                     ]}
                 />
 
