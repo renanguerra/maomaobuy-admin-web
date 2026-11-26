@@ -120,6 +120,11 @@ export const ptBR = {
         signingOut: 'Saindo…',
         pendingAria: 'pendências',
     },
+    packagesTabs: {
+        label: 'Assuntos de pacotes',
+        packages: 'Pacotes',
+        unpacked: 'Sem pacote',
+    },
     freightTabs: {
         label: 'Assuntos de frete',
         shippingTable: 'Tabela de frete',
@@ -3264,6 +3269,7 @@ export const ptBR = {
         },
     },
     settings: {
+        optionalServicesLink: 'Serviços adicionais',
         title: 'Configurações',
         description: 'Taxas, prazos e limites usados nos cálculos do site — mudar aqui evita editar direto no banco.',
         loading: 'Carregando configurações…',
@@ -3419,6 +3425,12 @@ export const ptBR = {
         },
     },
     shippingTable: {
+        tabs: {
+            label: 'Partes da tabela de frete',
+            table: 'Modalidades e linhas',
+            simulate: 'Simular',
+            performance: 'Desempenho',
+        },
         page: {
             title: 'Tabela de frete',
             description:
@@ -3494,6 +3506,7 @@ export const ptBR = {
             sectionPrice: 'Preço de custo (tabela do fornecedor)',
             sectionDays: 'Prazo e imposto',
             sectionNotes: 'Informações internas',
+            sectionNotesHint: 'interno, não vai para o site',
             modality: 'Modalidade',
             noModality: 'Nenhuma (uso interno)',
             supplier: 'Fornecedor',

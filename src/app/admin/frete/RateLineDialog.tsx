@@ -135,6 +135,26 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
     );
 }
 
+/**
+ * Notas internas da linha (resumo, vantagens, requisitos...): não vão para o
+ * site, só ajudam a equipe a escolher a linha. Começam recolhidas (26/11/2026)
+ * para o diálogo abrir no que muda a conta: preço, limites e prazo.
+ */
+function FoldedSection({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
+    return (
+        <details className="group border-t border-line pt-4 dark:border-night-line">
+            <summary className="cursor-pointer list-none text-xs font-semibold text-muted uppercase dark:text-night-muted">
+                <span className="mr-1 inline-block transition group-open:rotate-90" aria-hidden="true">
+                    ›
+                </span>
+                {title}
+                <span className="ml-2 font-normal normal-case">{hint}</span>
+            </summary>
+            <div className="mt-3 grid gap-3">{children}</div>
+        </details>
+    );
+}
+
 export function RateLineDialog({
     line,
     preset,
@@ -439,7 +459,10 @@ export function RateLineDialog({
                     />
                 </Section>
 
-                <Section title={t('shippingTable.lineForm.sectionNotes')}>
+                <FoldedSection
+                    hint={t('shippingTable.lineForm.sectionNotesHint')}
+                    title={t('shippingTable.lineForm.sectionNotes')}
+                >
                     <Textarea
                         label={optional(t('shippingTable.lineForm.summary'))}
                         maxLength={2000}
@@ -481,7 +504,7 @@ export function RateLineDialog({
                         rows={3}
                         value={form.notes}
                     />
-                </Section>
+                </FoldedSection>
             </form>
         </Modal>
     );

@@ -118,6 +118,11 @@ export const zhHans: Messages = {
         signingOut: '正在退出…',
         pendingAria: '项待处理',
     },
+    packagesTabs: {
+        label: '包裹相关',
+        packages: '包裹',
+        unpacked: '未打包',
+    },
     freightTabs: {
         label: '运费相关',
         shippingTable: '运费表',
@@ -3162,6 +3167,7 @@ export const zhHans: Messages = {
         },
     },
     settings: {
+        optionalServicesLink: '增值服务',
         title: '设置',
         description: '网站计算使用的费率、期限和限额 —— 在这里修改，避免直接操作数据库。',
         loading: '正在加载设置…',
@@ -3315,6 +3321,12 @@ export const zhHans: Messages = {
         },
     },
     shippingTable: {
+        tabs: {
+            label: '运费表分区',
+            table: '模式与线路',
+            simulate: '模拟',
+            performance: '表现',
+        },
         page: {
             title: '运费表',
             description:
@@ -3390,6 +3402,7 @@ export const zhHans: Messages = {
             sectionPrice: '成本价（供应商价格表）',
             sectionDays: '时效与税费',
             sectionNotes: '内部信息',
+            sectionNotesHint: '内部使用，不会显示在网站上',
             modality: '运输方式',
             noModality: '无（仅内部使用）',
             supplier: '供应商',

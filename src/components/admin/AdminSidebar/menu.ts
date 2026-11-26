@@ -17,7 +17,6 @@ import {
     Settings,
     ShieldCheck,
     ShoppingBasket,
-    Sparkles,
     Star,
     Store,
     Tags,
@@ -44,7 +43,14 @@ export const MENU_AREAS: readonly MenuArea[] = [
         items: [
             { key: 'dashboard', href: '/admin', icon: LayoutDashboard },
             { key: 'orders', href: '/admin/pedidos', icon: ClipboardList, badge: 'orders' },
-            { key: 'packages', href: '/admin/pacotes', icon: Boxes, badge: 'packages' },
+            {
+                key: 'packages',
+                href: '/admin/pacotes',
+                icon: Boxes,
+                badge: 'packages',
+                // "Sem pacote" é aba de Pacotes (26/11/2026).
+                also: ['/admin/sem-pacote'],
+            },
             { key: 'unpacked', href: '/admin/sem-pacote', icon: PackageOpen },
             {
                 key: 'productRequests',
@@ -92,14 +98,18 @@ export const MENU_AREAS: readonly MenuArea[] = [
         key: 'settings',
         icon: Settings,
         items: [
-            { key: 'settings', href: '/admin/configuracoes', icon: Settings },
+            {
+                key: 'settings',
+                href: '/admin/configuracoes',
+                icon: Settings,
+                also: ['/admin/servicos-adicionais'],
+            },
             {
                 key: 'freight',
                 href: '/admin/frete',
                 icon: Truck,
                 also: ['/admin/embalagens', '/admin/transportadoras'],
             },
-            { key: 'optionalServices', href: '/admin/servicos-adicionais', icon: Sparkles },
             { key: 'paymentMethods', href: '/admin/meios-de-pagamento', icon: CreditCard },
             { key: 'admins', href: '/admin/admins', icon: ShieldCheck },
         ],

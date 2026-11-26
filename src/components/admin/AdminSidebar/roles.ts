@@ -27,6 +27,8 @@ const WRITE_ROLES: Partial<Record<MenuItemKey, readonly string[]>> = {
     checkoutAddons: ['CATALOG'],
     boxes: ['CATALOG'],
     categories: ['CATALOG'],
+    // Fora do menu enquanto não há serviço (decisão de 14/11/2026): o
+    // link fica em Configurações, para o SUPERADMIN.
     optionalServices: [],
     coupons: ['FINANCE'],
     finance: ['FINANCE'],
@@ -36,7 +38,10 @@ const WRITE_ROLES: Partial<Record<MenuItemKey, readonly string[]>> = {
     settings: [],
 };
 
-export function canSeeMenuItem(role: string | undefined, key: MenuItemKey) {
+export function canSeeMenuItem(role: string | undefined, key: MenuItemKey): boolean {
+    // "Sem pacote" é aba de Pacotes; vira item próprio só para quem não vê
+    // Pacotes no menu (é balcão comum: o atendimento lembra o cliente).
+    if (key === 'unpacked') return !canSeeMenuItem(role, 'packages');
     if (role === 'SUPERADMIN') return true;
     const allowed = WRITE_ROLES[key];
     if (!allowed) return true;

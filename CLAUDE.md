@@ -11,6 +11,8 @@
 
 - O menu (`components/admin/AdminSidebar/menu.ts`) é por área de trabalho: Operação, Loja, Clientes, Finanças e Ajustes. Só o agrupamento mora ali: **endereço não muda**, e a área sai dele (`areaOfPath`). Dois níveis e nada mais; assunto dentro de uma tela vira aba (`PageTabs`, `FreightTabs`).
 - Ajustes troca a barra inteira e volta para a última tela de trabalho. Frete é um item só com três endereços (`also`).
+- Abas por endereço usam `RouteTabs` (`FreightTabs`, `PackagesTabs`). Pacotes tem a aba "Sem pacote" (`also`); quem não vê Pacotes no menu (só WAREHOUSE escreve) continua vendo "Sem pacote" como item próprio (`canSeeMenuItem`). Serviços adicionais saiu do menu (lista vazia desde 14/11) e abre por um link em Configurações, só SUPERADMIN.
+- Tabela de frete: modalidades e linhas, Simular e Desempenho são abas da mesma tela (`PageTabs`). No diálogo da linha, as notas internas (não vão para o site) ficam recolhidas.
 - Tela nova entra em `menu.ts`, `AdminSidebar.types.ts`, nos dois dicionários (`sidebar.items`) e, se só alguns papéis escrevem, em `roles.ts`. Área sem item visível some; não deixe um papel com uma área de um item que ele não usa.
 - Fixados (até 6) ficam no `localStorage` e os últimos acessos no `sessionStorage` (levam nome de cliente, saem no logout), os dois por admin: `services/admin/panel-prefs.ts`.
 - Busca geral (`CommandPalette`, Ctrl+K) usa a busca das listas (`/orders`, `/packages`, `/users`, `/products`) e só mostra o que o papel vê no menu.
