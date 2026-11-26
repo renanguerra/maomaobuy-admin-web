@@ -118,6 +118,11 @@ export const zhHans: Messages = {
         signingOut: '正在退出…',
         pendingAria: '项待处理',
     },
+    packagesTabs: {
+        label: '包裹相关',
+        packages: '包裹',
+        unpacked: '未打包',
+    },
     freightTabs: {
         label: '运费相关',
         shippingTable: '运费表',
@@ -750,7 +755,6 @@ export const zhHans: Messages = {
                 coinPrice: '积分价格',
                 coinLimit: '每位客户限兑',
                 noLimit: '不限',
-                estimatedShipping: '预估运费',
                 stock: '库存',
                 description: '描述',
                 categories: '分类',
@@ -853,8 +857,6 @@ export const zhHans: Messages = {
             },
             shippingStock: {
                 title: '运费与库存',
-                estimatedShipping: '预估运费（CNY，选填）',
-                estimatedShippingHint: '仅供参考，会显示在客户看到的商品页面，不计入订单收费。',
                 stock: '库存',
                 stockHint: '可用库存数量。仅在订单获批并进入付款流程时才会扣减。',
                 weight: '包装重量（克）',
@@ -875,6 +877,19 @@ export const zhHans: Messages = {
                 notInformed: '未填写',
                 no: '否',
                 yes: '是',
+            },
+            availability: {
+                title: '供货方式',
+                description: '商品如何到仓。默认现货。',
+                label: '供货方式',
+                options: { READY: '现货', PRESALE: '预售', ON_DEMAND: '按需采购' },
+                readyHint: '自有库存，无标签。',
+                preSaleHint: '网站显示“预售”标签和发售日期。',
+                onDemandHint: '客户下单后才采购。网站显示“按需采购”标签和到仓时效。',
+            },
+            fold: {
+                show: '显示字段',
+                hide: '收起',
             },
             preSale: {
                 title: '预售',
@@ -981,6 +996,8 @@ export const zhHans: Messages = {
             slugHint: '用于公开访问的链接地址，根据名称自动生成。',
             submitButton: '创建分类',
             wholesaleOnlyLabel: '仅对企业账户显示',
+            invoiceDefaults: '发票默认值',
+            invoiceDefaultsHint: '此分类的新商品会自动带上这些发票信息，只填写商品中为空的字段。',
             wholesaleOnlyHint: '此分类只在批发页面显示。商品在哪里显示仍由其销售渠道决定。',
         },
         wholesaleOnlyBadge: '仅企业账户',
@@ -1449,6 +1466,7 @@ export const zhHans: Messages = {
                 markOutForDelivery: '标记为派送中',
                 markDelivered: '标记为已签收',
                 quoteFreight: '录入重量和运费',
+                approveAndQuote: '批准并报价',
                 requoteFreight: '修改运费',
                 editMeasurements: '修正重量和尺寸',
                 dispatch: '发货',
@@ -1620,6 +1638,7 @@ export const zhHans: Messages = {
             },
             feedback: {
                 approve: '包裹已批准。',
+                approveAndQuote: '包裹已批准并报价，客户现在可以支付运费。',
                 reject: '包裹已拒绝并关闭；商品已重新可用。',
                 cancel: '包裹已取消；商品已重新可用。',
                 shipment: '运费信息已更新。',
@@ -1669,6 +1688,18 @@ export const zhHans: Messages = {
                     rateLinePlaceholder: '选择线路',
                     rateLineOnRequest: '需询价',
                     rateLineOther: '其他（无已登记线路）',
+                    tableCalculating: '正在按线路价格表计算…',
+                    tablePriced: '已按线路价格表计算。供应商报价不同时可以修改。',
+                    tableManual: '已手动填写。修改重量、尺寸或线路可恢复价格表的金额。',
+                    tableOnRequest: '该线路需询价：请填写供应商给出的金额。',
+                    tableLearned: '该线路需询价：近期发货参考价为 {{amount}}。请填写供应商给出的金额。',
+                    tableRejected: '该线路价格表不接受此包裹：{{reason}}',
+                    tableFailed: '无法按价格表计算，请手动填写。',
+                },
+                approveQuote: {
+                    title: '批准并报价',
+                    description: '一次完成核对商品、登记重量尺寸并向客户发送报价。验证码用于报价。',
+                    confirmLabel: '批准并发送报价',
                 },
                 measurements: {
                     title: '修正重量和尺寸',
@@ -3139,6 +3170,7 @@ export const zhHans: Messages = {
         },
     },
     settings: {
+        optionalServicesLink: '增值服务',
         title: '设置',
         description: '网站计算使用的费率、期限和限额 —— 在这里修改，避免直接操作数据库。',
         loading: '正在加载设置…',
@@ -3292,6 +3324,12 @@ export const zhHans: Messages = {
         },
     },
     shippingTable: {
+        tabs: {
+            label: '运费表分区',
+            table: '模式与线路',
+            simulate: '模拟',
+            performance: '表现',
+        },
         page: {
             title: '运费表',
             description:
@@ -3367,6 +3405,7 @@ export const zhHans: Messages = {
             sectionPrice: '成本价（供应商价格表）',
             sectionDays: '时效与税费',
             sectionNotes: '内部信息',
+            sectionNotesHint: '内部使用，不会显示在网站上',
             modality: '运输方式',
             noModality: '无（仅内部使用）',
             supplier: '供应商',

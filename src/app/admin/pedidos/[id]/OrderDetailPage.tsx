@@ -704,6 +704,7 @@ export function OrderDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}
                 open={dialog === 'approve'}
+                requireTotp={false}
                 title={t('orders.detail.dialogs.approve.title')}
             />
             <ActionDialog
@@ -736,6 +737,7 @@ export function OrderDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleApprovalConfirm}
                 open={dialog === 'request-customer-approval'}
+                requireTotp={false}
                 title={t('orders.detail.dialogs.requestCustomerApproval.title')}
             />
             <ActionDialog
@@ -811,6 +813,7 @@ export function OrderDetailPage() {
                 }
             />
             <OrderAmountDialog
+                currency={order.currency}
                 confirmLabel={t('orders.detail.dialogs.changePrice.confirmLabel')}
                 currentAmountMinor={order.totalAmountMinor}
                 description={t('orders.detail.dialogs.changePrice.description')}
@@ -840,6 +843,7 @@ export function OrderDetailPage() {
                 title={t('orders.detail.dialogs.cancelItem.title')}
             />
             <OrderAmountDialog
+                currency={order.currency}
                 confirmLabel={t('orders.detail.dialogs.changeShippingEstimate.confirmLabel')}
                 currentAmountMinor={order.shippingEstimateAmountMinor ?? '0'}
                 description={t('orders.detail.dialogs.changeShippingEstimate.description')}
@@ -848,6 +852,7 @@ export function OrderDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleShippingEstimateConfirm}
                 open={dialog === 'change-shipping-estimate'}
+                requireTotp={false}
                 title={t('orders.detail.dialogs.changeShippingEstimate.title')}
             />
         </div>

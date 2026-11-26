@@ -6,6 +6,7 @@ import { PackageOpen, PackagePlus } from 'lucide-react';
 import { ageTone, useFormatAge } from '@/components/admin/AgeBadge';
 import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
+import { PackagesTabs } from '@/components/admin/PackagesTabs';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
@@ -47,6 +48,7 @@ export function UnpackedItemsPage() {
 
     return (
         <div className="grid gap-6">
+            <PackagesTabs />
             <PageHeader description={t('unpacked.description')} title={t('unpacked.title')} />
 
             {error && (

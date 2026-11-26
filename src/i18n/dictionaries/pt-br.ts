@@ -120,6 +120,11 @@ export const ptBR = {
         signingOut: 'Saindo…',
         pendingAria: 'pendências',
     },
+    packagesTabs: {
+        label: 'Assuntos de pacotes',
+        packages: 'Pacotes',
+        unpacked: 'Sem pacote',
+    },
     freightTabs: {
         label: 'Assuntos de frete',
         shippingTable: 'Tabela de frete',
@@ -773,7 +778,6 @@ export const ptBR = {
                 coinPrice: 'Preço em moedas',
                 coinLimit: 'Limite por cliente',
                 noLimit: 'Sem limite',
-                estimatedShipping: 'Frete estimado',
                 stock: 'Estoque',
                 description: 'Descrição',
                 categories: 'Categorias',
@@ -878,9 +882,6 @@ export const ptBR = {
             },
             shippingStock: {
                 title: 'Frete e estoque',
-                estimatedShipping: 'Frete estimado (CNY, opcional)',
-                estimatedShippingHint:
-                    'Só informativo — mostrado ao cliente na página do produto, não é cobrado com o pedido.',
                 stock: 'Estoque',
                 stockHint: 'Unidades disponíveis. Só é debitado quando o pedido é aprovado e liberado para pagamento.',
                 weight: 'Peso embalado (g)',
@@ -902,6 +903,20 @@ export const ptBR = {
                 notInformed: 'Não informado',
                 no: 'Não',
                 yes: 'Sim',
+            },
+            availability: {
+                title: 'Disponibilidade',
+                description: 'Como o produto chega ao armazém. Pronta entrega é o padrão.',
+                label: 'Disponibilidade',
+                options: { READY: 'Pronta entrega', PRESALE: 'Pré-venda', ON_DEMAND: 'Sob demanda' },
+                readyHint: 'Produto em estoque próprio, sem selo.',
+                preSaleHint: 'O site mostra o selo "Pré-venda" e a data de lançamento.',
+                onDemandHint:
+                    'Comprado depois do pedido do cliente. O site mostra o selo "Sob demanda" e o prazo até o armazém.',
+            },
+            fold: {
+                show: 'Mostrar campos',
+                hide: 'Ocultar',
             },
             preSale: {
                 title: 'Pré-venda',
@@ -1019,6 +1034,9 @@ export const ptBR = {
             slugHint: 'Usado na URL pública. Gerado automaticamente a partir do nome.',
             submitButton: 'Criar categoria',
             wholesaleOnlyLabel: 'Exibir só para PJ',
+            invoiceDefaults: 'Padrões do invoice',
+            invoiceDefaultsHint:
+                'Produto novo desta categoria já vem com estes dados no invoice. Só preenche o que estiver vazio no produto.',
             wholesaleOnlyHint:
                 'A categoria aparece só na vitrine de atacado. Onde cada produto aparece continua definido pelo canal de venda dele.',
         },
@@ -1502,6 +1520,7 @@ export const ptBR = {
                 markOutForDelivery: 'Marcar saiu para entrega',
                 markDelivered: 'Marcar como entregue',
                 quoteFreight: 'Informar peso e frete',
+                approveAndQuote: 'Aprovar e cotar',
                 requoteFreight: 'Editar frete',
                 editMeasurements: 'Corrigir peso e medidas',
                 dispatch: 'Despachar',
@@ -1675,6 +1694,7 @@ export const ptBR = {
             },
             feedback: {
                 approve: 'Pacote aprovado.',
+                approveAndQuote: 'Pacote aprovado e cotado; o cliente já pode pagar o frete.',
                 reject: 'Pacote rejeitado e encerrado; os itens voltaram a ficar disponíveis.',
                 cancel: 'Pacote cancelado; os itens voltaram a ficar disponíveis.',
                 shipment: 'Dados de frete atualizados.',
@@ -1727,6 +1747,19 @@ export const ptBR = {
                     rateLinePlaceholder: 'Escolha a linha',
                     rateLineOnRequest: 'sob consulta',
                     rateLineOther: 'Outra (nenhuma linha cadastrada)',
+                    tableCalculating: 'Calculando pela tabela da linha…',
+                    tablePriced: 'Calculado pela tabela da linha. Pode ajustar se o fornecedor cobrou outro valor.',
+                    tableManual: 'Valor digitado. Mude peso, medidas ou linha para voltar ao valor da tabela.',
+                    tableOnRequest: 'Linha sob consulta: informe o valor que o fornecedor passou.',
+                    tableLearned: 'Linha sob consulta: os últimos envios sugerem {{amount}}. Informe o valor que o fornecedor passou.',
+                    tableRejected: 'A tabela desta linha não aceita este pacote: {{reason}}',
+                    tableFailed: 'Não deu para calcular pela tabela. Informe o valor.',
+                },
+                approveQuote: {
+                    title: 'Aprovar e cotar',
+                    description:
+                        'Confere os itens, registra peso e medidas e manda a cotação ao cliente numa ação só. O código do autenticador vale para a cotação.',
+                    confirmLabel: 'Aprovar e enviar cotação',
                 },
                 measurements: {
                     title: 'Corrigir peso e medidas',
@@ -3240,6 +3273,7 @@ export const ptBR = {
         },
     },
     settings: {
+        optionalServicesLink: 'Serviços adicionais',
         title: 'Configurações',
         description: 'Taxas, prazos e limites usados nos cálculos do site — mudar aqui evita editar direto no banco.',
         loading: 'Carregando configurações…',
@@ -3395,6 +3429,12 @@ export const ptBR = {
         },
     },
     shippingTable: {
+        tabs: {
+            label: 'Partes da tabela de frete',
+            table: 'Modalidades e linhas',
+            simulate: 'Simular',
+            performance: 'Desempenho',
+        },
         page: {
             title: 'Tabela de frete',
             description:
@@ -3470,6 +3510,7 @@ export const ptBR = {
             sectionPrice: 'Preço de custo (tabela do fornecedor)',
             sectionDays: 'Prazo e imposto',
             sectionNotes: 'Informações internas',
+            sectionNotesHint: 'interno, não vai para o site',
             modality: 'Modalidade',
             noModality: 'Nenhuma (uso interno)',
             supplier: 'Fornecedor',

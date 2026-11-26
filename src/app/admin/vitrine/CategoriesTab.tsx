@@ -4,8 +4,6 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Alert } from '@/components/admin/Alert';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { StatusPill } from '@/components/admin/StatusPill';
-import { useTotpEnrollmentGate } from '@/components/admin/ActionDialog';
-import { TotpEnrollmentDialog } from '@/components/admin/TotpEnrollmentDialog';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
@@ -115,12 +113,10 @@ function CategoryDialog({
     onSaved: () => void;
 }) {
     const { t } = useTranslation();
-    const needsEnrollment = useTotpEnrollmentGate(true, true);
     const [imageKey, setImageKey] = useState<string | null>(category.image?.key ?? null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string>();
 
-    if (needsEnrollment) return <TotpEnrollmentDialog onCancel={onClose} onEnrolled={() => undefined} open />;
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -135,7 +131,6 @@ function CategoryDialog({
                 body: JSON.stringify({
                     imageKey,
                     imageAlt: imageKey ? imageAlt : null,
-                    totpCode: String(data.get('totpCode') ?? ''),
                 }),
             });
             onSaved();
@@ -178,15 +173,6 @@ function CategoryDialog({
                     label={t('storefront.image.alt')}
                     maxLength={300}
                     name="imageAlt"
-                />
-                <Input
-                    autoComplete="one-time-code"
-                    inputMode="numeric"
-                    label={t('common.fields.totpCode')}
-                    maxLength={6}
-                    name="totpCode"
-                    pattern="\d{6}"
-                    required
                 />
                 {error && (
                     <Alert tone="danger">

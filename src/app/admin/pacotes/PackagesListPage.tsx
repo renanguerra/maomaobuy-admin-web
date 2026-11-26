@@ -8,6 +8,7 @@ import { Alert } from '@/components/admin/Alert';
 import { CopyButton } from '@/components/admin/CopyButton';
 import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
 import { EmptyState } from '@/components/admin/EmptyState';
+import { PackagesTabs } from '@/components/admin/PackagesTabs';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { Pagination } from '@/components/admin/Pagination';
 import { SectionCard } from '@/components/admin/SectionCard';
@@ -270,6 +271,7 @@ export function PackagesListPage() {
 
     return (
         <div className="grid gap-6">
+            <PackagesTabs />
             <PageHeader description={t('packages.list.description')} title={t('packages.list.title')} />
 
             {error && (

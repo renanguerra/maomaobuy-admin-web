@@ -90,8 +90,6 @@ export function NewProductPage({ kind = 'STORE' }: { kind?: ProductKind }) {
                     // O produto nasce como rascunho: publicar antes da mídia deixaria
                     // a loja com um item sem foto.
                     isPublished: false,
-                    estimatedShippingAmountMinor:
-                        payload.estimatedShippingAmountMinor !== '0' ? payload.estimatedShippingAmountMinor : undefined,
                     variants:
                         variants.length > 0
                             ? variants.map((variant) => ({

@@ -6,6 +6,7 @@ import { Alert } from '@/components/admin/Alert';
 import { EmptyState } from '@/components/admin/EmptyState';
 import { FreightTabs } from '@/components/admin/FreightTabs';
 import { PageHeader } from '@/components/admin/PageHeader';
+import { PageTabs } from '@/components/admin/PageTabs';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
 import { StatusPill } from '@/components/admin/StatusPill';
@@ -41,8 +42,11 @@ type Editing =
  * trás delas. O site (página /frete e carrinho) mostra, por modalidade ativa,
  * a linha ativa mais barata que aceita o volume, com a margem de frete.
  */
+type FreightTab = 'table' | 'simulate' | 'performance';
+
 export function ShippingTablePage() {
     const { t } = useTranslation();
+    const [tab, setTab] = useState<FreightTab>('table');
     const { notify } = useToast();
     const { admin } = useAdminAccountAuth();
     const canWrite = canWriteShippingTable(admin?.role);
@@ -148,211 +152,278 @@ export function ShippingTablePage() {
             {!table && !error && <SkeletonCards label={t('shippingTable.page.title')} />}
 
             {table && (
-                <SectionCard
-                    description={t('shippingTable.modalities.hint')}
-                    flush
-                    icon={<Layers aria-hidden="true" />}
-                    title={t('shippingTable.modalities.title')}
-                >
-                    {table.modalities.length === 0 ? (
-                        <div className="p-4">
-                            <EmptyState title={t('shippingTable.modalities.empty')} />
-                        </div>
-                    ) : (
-                        <ul className="m-0 list-none p-0">
-                            {table.modalities.map((modality) => (
-                                <li
-                                    className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3 last:border-0 dark:border-night-line"
-                                    key={modality.id}
-                                >
-                                    <div className="min-w-0 flex-1">
-                                        <p className="m-0 flex flex-wrap items-center gap-2 font-semibold text-ink dark:text-night-text">
-                                            {modality.name}
-                                            <span className="mm-data text-xs font-normal text-muted dark:text-night-muted">
-                                                {modality.code}
-                                            </span>
-                                            <StatusPill tone={modality.isActive ? 'success' : 'neutral'}>
-                                                {modality.isActive
-                                                    ? t('shippingTable.status.active')
-                                                    : t('shippingTable.status.inactive')}
-                                            </StatusPill>
-                                        </p>
-                                        {modality.description && (
-                                            <p className="m-0 mt-0.5 text-sm text-muted dark:text-night-muted">
-                                                {modality.description}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <span
-                                        className={`text-xs ${
-                                            modality.activeLineCount === 0
-                                                ? 'font-semibold text-amber-700 dark:text-night-warning'
-                                                : 'text-muted dark:text-night-muted'
-                                        }`}
+                <PageTabs<FreightTab>
+                    label={t('shippingTable.tabs.label')}
+                    onChange={setTab}
+                    tabs={[
+                        {
+                            key: 'table',
+                            label: t('shippingTable.tabs.table'),
+                            content: (
+                                <>
+                                    <SectionCard
+                                        description={t('shippingTable.modalities.hint')}
+                                        flush
+                                        icon={<Layers aria-hidden="true" />}
+                                        title={t('shippingTable.modalities.title')}
                                     >
-                                        {modality.activeLineCount === 0
-                                            ? t('shippingTable.modalities.noLines')
-                                            : t('shippingTable.modalities.lines', {
-                                                  active: modality.activeLineCount,
-                                                  total: modality.lineCount,
-                                              })}
-                                    </span>
-                                    {canWrite && (
-                                        <Button
-                                            onClick={() => setEditing({ type: 'modality', modality })}
-                                            size="small"
-                                            variant="ghost"
-                                        >
-                                            {t('shippingTable.page.edit')}
-                                        </Button>
-                                    )}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </SectionCard>
-            )}
-
-            {table && <ShippingPerformanceSection />}
-
-            {table && <ShippingTableSimulator modalityNames={modalityNames} />}
-
-            {table && (
-                <SectionCard
-                    description={t('shippingTable.lines.hint')}
-                    flush
-                    icon={<Truck aria-hidden="true" />}
-                    title={t('shippingTable.lines.title')}
-                >
-                    {table.lines.length === 0 ? (
-                        <div className="p-4">
-                            <EmptyState title={t('shippingTable.lines.empty')} />
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[52rem] border-collapse text-sm">
-                                <thead>
-                                    <tr className="border-b border-line text-left text-xs text-muted dark:border-night-line dark:text-night-muted">
-                                        <th className="px-4 py-2 font-semibold">{t('shippingTable.lines.code')}</th>
-                                        <th className="px-4 py-2 font-semibold">{t('shippingTable.lines.price')}</th>
-                                        <th className="px-4 py-2 font-semibold">{t('shippingTable.lines.weight')}</th>
-                                        <th className="px-4 py-2 font-semibold">{t('shippingTable.lines.days')}</th>
-                                        <th className="px-4 py-2 font-semibold">{t('shippingTable.lines.updated')}</th>
-                                        <th className="px-4 py-2" />
-                                    </tr>
-                                </thead>
-                                {groups.map((group) => (
-                                    <tbody key={group.key}>
-                                        <tr className="bg-background dark:bg-night-soft">
-                                            <th
-                                                className="px-4 py-1.5 text-left text-xs font-semibold text-muted uppercase dark:text-night-muted"
-                                                colSpan={6}
-                                                scope="rowgroup"
-                                            >
-                                                {group.title}
-                                            </th>
-                                        </tr>
-                                        {group.lines.map((line) => (
-                                            <tr
-                                                className="border-b border-line align-top last:border-0 dark:border-night-line"
-                                                key={line.id}
-                                            >
-                                                <th className="px-4 py-2 text-left font-normal" scope="row">
-                                                    <span className="mm-data font-semibold text-ink dark:text-night-text">
-                                                        {line.code}
-                                                    </span>{' '}
-                                                    <span className="text-ink dark:text-night-text">{line.name}</span>
-                                                    <span className="mt-1 flex flex-wrap gap-1">
-                                                        {!line.isActive && (
-                                                            <StatusPill tone="neutral">
-                                                                {t('shippingTable.status.inactive')}
-                                                            </StatusPill>
-                                                        )}
-                                                        {line.isPreferred && (
-                                                            <StatusPill tone="success">
-                                                                {t('shippingTable.status.preferred')}
-                                                            </StatusPill>
-                                                        )}
-                                                        {line.supplierName && (
-                                                            <StatusPill tone="neutral" hideDot>
-                                                                {line.supplierName}
-                                                            </StatusPill>
-                                                        )}
-                                                        {line.integration && (
-                                                            <StatusPill tone="info" hideDot>
-                                                                {t('shippingTable.lines.api')}
-                                                            </StatusPill>
-                                                        )}
-                                                    </span>
-                                                </th>
-                                                <td className="mm-data px-4 py-2">
-                                                    {summarize(line.pricing)}
-                                                    {line.pricing.kind === 'ON_REQUEST' && (
-                                                        <span className="block text-xs text-muted dark:text-night-muted">
-                                                            {line.learnedPricing &&
-                                                            line.learnedPricing.samples >= line.pricing.minSamples
-                                                                ? t('shippingTable.learned.short', {
-                                                                      fixed: yuan(line.learnedPricing.fixedMinor),
-                                                                      perKg: yuan(line.learnedPricing.perKgMinor),
-                                                                      count: line.learnedPricing.samples,
-                                                                  })
-                                                                : t('shippingTable.learned.shortMissing', {
-                                                                      count: line.learnedPricing?.samples ?? 0,
-                                                                      needed: line.pricing.minSamples,
+                                        {table.modalities.length === 0 ? (
+                                            <div className="p-4">
+                                                <EmptyState title={t('shippingTable.modalities.empty')} />
+                                            </div>
+                                        ) : (
+                                            <ul className="m-0 list-none p-0">
+                                                {table.modalities.map((modality) => (
+                                                    <li
+                                                        className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3 last:border-0 dark:border-night-line"
+                                                        key={modality.id}
+                                                    >
+                                                        <div className="min-w-0 flex-1">
+                                                            <p className="m-0 flex flex-wrap items-center gap-2 font-semibold text-ink dark:text-night-text">
+                                                                {modality.name}
+                                                                <span className="mm-data text-xs font-normal text-muted dark:text-night-muted">
+                                                                    {modality.code}
+                                                                </span>
+                                                                <StatusPill
+                                                                    tone={modality.isActive ? 'success' : 'neutral'}
+                                                                >
+                                                                    {modality.isActive
+                                                                        ? t('shippingTable.status.active')
+                                                                        : t('shippingTable.status.inactive')}
+                                                                </StatusPill>
+                                                            </p>
+                                                            {modality.description && (
+                                                                <p className="m-0 mt-0.5 text-sm text-muted dark:text-night-muted">
+                                                                    {modality.description}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <span
+                                                            className={`text-xs ${
+                                                                modality.activeLineCount === 0
+                                                                    ? 'font-semibold text-amber-700 dark:text-night-warning'
+                                                                    : 'text-muted dark:text-night-muted'
+                                                            }`}
+                                                        >
+                                                            {modality.activeLineCount === 0
+                                                                ? t('shippingTable.modalities.noLines')
+                                                                : t('shippingTable.modalities.lines', {
+                                                                      active: modality.activeLineCount,
+                                                                      total: modality.lineCount,
                                                                   })}
                                                         </span>
-                                                    )}
-                                                </td>
-                                                <td className="mm-data px-4 py-2 whitespace-nowrap">
-                                                    {kilograms(line.maxWeightGrams)}
-                                                    {line.volumetricDivisor ? ` · ÷${line.volumetricDivisor}` : ''}
-                                                </td>
-                                                <td className="px-4 py-2 whitespace-nowrap">
-                                                    {t('carrier.channel.daysValue', {
-                                                        min: line.daysMin,
-                                                        max: line.daysMax,
-                                                    })}
-                                                </td>
-                                                <td className="px-4 py-2 whitespace-nowrap text-muted dark:text-night-muted">
-                                                    {line.ratesUpdatedAt
-                                                        ? new Date(line.ratesUpdatedAt).toLocaleDateString('pt-BR')
-                                                        : t('common.dash')}
-                                                </td>
-                                                <td className="px-4 py-2 text-right whitespace-nowrap">
-                                                    <Button
-                                                        onClick={() => setEditing({ type: 'learned', line })}
-                                                        size="small"
-                                                        variant="ghost"
-                                                    >
-                                                        {t('shippingTable.learned.open')}
-                                                    </Button>
-                                                    {canWrite && line.integration === 'WESTLINK' && (
-                                                        <Button
-                                                            onClick={() => setEditing({ type: 'api', line })}
-                                                            size="small"
-                                                            variant="ghost"
-                                                        >
-                                                            {t('shippingTable.api.check')}
-                                                        </Button>
-                                                    )}
-                                                    {canWrite && (
-                                                        <Button
-                                                            onClick={() => setEditing({ type: 'line', line })}
-                                                            size="small"
-                                                            variant="ghost"
-                                                        >
-                                                            {t('shippingTable.page.edit')}
-                                                        </Button>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                ))}
-                            </table>
-                        </div>
-                    )}
-                </SectionCard>
+                                                        {canWrite && (
+                                                            <Button
+                                                                onClick={() =>
+                                                                    setEditing({ type: 'modality', modality })
+                                                                }
+                                                                size="small"
+                                                                variant="ghost"
+                                                            >
+                                                                {t('shippingTable.page.edit')}
+                                                            </Button>
+                                                        )}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </SectionCard>
+                                    <SectionCard
+                                        description={t('shippingTable.lines.hint')}
+                                        flush
+                                        icon={<Truck aria-hidden="true" />}
+                                        title={t('shippingTable.lines.title')}
+                                    >
+                                        {table.lines.length === 0 ? (
+                                            <div className="p-4">
+                                                <EmptyState title={t('shippingTable.lines.empty')} />
+                                            </div>
+                                        ) : (
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full min-w-[52rem] border-collapse text-sm">
+                                                    <thead>
+                                                        <tr className="border-b border-line text-left text-xs text-muted dark:border-night-line dark:text-night-muted">
+                                                            <th className="px-4 py-2 font-semibold">
+                                                                {t('shippingTable.lines.code')}
+                                                            </th>
+                                                            <th className="px-4 py-2 font-semibold">
+                                                                {t('shippingTable.lines.price')}
+                                                            </th>
+                                                            <th className="px-4 py-2 font-semibold">
+                                                                {t('shippingTable.lines.weight')}
+                                                            </th>
+                                                            <th className="px-4 py-2 font-semibold">
+                                                                {t('shippingTable.lines.days')}
+                                                            </th>
+                                                            <th className="px-4 py-2 font-semibold">
+                                                                {t('shippingTable.lines.updated')}
+                                                            </th>
+                                                            <th className="px-4 py-2" />
+                                                        </tr>
+                                                    </thead>
+                                                    {groups.map((group) => (
+                                                        <tbody key={group.key}>
+                                                            <tr className="bg-background dark:bg-night-soft">
+                                                                <th
+                                                                    className="px-4 py-1.5 text-left text-xs font-semibold text-muted uppercase dark:text-night-muted"
+                                                                    colSpan={6}
+                                                                    scope="rowgroup"
+                                                                >
+                                                                    {group.title}
+                                                                </th>
+                                                            </tr>
+                                                            {group.lines.map((line) => (
+                                                                <tr
+                                                                    className="border-b border-line align-top last:border-0 dark:border-night-line"
+                                                                    key={line.id}
+                                                                >
+                                                                    <th
+                                                                        className="px-4 py-2 text-left font-normal"
+                                                                        scope="row"
+                                                                    >
+                                                                        <span className="mm-data font-semibold text-ink dark:text-night-text">
+                                                                            {line.code}
+                                                                        </span>{' '}
+                                                                        <span className="text-ink dark:text-night-text">
+                                                                            {line.name}
+                                                                        </span>
+                                                                        <span className="mt-1 flex flex-wrap gap-1">
+                                                                            {!line.isActive && (
+                                                                                <StatusPill tone="neutral">
+                                                                                    {t('shippingTable.status.inactive')}
+                                                                                </StatusPill>
+                                                                            )}
+                                                                            {line.isPreferred && (
+                                                                                <StatusPill tone="success">
+                                                                                    {t(
+                                                                                        'shippingTable.status.preferred',
+                                                                                    )}
+                                                                                </StatusPill>
+                                                                            )}
+                                                                            {line.supplierName && (
+                                                                                <StatusPill tone="neutral" hideDot>
+                                                                                    {line.supplierName}
+                                                                                </StatusPill>
+                                                                            )}
+                                                                            {line.integration && (
+                                                                                <StatusPill tone="info" hideDot>
+                                                                                    {t('shippingTable.lines.api')}
+                                                                                </StatusPill>
+                                                                            )}
+                                                                        </span>
+                                                                    </th>
+                                                                    <td className="mm-data px-4 py-2">
+                                                                        {summarize(line.pricing)}
+                                                                        {line.pricing.kind === 'ON_REQUEST' && (
+                                                                            <span className="block text-xs text-muted dark:text-night-muted">
+                                                                                {line.learnedPricing &&
+                                                                                line.learnedPricing.samples >=
+                                                                                    line.pricing.minSamples
+                                                                                    ? t('shippingTable.learned.short', {
+                                                                                          fixed: yuan(
+                                                                                              line.learnedPricing
+                                                                                                  .fixedMinor,
+                                                                                          ),
+                                                                                          perKg: yuan(
+                                                                                              line.learnedPricing
+                                                                                                  .perKgMinor,
+                                                                                          ),
+                                                                                          count: line.learnedPricing
+                                                                                              .samples,
+                                                                                      })
+                                                                                    : t(
+                                                                                          'shippingTable.learned.shortMissing',
+                                                                                          {
+                                                                                              count:
+                                                                                                  line.learnedPricing
+                                                                                                      ?.samples ?? 0,
+                                                                                              needed: line.pricing
+                                                                                                  .minSamples,
+                                                                                          },
+                                                                                      )}
+                                                                            </span>
+                                                                        )}
+                                                                    </td>
+                                                                    <td className="mm-data px-4 py-2 whitespace-nowrap">
+                                                                        {kilograms(line.maxWeightGrams)}
+                                                                        {line.volumetricDivisor
+                                                                            ? ` · ÷${line.volumetricDivisor}`
+                                                                            : ''}
+                                                                    </td>
+                                                                    <td className="px-4 py-2 whitespace-nowrap">
+                                                                        {t('carrier.channel.daysValue', {
+                                                                            min: line.daysMin,
+                                                                            max: line.daysMax,
+                                                                        })}
+                                                                    </td>
+                                                                    <td className="px-4 py-2 whitespace-nowrap text-muted dark:text-night-muted">
+                                                                        {line.ratesUpdatedAt
+                                                                            ? new Date(
+                                                                                  line.ratesUpdatedAt,
+                                                                              ).toLocaleDateString('pt-BR')
+                                                                            : t('common.dash')}
+                                                                    </td>
+                                                                    <td className="px-4 py-2 text-right whitespace-nowrap">
+                                                                        <Button
+                                                                            onClick={() =>
+                                                                                setEditing({ type: 'learned', line })
+                                                                            }
+                                                                            size="small"
+                                                                            variant="ghost"
+                                                                        >
+                                                                            {t('shippingTable.learned.open')}
+                                                                        </Button>
+                                                                        {canWrite &&
+                                                                            line.integration === 'WESTLINK' && (
+                                                                                <Button
+                                                                                    onClick={() =>
+                                                                                        setEditing({
+                                                                                            type: 'api',
+                                                                                            line,
+                                                                                        })
+                                                                                    }
+                                                                                    size="small"
+                                                                                    variant="ghost"
+                                                                                >
+                                                                                    {t('shippingTable.api.check')}
+                                                                                </Button>
+                                                                            )}
+                                                                        {canWrite && (
+                                                                            <Button
+                                                                                onClick={() =>
+                                                                                    setEditing({ type: 'line', line })
+                                                                                }
+                                                                                size="small"
+                                                                                variant="ghost"
+                                                                            >
+                                                                                {t('shippingTable.page.edit')}
+                                                                            </Button>
+                                                                        )}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    ))}
+                                                </table>
+                                            </div>
+                                        )}
+                                    </SectionCard>
+                                </>
+                            ),
+                        },
+                        {
+                            key: 'simulate',
+                            label: t('shippingTable.tabs.simulate'),
+                            content: <ShippingTableSimulator modalityNames={modalityNames} />,
+                        },
+                        {
+                            key: 'performance',
+                            label: t('shippingTable.tabs.performance'),
+                            content: <ShippingPerformanceSection />,
+                        },
+                    ]}
+                    value={tab}
+                />
             )}
 
             {table && editing?.type === 'modality' && (

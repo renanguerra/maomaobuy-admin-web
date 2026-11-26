@@ -1,6 +1,8 @@
 'use client';
 
+import { useState, type ReactNode } from 'react';
 import { SectionCard } from '@/components/admin/SectionCard';
+import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { Input } from '@/components/ui/Input';
@@ -192,8 +194,9 @@ export function ProductFormFields({
             </SectionCard>
 
             {isStore && (
-                <SectionCard
+                <FoldableSection
                     description={t('products.new.wholesale.description')}
+                    hasData={values.salesChannel !== 'RETAIL_ONLY'}
                     title={t('products.new.wholesale.title')}
                 >
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -250,20 +253,11 @@ export function ProductFormFields({
                             />
                         )}
                     </div>
-                </SectionCard>
+                </FoldableSection>
             )}
 
             <SectionCard title={t('products.new.shippingStock.title')}>
                 <div className="grid gap-4 sm:grid-cols-2">
-                    {isStore && (
-                        <CurrencyInput
-                            currency="BRL"
-                            hint={t('products.new.shippingStock.estimatedShippingHint')}
-                            label={t('products.new.shippingStock.estimatedShipping')}
-                            minor={values.estimatedShippingAmountMinor}
-                            onMinorChange={(minor) => patch({ estimatedShippingAmountMinor: minor })}
-                        />
-                    )}
                     {!isBox && (
                         <Input
                             hint={t('products.new.shippingStock.stockHint')}
@@ -353,7 +347,19 @@ export function ProductFormFields({
                 )}
             </SectionCard>
 
-            <SectionCard description={t('products.new.invoice.description')} title={t('products.new.invoice.title')}>
+            <FoldableSection
+                description={t('products.new.invoice.description')}
+                hasData={[
+                    values.customsNameEn,
+                    values.customsNameZh,
+                    values.hsCode,
+                    values.customsBrand,
+                    values.customsMaterial,
+                    values.customsPurpose,
+                    values.customsElectricMagnetic,
+                ].some((value) => value.trim() !== '')}
+                title={t('products.new.invoice.title')}
+            >
                 <div className="grid gap-4 sm:grid-cols-2">
                     <Input
                         label={t('products.new.invoice.nameEn')}
@@ -417,31 +423,39 @@ export function ProductFormFields({
                         value={values.customsElectricMagnetic}
                     />
                 </div>
-            </SectionCard>
+            </FoldableSection>
 
             {isStore && (
                 <SectionCard
-                    description={t('products.new.preSale.description')}
-                    title={t('products.new.preSale.title')}
+                    description={t('products.new.availability.description')}
+                    title={t('products.new.availability.title')}
                 >
-                    <Checkbox
-                        boxed
-                        checked={values.isPreSale}
-                        description={t('products.new.preSale.checkboxHint')}
-                        label={t('products.new.preSale.checkbox')}
-                        // Desmarcar limpa a data no mesmo gesto: o backend a apaga
-                        // de qualquer jeito, e deixá-la na tela sugere que ela
-                        // continua valendo.
-                        // Pré-venda e sob demanda se excluem: marcar uma desmarca a outra.
-                        onChange={(event) =>
-                            patch({
-                                isPreSale: event.target.checked,
-                                ...(event.target.checked ? { isOnDemand: false } : { releaseDate: '' }),
-                            })
-                        }
-                    />
-                    {values.isPreSale && (
-                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        {/* Pré-venda e sob demanda se excluem: uma escolha só. */}
+                        <Select
+                            label={t('products.new.availability.label')}
+                            onChange={(event) => {
+                                const next = event.target.value;
+                                patch({
+                                    isPreSale: next === 'PRESALE',
+                                    isOnDemand: next === 'ON_DEMAND',
+                                    // O backend apaga a data fora da pré-venda; a tela também.
+                                    ...(next === 'PRESALE' ? {} : { releaseDate: '' }),
+                                    ...(next === 'ON_DEMAND'
+                                        ? {
+                                              onDemandLeadDays:
+                                                  values.onDemandLeadDays || String(DEFAULT_ON_DEMAND_LEAD_DAYS),
+                                          }
+                                        : {}),
+                                });
+                            }}
+                            options={(['READY', 'PRESALE', 'ON_DEMAND'] as const).map((option) => ({
+                                value: option,
+                                label: t(`products.new.availability.options.${option}`),
+                            }))}
+                            value={values.isPreSale ? 'PRESALE' : values.isOnDemand ? 'ON_DEMAND' : 'READY'}
+                        />
+                        {values.isPreSale && (
                             <Input
                                 hint={t('products.new.preSale.releaseDateHint')}
                                 label={t('products.new.preSale.releaseDate')}
@@ -450,37 +464,8 @@ export function ProductFormFields({
                                 type="date"
                                 value={values.releaseDate}
                             />
-                        </div>
-                    )}
-                </SectionCard>
-            )}
-
-            {isStore && (
-                <SectionCard
-                    description={t('products.new.onDemand.description')}
-                    title={t('products.new.onDemand.title')}
-                >
-                    <Checkbox
-                        boxed
-                        checked={values.isOnDemand}
-                        description={t('products.new.onDemand.checkboxHint')}
-                        label={t('products.new.onDemand.checkbox')}
-                        onChange={(event) =>
-                            patch({
-                                isOnDemand: event.target.checked,
-                                ...(event.target.checked
-                                    ? {
-                                          isPreSale: false,
-                                          releaseDate: '',
-                                          onDemandLeadDays:
-                                              values.onDemandLeadDays || String(DEFAULT_ON_DEMAND_LEAD_DAYS),
-                                      }
-                                    : {}),
-                            })
-                        }
-                    />
-                    {values.isOnDemand && (
-                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        )}
+                        {values.isOnDemand && (
                             <Input
                                 hint={t('products.new.onDemand.leadDaysHint')}
                                 label={t('products.new.onDemand.leadDays')}
@@ -492,8 +477,15 @@ export function ProductFormFields({
                                 type="number"
                                 value={values.onDemandLeadDays}
                             />
-                        </div>
-                    )}
+                        )}
+                    </div>
+                    <p className="mt-3 mb-0 text-sm text-muted dark:text-night-muted">
+                        {values.isPreSale
+                            ? t('products.new.availability.preSaleHint')
+                            : values.isOnDemand
+                              ? t('products.new.availability.onDemandHint')
+                              : t('products.new.availability.readyHint')}
+                    </p>
                 </SectionCard>
             )}
 
@@ -508,7 +500,14 @@ export function ProductFormFields({
                                 <Checkbox
                                     checked={values.categoryIds.includes(category.id)}
                                     label={category.name}
-                                    onChange={() => toggleCategory(category.id)}
+                                    onChange={() => {
+                                        // Marcar a categoria completa o invoice vazio com os padrões dela.
+                                        if (!values.categoryIds.includes(category.id)) {
+                                            const defaults = invoiceDefaultsFor(category, values);
+                                            if (defaults) patch(defaults);
+                                        }
+                                        toggleCategory(category.id);
+                                    }}
                                 />
                                 {category.subcategories.length > 0 && (
                                     <div className="mt-2 ml-6 flex flex-wrap gap-x-5 gap-y-2">
@@ -542,4 +541,50 @@ function unitMarginLabel(priceMinor: string, costMinor: string, t: ReturnType<ty
     const profit = price - Number(costMinor);
     const percent = price > 0 ? ((profit / price) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : '0';
     return t('products.new.originPrice.margin', { profit: cny(profit), percent: `${percent}%` });
+}
+
+/**
+ * Cartão que começa fechado quando não tem dado (26/11/2026): atacado e
+ * invoice só aparecem para quem precisa. Com dado, abre sozinho; o admin
+ * pode abrir e fechar à vontade — o valor fica no formulário.
+ */
+function FoldableSection({
+    title,
+    description,
+    hasData,
+    children,
+}: {
+    title: string;
+    description: string;
+    hasData: boolean;
+    children: ReactNode;
+}) {
+    const { t } = useTranslation();
+    const [toggled, setToggled] = useState<boolean>();
+    const open = toggled ?? hasData;
+    return (
+        <SectionCard
+            action={
+                <Button onClick={() => setToggled(!open)} size="small" type="button" variant="ghost">
+                    {open ? t('products.new.fold.hide') : t('products.new.fold.show')}
+                </Button>
+            }
+            description={description}
+            title={title}
+        >
+            {open ? children : null}
+        </SectionCard>
+    );
+}
+
+const INVOICE_KEYS = ['customsNameEn', 'customsNameZh', 'hsCode', 'customsMaterial', 'customsPurpose'] as const;
+
+/** Só os campos do invoice que o produto ainda não tem e a categoria tem (26/11/2026). */
+function invoiceDefaultsFor(
+    category: AdminCategory,
+    values: ProductForm['values'],
+): Partial<ProductForm['values']> | null {
+    const filled = INVOICE_KEYS.filter((key) => values[key].trim() === '' && category[key]);
+    if (filled.length === 0) return null;
+    return Object.fromEntries(filled.map((key) => [key, category[key] as string]));
 }

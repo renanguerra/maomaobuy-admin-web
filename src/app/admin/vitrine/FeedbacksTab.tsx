@@ -6,8 +6,6 @@ import { Alert } from '@/components/admin/Alert';
 import { FilterTabs } from '@/components/admin/FilterTabs';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { StatusPill, type StatusTone } from '@/components/admin/StatusPill';
-import { useTotpEnrollmentGate } from '@/components/admin/ActionDialog';
-import { TotpEnrollmentDialog } from '@/components/admin/TotpEnrollmentDialog';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Input } from '@/components/ui/Input';
@@ -123,7 +121,6 @@ export function FeedbacksTab() {
 
 function FeedbackDialog({ post, onClose, onSaved }: { post?: FeedbackPost; onClose: () => void; onSaved: () => void }) {
     const { t } = useTranslation();
-    const needsEnrollment = useTotpEnrollmentGate(true, true);
     const [imageKey, setImageKey] = useState<string | null>(post?.image.key ?? null);
     const [product, setProduct] = useState<PickedProduct | null>(
         post?.product ? { id: post.product.id, name: post.product.name } : null,
@@ -131,7 +128,6 @@ function FeedbackDialog({ post, onClose, onSaved }: { post?: FeedbackPost; onClo
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string>();
 
-    if (needsEnrollment) return <TotpEnrollmentDialog onCancel={onClose} onEnrolled={() => undefined} open />;
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -150,7 +146,6 @@ function FeedbackDialog({ post, onClose, onSaved }: { post?: FeedbackPost; onClo
                 authorized: data.get('authorized') === 'on',
                 authorizationNote: text('authorizationNote') || null,
                 ...(post ? { isVisible: data.get('isVisible') === 'on' } : {}),
-                totpCode: text('totpCode'),
             };
             await api(post ? `/home/feedback-posts/${post.id}` : '/home/feedback-posts', {
                 method: post ? 'PATCH' : 'POST',
@@ -245,15 +240,6 @@ function FeedbackDialog({ post, onClose, onSaved }: { post?: FeedbackPost; onClo
                         name="isVisible"
                     />
                 )}
-                <Input
-                    autoComplete="one-time-code"
-                    inputMode="numeric"
-                    label={t('common.fields.totpCode')}
-                    maxLength={6}
-                    name="totpCode"
-                    pattern="\d{6}"
-                    required
-                />
                 {error && (
                     <Alert className="sm:col-span-2" tone="danger">
                         <p>{error}</p>

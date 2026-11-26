@@ -70,6 +70,7 @@ import {
 } from '@/types/api';
 import { QuantityBadge } from '@/components/admin/QuantityBadge';
 import { AddPackageItemsDialog } from './AddPackageItemsDialog';
+import { FreightQuoteDialog } from './FreightQuoteDialog';
 import { PackageHistory } from './PackageHistory';
 import { RemovePackageItemDialog } from './RemovePackageItemDialog';
 
@@ -80,6 +81,7 @@ type DialogKind =
     | 'dispatch'
     | 'correct-dispatch'
     | 'shipment'
+    | 'approve-quote'
     | 'measurements'
     | 'add-items'
     | 'override-status'
@@ -87,6 +89,10 @@ type DialogKind =
     | 'shipping-failure'
     | 'import-tax'
     | null;
+
+function numberOrNull(value: string | undefined): number | null {
+    return value ? Number(value) : null;
+}
 
 /** Situações finais do pacote — nada mais é anexado depois delas. */
 /** Tipos aceitos pela API; alguns sistemas não informam o MIME de `.doc` e `.csv`. */
@@ -247,7 +253,11 @@ export function PackageDetailPage() {
     const [invoiceOpen, setInvoiceOpen] = useState(false);
 
     const { carrierField, modalityField, quoteLineField } = useDispatchFields(
-        dialog === 'dispatch' || dialog === 'correct-dispatch' || dialog === 'override-status' || dialog === 'shipment',
+        dialog === 'dispatch' ||
+            dialog === 'correct-dispatch' ||
+            dialog === 'override-status' ||
+            dialog === 'shipment' ||
+            dialog === 'approve-quote',
     );
 
     const load = useCallback(() => {
@@ -335,10 +345,11 @@ export function PackageDetailPage() {
             return;
         }
 
-        if (action === 'shipment') {
+        if (action === 'shipment' || action === 'approve-quote') {
             // "Outra" = nenhuma linha cadastrada serviu; o backend guarda nulo.
             try {
-                const updated = await api<AdminPackage>(`/packages/${params.id}/shipment`, {
+                const route = action === 'approve-quote' ? 'approve-and-quote' : 'shipment';
+                const updated = await api<AdminPackage>(`/packages/${params.id}/${route}`, {
                     method: 'POST',
                     body: JSON.stringify({
                         ...values,
@@ -346,7 +357,12 @@ export function PackageDetailPage() {
                             values.freightRateLineId === OTHER_RATE_LINE ? null : values.freightRateLineId,
                     }),
                 });
-                applyUpdate(updated, t('packages.detail.feedback.shipment'));
+                applyUpdate(
+                    updated,
+                    action === 'approve-quote'
+                        ? t('packages.detail.feedback.approveAndQuote')
+                        : t('packages.detail.feedback.shipment'),
+                );
                 return;
             } catch (err) {
                 throw err instanceof ApiError ? err : new Error(t('common.errors.generic'));
@@ -841,9 +857,18 @@ export function PackageDetailPage() {
                                 key: 'approve',
                                 label: t('packages.detail.actions.approve'),
                                 icon: CheckCircle2,
-                                tone: 'primary',
+                                inline: true,
                                 onClick: () => setDialog('approve'),
                             },
+                            // Substituto de pacote com problema já tem frete pago: só aprova.
+                            isAwaitingApproval &&
+                                !freightPaid && {
+                                    key: 'approve-quote',
+                                    label: t('packages.detail.actions.approveAndQuote'),
+                                    icon: Wallet,
+                                    tone: 'primary',
+                                    onClick: () => setDialog('approve-quote'),
+                                },
                             pkg.status === 'AWAITING_FREIGHT_QUOTE' && {
                                 key: 'quote-freight',
                                 label: t('packages.detail.actions.quoteFreight'),
@@ -1332,6 +1357,7 @@ export function PackageDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleActionConfirm}
                 open={dialog === 'approve'}
+                requireTotp={false}
                 title={t('packages.detail.dialogs.approve.title')}
             />
             <ActionDialog
@@ -1370,6 +1396,7 @@ export function PackageDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleActionConfirm}
                 open={dialog === 'measurements'}
+                requireTotp={false}
                 title={t('packages.detail.dialogs.measurements.title')}
                 fields={[
                     {
@@ -1410,72 +1437,36 @@ export function PackageDetailPage() {
                     },
                 ]}
             />
-            <ActionDialog
+            <FreightQuoteDialog
                 confirmLabel={t('packages.detail.dialogs.shipment.confirmLabel')}
+                defaults={shipmentDefaults}
                 description={
                     canRequoteFreight
                         ? t('packages.detail.dialogs.shipment.requoteDescription')
                         : t('packages.detail.dialogs.shipment.description')
                 }
+                destinationCountry={pkg.destination.countryCode || 'BR'}
+                lineField={quoteLineField(pkg, carrierSelection?.channelCode)}
                 onCancel={() => setDialog(null)}
                 onConfirm={handleActionConfirm}
                 open={dialog === 'shipment'}
                 title={t('packages.detail.dialogs.shipment.title')}
-                fields={[
-                    {
-                        name: 'weightGrams',
-                        label: t('packages.detail.dialogs.shipment.weight'),
-                        kind: 'number',
-                        min: 1,
-                        suffix: 'g',
-                        defaultValue: shipmentDefaults.weightGrams ? String(shipmentDefaults.weightGrams) : undefined,
-                        placeholder: '1500',
-                    },
-                    {
-                        name: 'lengthMillimeters',
-                        label: t('packages.detail.dialogs.shipment.length'),
-                        kind: 'number',
-                        min: 1,
-                        suffix: 'mm',
-                        defaultValue: shipmentDefaults.lengthMillimeters
-                            ? String(shipmentDefaults.lengthMillimeters)
-                            : undefined,
-                        placeholder: '300',
-                    },
-                    {
-                        name: 'widthMillimeters',
-                        label: t('packages.detail.dialogs.shipment.width'),
-                        kind: 'number',
-                        min: 1,
-                        suffix: 'mm',
-                        defaultValue: shipmentDefaults.widthMillimeters
-                            ? String(shipmentDefaults.widthMillimeters)
-                            : undefined,
-                        placeholder: '200',
-                    },
-                    {
-                        name: 'heightMillimeters',
-                        label: t('packages.detail.dialogs.shipment.height'),
-                        kind: 'number',
-                        min: 1,
-                        suffix: 'mm',
-                        defaultValue: shipmentDefaults.heightMillimeters
-                            ? String(shipmentDefaults.heightMillimeters)
-                            : undefined,
-                        placeholder: '150',
-                    },
-                    {
-                        // Backend fixa CNY (ver AdminPackagesService.setShipmentDetails):
-                        // não existe mais escolha de moeda aqui, só o valor.
-                        name: 'freightCostAmountMinor',
-                        label: t('packages.detail.dialogs.shipment.amount'),
-                        hint: t('packages.detail.dialogs.shipment.amountHint'),
-                        kind: 'currency',
-                        suffix: 'CNY',
-                        defaultValue: shipmentDefaults.freightCostAmountMinor ?? '0',
-                    },
-                    quoteLineField(pkg, carrierSelection?.channelCode),
-                ]}
+            />
+            <FreightQuoteDialog
+                confirmLabel={t('packages.detail.dialogs.approveQuote.confirmLabel')}
+                defaults={{
+                    ...shipmentDefaults,
+                    lengthMillimeters: shipmentDefaults.lengthMillimeters ?? numberOrNull(suggestedSide('length')),
+                    widthMillimeters: shipmentDefaults.widthMillimeters ?? numberOrNull(suggestedSide('width')),
+                    heightMillimeters: shipmentDefaults.heightMillimeters ?? numberOrNull(suggestedSide('height')),
+                }}
+                description={t('packages.detail.dialogs.approveQuote.description')}
+                destinationCountry={pkg.destination.countryCode || 'BR'}
+                lineField={quoteLineField(pkg, carrierSelection?.channelCode)}
+                onCancel={() => setDialog(null)}
+                onConfirm={handleActionConfirm}
+                open={dialog === 'approve-quote'}
+                title={t('packages.detail.dialogs.approveQuote.title')}
             />
             <ActionDialog
                 confirmLabel={t('packages.detail.dialogs.dispatch.confirmLabel')}
@@ -1483,6 +1474,7 @@ export function PackageDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleActionConfirm}
                 open={dialog === 'dispatch'}
+                requireTotp={false}
                 title={t('packages.detail.dialogs.dispatch.title')}
                 fields={[
                     modalityField(pkg),
@@ -1503,6 +1495,7 @@ export function PackageDetailPage() {
                 onCancel={() => setDialog(null)}
                 onConfirm={handleActionConfirm}
                 open={dialog === 'correct-dispatch'}
+                requireTotp={false}
                 title={t('packages.detail.dialogs.correctDispatch.title')}
                 fields={[
                     modalityField(pkg),

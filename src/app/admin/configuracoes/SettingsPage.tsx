@@ -7,18 +7,20 @@ import { EmptyState } from '@/components/admin/EmptyState';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { SectionCard } from '@/components/admin/SectionCard';
 import { SkeletonCards } from '@/components/admin/Skeleton';
-import { Button } from '@/components/ui/Button';
+import { Button, ButtonLink } from '@/components/ui/Button';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { normalize } from '@/services/admin/normalize';
 import { api, ApiError } from '@/services/api';
+import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import type { AdminSetting } from '@/types/api';
 import { SettingFormDialog } from './SettingFormDialog';
 import { describeSetting, friendlySettingValue, SETTING_GROUPS } from './settings-catalog';
 
 export function SettingsPage() {
     const { locale, t } = useTranslation();
+    const { admin } = useAdminAccountAuth();
     const { notify } = useToast();
     const [settings, setSettings] = useState<AdminSetting[]>();
     const [error, setError] = useState<string>();
@@ -86,7 +88,17 @@ export function SettingsPage() {
 
     return (
         <div className="grid gap-6">
-            <PageHeader description={t('settings.description')} title={t('settings.title')} />
+            <PageHeader
+                actions={
+                    admin?.role === 'SUPERADMIN' && (
+                        <ButtonLink href="/admin/servicos-adicionais" variant="secondary">
+                            {t('settings.optionalServicesLink')}
+                        </ButtonLink>
+                    )
+                }
+                description={t('settings.description')}
+                title={t('settings.title')}
+            />
 
             {error && (
                 <Alert tone="danger" title={t('common.errors.loadTitle')}>
