@@ -903,6 +903,20 @@ export const ptBR = {
                 no: 'Não',
                 yes: 'Sim',
             },
+            availability: {
+                title: 'Disponibilidade',
+                description: 'Como o produto chega ao armazém. Pronta entrega é o padrão.',
+                label: 'Disponibilidade',
+                options: { READY: 'Pronta entrega', PRESALE: 'Pré-venda', ON_DEMAND: 'Sob demanda' },
+                readyHint: 'Produto em estoque próprio, sem selo.',
+                preSaleHint: 'O site mostra o selo "Pré-venda" e a data de lançamento.',
+                onDemandHint:
+                    'Comprado depois do pedido do cliente. O site mostra o selo "Sob demanda" e o prazo até o armazém.',
+            },
+            fold: {
+                show: 'Mostrar campos',
+                hide: 'Ocultar',
+            },
             preSale: {
                 title: 'Pré-venda',
                 description:

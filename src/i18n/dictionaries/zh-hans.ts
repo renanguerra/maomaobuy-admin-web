@@ -876,6 +876,19 @@ export const zhHans: Messages = {
                 no: '否',
                 yes: '是',
             },
+            availability: {
+                title: '供货方式',
+                description: '商品如何到仓。默认现货。',
+                label: '供货方式',
+                options: { READY: '现货', PRESALE: '预售', ON_DEMAND: '按需采购' },
+                readyHint: '自有库存，无标签。',
+                preSaleHint: '网站显示“预售”标签和发售日期。',
+                onDemandHint: '客户下单后才采购。网站显示“按需采购”标签和到仓时效。',
+            },
+            fold: {
+                show: '显示字段',
+                hide: '收起',
+            },
             preSale: {
                 title: '预售',
                 description: '当商品在入库前就上架时使用。网站会显示预售标签和发售日期。',
