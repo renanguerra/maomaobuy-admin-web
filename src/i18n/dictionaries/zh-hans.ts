@@ -996,6 +996,8 @@ export const zhHans: Messages = {
             slugHint: '用于公开访问的链接地址，根据名称自动生成。',
             submitButton: '创建分类',
             wholesaleOnlyLabel: '仅对企业账户显示',
+            invoiceDefaults: '发票默认值',
+            invoiceDefaultsHint: '此分类的新商品会自动带上这些发票信息，只填写商品中为空的字段。',
             wholesaleOnlyHint: '此分类只在批发页面显示。商品在哪里显示仍由其销售渠道决定。',
         },
         wholesaleOnlyBadge: '仅企业账户',

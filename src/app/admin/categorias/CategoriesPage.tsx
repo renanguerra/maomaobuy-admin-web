@@ -58,7 +58,9 @@ export function CategoriesPage() {
     async function submitDialog(values: CategoryFormValues) {
         if (!dialog) return;
 
-        const body = JSON.stringify(values);
+        // A API recebe os padrões do invoice soltos, ao lado do nome.
+        const { invoiceDefaults, ...rest } = values;
+        const body = JSON.stringify({ ...rest, ...invoiceDefaults });
         if (dialog.kind === 'create-category') {
             await api('/categories', { method: 'POST', body });
             notify({ tone: 'success', title: t('categories.createdFeedback') });
@@ -291,6 +293,13 @@ export function CategoriesPage() {
                               name: dialog.category.name,
                               slug: dialog.category.slug,
                               wholesaleOnly: dialog.category.wholesaleOnly,
+                              invoiceDefaults: {
+                                  customsNameEn: dialog.category.customsNameEn,
+                                  customsNameZh: dialog.category.customsNameZh,
+                                  hsCode: dialog.category.hsCode,
+                                  customsMaterial: dialog.category.customsMaterial,
+                                  customsPurpose: dialog.category.customsPurpose,
+                              },
                           }
                         : dialog?.kind === 'edit-subcategory'
                           ? { name: dialog.subcategory.name, slug: dialog.subcategory.slug }

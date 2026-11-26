@@ -963,6 +963,12 @@ export interface AdminCategory {
     name: string;
     slug: string;
     wholesaleOnly: boolean;
+    /** Padrões do invoice para o produto novo da categoria (26/11/2026). */
+    customsNameEn: string | null;
+    customsNameZh: string | null;
+    hsCode: string | null;
+    customsMaterial: string | null;
+    customsPurpose: string | null;
     subcategories: AdminSubcategory[];
 }
 

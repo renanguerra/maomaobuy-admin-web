@@ -1034,6 +1034,9 @@ export const ptBR = {
             slugHint: 'Usado na URL pública. Gerado automaticamente a partir do nome.',
             submitButton: 'Criar categoria',
             wholesaleOnlyLabel: 'Exibir só para PJ',
+            invoiceDefaults: 'Padrões do invoice',
+            invoiceDefaultsHint:
+                'Produto novo desta categoria já vem com estes dados no invoice. Só preenche o que estiver vazio no produto.',
             wholesaleOnlyHint:
                 'A categoria aparece só na vitrine de atacado. Onde cada produto aparece continua definido pelo canal de venda dele.',
         },

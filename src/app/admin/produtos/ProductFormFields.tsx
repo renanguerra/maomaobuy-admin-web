@@ -500,7 +500,14 @@ export function ProductFormFields({
                                 <Checkbox
                                     checked={values.categoryIds.includes(category.id)}
                                     label={category.name}
-                                    onChange={() => toggleCategory(category.id)}
+                                    onChange={() => {
+                                        // Marcar a categoria completa o invoice vazio com os padrões dela.
+                                        if (!values.categoryIds.includes(category.id)) {
+                                            const defaults = invoiceDefaultsFor(category, values);
+                                            if (defaults) patch(defaults);
+                                        }
+                                        toggleCategory(category.id);
+                                    }}
                                 />
                                 {category.subcategories.length > 0 && (
                                     <div className="mt-2 ml-6 flex flex-wrap gap-x-5 gap-y-2">
@@ -568,4 +575,16 @@ function FoldableSection({
             {open ? children : null}
         </SectionCard>
     );
+}
+
+const INVOICE_KEYS = ['customsNameEn', 'customsNameZh', 'hsCode', 'customsMaterial', 'customsPurpose'] as const;
+
+/** Só os campos do invoice que o produto ainda não tem e a categoria tem (26/11/2026). */
+function invoiceDefaultsFor(
+    category: AdminCategory,
+    values: ProductForm['values'],
+): Partial<ProductForm['values']> | null {
+    const filled = INVOICE_KEYS.filter((key) => values[key].trim() === '' && category[key]);
+    if (filled.length === 0) return null;
+    return Object.fromEntries(filled.map((key) => [key, category[key] as string]));
 }

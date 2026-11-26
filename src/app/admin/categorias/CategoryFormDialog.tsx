@@ -16,7 +16,19 @@ export interface CategoryFormValues {
     slug: string;
     /** Só categoria: subcategoria segue a visibilidade da categoria. */
     wholesaleOnly?: boolean;
+    /** Só categoria: padrões do invoice que o produto novo herda. Vazio = nulo. */
+    invoiceDefaults?: InvoiceDefaults;
 }
+
+export const INVOICE_DEFAULT_FIELDS = [
+    { key: 'customsNameEn', label: 'products.new.invoice.nameEn', maxLength: 64 },
+    { key: 'customsNameZh', label: 'products.new.invoice.nameZh', maxLength: 100 },
+    { key: 'hsCode', label: 'products.new.invoice.hsCode', maxLength: 12 },
+    { key: 'customsMaterial', label: 'products.new.invoice.material', maxLength: 100 },
+    { key: 'customsPurpose', label: 'products.new.invoice.purpose', maxLength: 200 },
+] as const;
+
+export type InvoiceDefaults = Record<(typeof INVOICE_DEFAULT_FIELDS)[number]['key'], string | null>;
 
 interface CategoryFormDialogProps {
     open: boolean;
@@ -93,6 +105,9 @@ function CategoryForm({
     const [slug, setSlug] = useState(initialValues?.slug ?? '');
     const [slugTouched, setSlugTouched] = useState(Boolean(initialValues));
     const [wholesaleOnly, setWholesaleOnly] = useState(initialValues?.wholesaleOnly ?? false);
+    const [invoice, setInvoice] = useState<Record<string, string>>(() =>
+        Object.fromEntries(INVOICE_DEFAULT_FIELDS.map(({ key }) => [key, initialValues?.invoiceDefaults?.[key] ?? ''])),
+    );
     const [error, setError] = useState<string>();
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -100,7 +115,16 @@ function CategoryForm({
         onSubmittingChange(true);
         setError(undefined);
         try {
-            await onSubmit({ name: name.trim(), slug, ...(showWholesaleOnly && { wholesaleOnly }) });
+            await onSubmit({
+                name: name.trim(),
+                slug,
+                ...(showWholesaleOnly && {
+                    wholesaleOnly,
+                    invoiceDefaults: Object.fromEntries(
+                        INVOICE_DEFAULT_FIELDS.map(({ key }) => [key, invoice[key].trim() || null]),
+                    ) as InvoiceDefaults,
+                }),
+            });
         } catch (err) {
             setError(err instanceof Error ? err.message : t('categories.actionError'));
         } finally {
@@ -140,6 +164,34 @@ function CategoryForm({
                     label={t('categories.newCategory.wholesaleOnlyLabel')}
                     onChange={(event) => setWholesaleOnly(event.target.checked)}
                 />
+            )}
+            {showWholesaleOnly && (
+                <details
+                    className="rounded-lg border border-line p-3 dark:border-night-line"
+                    open={INVOICE_DEFAULT_FIELDS.some(({ key }) => invoice[key] !== '')}
+                >
+                    <summary className="cursor-pointer text-sm font-semibold text-ink dark:text-night-text">
+                        {t('categories.newCategory.invoiceDefaults')}
+                    </summary>
+                    <p className="mt-1 mb-3 text-sm text-muted dark:text-night-muted">
+                        {t('categories.newCategory.invoiceDefaultsHint')}
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {INVOICE_DEFAULT_FIELDS.map(({ key, label, maxLength }) => (
+                            <Input
+                                key={key}
+                                label={t(label)}
+                                maxLength={maxLength}
+                                onChange={(event) => {
+                                    const value = event.target.value;
+                                    setInvoice((current) => ({ ...current, [key]: value }));
+                                }}
+                                {...(key === 'hsCode' && { inputMode: 'numeric' as const, pattern: '\\d{4,12}' })}
+                                value={invoice[key]}
+                            />
+                        ))}
+                    </div>
+                </details>
             )}
 
             {error && (
