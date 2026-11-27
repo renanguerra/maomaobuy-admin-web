@@ -73,6 +73,7 @@ import { AddPackageItemsDialog } from './AddPackageItemsDialog';
 import { FreightQuoteDialog } from './FreightQuoteDialog';
 import { PackageHistory } from './PackageHistory';
 import { RemovePackageItemDialog } from './RemovePackageItemDialog';
+import { kilograms } from '@/types/carrier';
 
 type DialogKind =
     | 'approve'
@@ -652,8 +653,9 @@ export function PackageDetailPage() {
     const dash = t('common.dash');
     const hasSize = pkg.lengthMillimeters && pkg.widthMillimeters && pkg.heightMillimeters;
     const transportRows: SummaryRow[] = [
-        { label: t('packages.detail.fields.carrier'), value: pkg.carrier ?? dash },
-        ...(pkg.carrierService
+        // Com envio na Westlink, transportadora e linha já estão no bloco dela.
+        ...(hasCarrierShipment ? [] : [{ label: t('packages.detail.fields.carrier'), value: pkg.carrier ?? dash }]),
+        ...(pkg.carrierService && !hasCarrierShipment
             ? [{ label: t('packages.detail.fields.carrierService'), value: pkg.carrierService }]
             : []),
         {
@@ -664,19 +666,6 @@ export function PackageDetailPage() {
                 'correct-dispatch',
                 canCorrectDispatch,
             ),
-        },
-        {
-            label: t('packages.detail.fields.weight'),
-            value: editable(
-                pkg.weightGrams ? `${pkg.weightGrams} g` : dash,
-                t('packages.detail.actions.editMeasurements'),
-                'measurements',
-                true,
-            ),
-        },
-        {
-            label: t('packages.detail.fields.dimensions'),
-            value: hasSize ? `${pkg.lengthMillimeters} × ${pkg.widthMillimeters} × ${pkg.heightMillimeters} mm` : dash,
         },
         ...(pkg.shippedAt
             ? [
@@ -694,17 +683,23 @@ export function PackageDetailPage() {
                       : []),
               ]
             : []),
-        ...(pkg.declaration
-            ? [
-                  {
-                      label: t('packages.detail.declarationSection.modeLabel'),
-                      value:
-                          pkg.declaration.mode === 'CUSTOM'
-                              ? t('packages.detail.declarationSection.modeCustom')
-                              : t('packages.detail.declarationSection.modeFull'),
-                  },
-              ]
-            : []),
+    ];
+    const volumeRows: SummaryRow[] = [
+        {
+            label: t('packages.detail.fields.weight'),
+            value: editable(
+                pkg.weightGrams ? kilograms(pkg.weightGrams) : dash,
+                t('packages.detail.actions.editMeasurements'),
+                'measurements',
+                true,
+            ),
+        },
+        {
+            label: t('packages.detail.fields.dimensions'),
+            value: hasSize
+                ? `${Number(pkg.lengthMillimeters) / 10} × ${Number(pkg.widthMillimeters) / 10} × ${Number(pkg.heightMillimeters) / 10} cm`
+                : dash,
+        },
     ];
     const chargeRows: SummaryRow[] = [
         {
@@ -1050,55 +1045,54 @@ export function PackageDetailPage() {
                         )}
                     </SectionCard>
 
-                    <SectionCard
-                        action={shippingActions.length > 0 ? shippingActions : undefined}
-                        bodyClassName="grid gap-5"
-                        title={t('packages.detail.shippingSection')}
-                    >
-                        <div className="grid gap-x-10 gap-y-5 lg:grid-cols-2">
-                            <div className="min-w-0">
-                                <h3 className="m-0 mb-1 text-xs font-semibold text-muted dark:text-night-muted">
-                                    {t('packages.detail.transportBlock')}
-                                </h3>
-                                <SummaryList rows={transportRows} />
-                            </div>
-                            <div className="min-w-0">
-                                <h3 className="m-0 mb-1 text-xs font-semibold text-muted dark:text-night-muted">
-                                    {t('packages.detail.chargeBlock')}
-                                </h3>
-                                <SummaryList rows={chargeRows} />
-                            </div>
-                        </div>
-                        {pkg.declaration?.mode === 'CUSTOM' && (
-                            <div className="rounded-lg border border-line p-4 dark:border-night-line">
-                                <p className="m-0 text-xs text-muted dark:text-night-muted">
-                                    {t('packages.detail.declarationSection.customText')}
-                                </p>
-                                <p className="mt-1 mb-0 text-sm break-words whitespace-pre-line text-ink dark:text-night-text">
-                                    {pkg.declaration.description ?? t('common.dash')}
-                                </p>
-                                {pkg.declaration.riskAcceptedAt && (
-                                    <p className="mt-2 mb-0 text-xs text-muted dark:text-night-muted">
-                                        {t('packages.detail.declarationSection.riskAccepted')}{' '}
-                                        {formatDate(pkg.declaration.riskAcceptedAt)}
-                                    </p>
-                                )}
-                            </div>
-                        )}
-                    </SectionCard>
-
-                    {(pkg.status === 'READY_FOR_DISPATCH' || pkg.shippedAt) && (
-                        <CarrierShipmentSection
-                            onPackageChanged={(updated) => {
-                                if (updated) setPkg(updated);
-                                else load();
-                                void refreshPendingCounts();
-                            }}
-                            onActiveChange={setHasCarrierShipment}
-                            pkg={pkg}
-                            preferredChannelCode={carrierSelection?.channelCode}
-                        />
-                    )}
+                    <CarrierShipmentSection
+                        actions={shippingActions}
+                        carrierEnabled={pkg.status === 'READY_FOR_DISPATCH' || Boolean(pkg.shippedAt)}
+                        chargeRows={chargeRows}
+                        declaration={
+                            pkg.declaration && (
+                                <div className="grid gap-2">
+                                    <SummaryList
+                                        rows={[
+                                            {
+                                                label: t('packages.detail.declarationSection.modeLabel'),
+                                                value:
+                                                    pkg.declaration.mode === 'CUSTOM'
+                                                        ? t('packages.detail.declarationSection.modeCustom')
+                                                        : t('packages.detail.declarationSection.modeFull'),
+                                            },
+                                        ]}
+                                    />
+                                    {pkg.declaration.mode === 'CUSTOM' && (
+                                        <div className="rounded-lg border border-line p-4 dark:border-night-line">
+                                            <p className="m-0 text-xs text-muted dark:text-night-muted">
+                                                {t('packages.detail.declarationSection.customText')}
+                                            </p>
+                                            <p className="mt-1 mb-0 text-sm break-words whitespace-pre-line text-ink dark:text-night-text">
+                                                {pkg.declaration.description ?? t('common.dash')}
+                                            </p>
+                                            {pkg.declaration.riskAcceptedAt && (
+                                                <p className="mt-2 mb-0 text-xs text-muted dark:text-night-muted">
+                                                    {t('packages.detail.declarationSection.riskAccepted')}{' '}
+                                                    {formatDate(pkg.declaration.riskAcceptedAt)}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        }
+                        onActiveChange={setHasCarrierShipment}
+                        onPackageChanged={(updated) => {
+                            if (updated) setPkg(updated);
+                            else load();
+                            void refreshPendingCounts();
+                        }}
+                        pkg={pkg}
+                        preferredChannelCode={carrierSelection?.channelCode}
+                        transportRows={transportRows}
+                        volumeRows={volumeRows}
+                    />
 
                     {invoiceOpen && (
                         <CommercialInvoiceDialog
