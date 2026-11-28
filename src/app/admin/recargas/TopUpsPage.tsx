@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowDownToLine, Coins, Wallet } from 'lucide-react';
+import { ArrowDownToLine, Coins, SearchCheck, Wallet } from 'lucide-react';
 import { Alert } from '@/components/admin/Alert';
 import { DataTable, type DataTableColumn } from '@/components/admin/DataTable';
 import { EmptyState } from '@/components/admin/EmptyState';
@@ -13,10 +13,13 @@ import { SectionCard } from '@/components/admin/SectionCard';
 import { StatCard } from '@/components/admin/StatCard';
 import { StatusPill, topUpStatusTone } from '@/components/admin/StatusPill';
 import { Toolbar } from '@/components/admin/Toolbar';
+import { Button } from '@/components/ui/Button';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { useTranslation } from '@/i18n/LanguageProvider';
 import { api } from '@/services/api';
+import { useAdminAccountAuth } from '@/services/auth/admin-account-auth';
 import { brl, cny, formatDate, type AdminTopUp, type AdminTopUpsPage, type TopUpStatus } from '@/types/api';
+import { TopUpReviewDialog } from './TopUpReviewDialog';
 
 type Filter = TopUpStatus | 'all';
 
@@ -25,10 +28,14 @@ const LIMIT = 25;
 /**
  * Histórico de recargas: quem pagou, quanto entrou no saldo e em que deu.
  * Recarga manual (pagamento recebido por fora) aparece com a origem
- * "Manual"; as do Pix e do cartão, com o provedor e o meio.
+ * "Manual"; as do Pix e do cartão, com o provedor e o meio. A que parou em
+ * conferência tem "Conferir": o Financeiro credita ou encerra.
  */
 export function TopUpsPage() {
     const { t } = useTranslation();
+    const { admin } = useAdminAccountAuth();
+    const canReview = admin?.role === 'FINANCE' || admin?.role === 'SUPERADMIN';
+    const [reviewing, setReviewing] = useState<AdminTopUp>();
     const [result, setResult] = useState<AdminTopUpsPage>();
     const [filter, setFilter] = useState<Filter>('all');
     const [search, setSearch] = useState('');
@@ -95,13 +102,21 @@ export function TopUpsPage() {
             key: 'status',
             header: t('topUps.columns.status'),
             cell: (row) => (
-                <StatusPill tone={topUpStatusTone(row.status)}>
-                    {/* Cartão sem resposta do provedor: alguém precisa conferir
-                        no painel da AbacatePay se a cobrança passou. */}
-                    {row.paymentMethod === 'CARD' && row.status === 'AWAITING_PROVIDER'
-                        ? t('topUps.cardUnderReview')
-                        : statusLabel(row.status)}
-                </StatusPill>
+                <span className="inline-flex flex-wrap items-center gap-2">
+                    <StatusPill tone={topUpStatusTone(row.status)}>
+                        {/* Cartão sem resposta ou pago com valor diferente:
+                            alguém precisa conferir com o provedor. */}
+                        {row.reviewable || (row.paymentMethod === 'CARD' && row.status === 'AWAITING_PROVIDER')
+                            ? t('topUps.underReview')
+                            : statusLabel(row.status)}
+                    </StatusPill>
+                    {row.reviewable && canReview && (
+                        <Button onClick={() => setReviewing(row)} size="small" variant="secondary">
+                            <SearchCheck aria-hidden="true" className="h-4 w-4" />
+                            {t('topUps.review.open')}
+                        </Button>
+                    )}
+                </span>
             ),
         },
         {
@@ -206,7 +221,7 @@ export function TopUpsPage() {
                             { value: 'all', label: t('topUps.filters.all') },
                             { value: 'CONFIRMED', label: statusLabel('CONFIRMED') },
                             { value: 'PENDING', label: statusLabel('PENDING') },
-                            { value: 'AWAITING_PROVIDER', label: t('topUps.cardUnderReview') },
+                            { value: 'AWAITING_PROVIDER', label: t('topUps.underReview') },
                             { value: 'FAILED', label: statusLabel('FAILED') },
                             { value: 'EXPIRED', label: statusLabel('EXPIRED') },
                             { value: 'CANCELLED', label: statusLabel('CANCELLED') },
@@ -253,6 +268,17 @@ export function TopUpsPage() {
                     />
                 )}
             </SectionCard>
+
+            {reviewing && (
+                <TopUpReviewDialog
+                    topUp={reviewing}
+                    onClose={() => setReviewing(undefined)}
+                    onDecided={() => {
+                        setReviewing(undefined);
+                        load();
+                    }}
+                />
+            )}
         </div>
     );
 }

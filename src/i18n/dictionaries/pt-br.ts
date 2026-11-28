@@ -1961,7 +1961,47 @@ export const ptBR = {
         countUnit: '{{count}} recargas',
         manual: 'Manual',
         internalAccount: 'Conta interna',
-        cardUnderReview: 'Cartão em conferência',
+        underReview: 'Em conferência',
+        review: {
+            open: 'Conferir',
+            title: 'Conferir recarga',
+            description: 'Pagamento de {{customer}} parado porque o provedor e o nosso registro não bateram.',
+            loading: 'Perguntando ao provedor…',
+            error: 'Não foi possível conferir com o provedor.',
+            state: 'Situação no provedor',
+            payment: 'Cobrança',
+            expected: 'Cobramos',
+            received: 'O provedor recebeu',
+            expectedYuan: 'Yuan cotado',
+            receivedYuan: 'Yuan no provedor',
+            differs:
+                'O valor não bate. Creditar dá ao cliente o crédito cotado ({{credit}}). Para outro valor, estorne no provedor, encerre aqui e lance um crédito manual.',
+            checkByHand:
+                'O provedor não devolveu o número desta cobrança. Confira no painel da {{provider}} se ela passou antes de decidir.',
+            cannotCredit:
+                'O provedor não confirma o pagamento, então não dá para creditar. Encerrar libera a compra para o cliente pagar de novo.',
+            credit: 'Creditar',
+            close: 'Encerrar',
+            creditTitle: 'Creditar a recarga',
+            closeTitle: 'Encerrar a recarga',
+            creditDescription:
+                'Entram {{credit}} no saldo do cliente. Se ela paga uma compra ou um frete, o pagamento sai em até uma hora.',
+            closeDescription:
+                'Nada entra no saldo e a compra volta a aceitar pagamento. O que ainda puder ser pago é cancelado no provedor. Se o cliente já pagou, estorne no painel do provedor antes.',
+            credited: 'Recarga creditada.',
+            closed: 'Recarga encerrada.',
+            states: {
+                PENDING: 'Aberta, não paga',
+                PAID: 'Paga',
+                EXPIRED: 'Vencida',
+                CANCELLED: 'Cancelada',
+                REFUNDED: 'Estornada',
+                DISPUTED: 'Contestada',
+                FAILED: 'Não concluída',
+                UNREACHABLE: 'Provedor não respondeu',
+                NOT_OPENED: 'Sem cobrança ligada',
+            },
+        },
         methods: {
             PIX: 'Pix',
             CARD: 'Cartão',
@@ -1978,7 +2018,7 @@ export const ptBR = {
             AWAITING_PROVIDER: 'Gerando Pix',
             PENDING: 'Aguardando pagamento',
             CONFIRMED: 'Confirmada',
-            FAILED: 'Cartão recusado',
+            FAILED: 'Não concluída',
             EXPIRED: 'Expirada',
             PARTIALLY_REFUNDED: 'Parcialmente devolvida',
             REFUNDED: 'Devolvida',
@@ -2041,6 +2081,55 @@ export const ptBR = {
         add: 'Adicionar',
         remove: 'Remover',
         addedAt: 'na lista desde {{date}}',
+        provider: {
+            title: 'Provedor',
+            current: 'Cobrado por {{provider}}.',
+            pilot: 'Piloto: os clientes da lista abaixo pagam por {{provider}}.',
+            noPilot: 'Sem piloto.',
+            unavailable:
+                '{{provider}} não está ligado neste ambiente (PAYMENT_PROVIDERS) ou está sem credencial. Este meio não aparece para os clientes até você escolher outro provedor ou ligar este no deploy.',
+            pilotUnavailable:
+                '{{provider}} não está ligado neste ambiente ou está sem credencial. Os clientes do piloto ficam sem este meio até você trocar ou desligar o piloto.',
+            change: 'Trocar provedor',
+            onlySuperadmin: 'Só o SUPERADMIN troca o provedor.',
+            dialogTitle: 'Trocar o provedor de {{method}}',
+            dialogDescription:
+                'Vale para a próxima cotação. Pix e cartão já abertos continuam no provedor em que foram criados até serem pagos ou vencerem.',
+            providerLabel: 'Provedor para todos',
+            pilotLabel: 'Provedor-piloto',
+            pilotHint: 'Os clientes da lista de piloto pagam por ele. Igual ao provedor para todos = sem piloto.',
+            noPilotOption: 'Sem piloto',
+            confirm: 'Trocar',
+            pilotListTitle: 'Clientes do piloto',
+            pilotListInactive: 'Clientes do piloto (sem efeito: nenhum piloto escolhido)',
+        },
+        fxMode: {
+            title: 'Câmbio do Pix',
+            current: {
+                BRL: 'Em reais: cobrado em BRL. O câmbio até a conversão para yuan é risco nosso.',
+                LOCKED: 'Câmbio travado: cobrado em yuan, e o cliente paga em reais na cotação do provedor, válida até o fim do pagamento.',
+            },
+            noEffect: '{{provider}} não trava o câmbio: o modo fica guardado, sem efeito.',
+            partial: 'O modo só vale para quem paga por {{provider}}.',
+            lockedFees: 'Taxas do modo travado: {{fee}} por Pix e {{settlement}} de recebimento em yuan.',
+            changeTo: {
+                BRL: 'Cobrar em reais',
+                LOCKED: 'Travar o câmbio',
+            },
+            dialogTitle: {
+                BRL: 'Cobrar o Pix em reais',
+                LOCKED: 'Travar o câmbio do Pix',
+            },
+            dialogDescription: {
+                BRL: 'Vale para a próxima cotação e muda o preço dos clientes. O câmbio entre o pagamento e a conversão passa a ser risco nosso. Pix já aberto e cotação já aceita seguem no modo em que nasceram.',
+                LOCKED: 'Vale para a próxima cotação e muda o preço dos clientes, que passam a pagar a margem de conversão do provedor. Se o provedor não der a cotação, o Pix fica indisponível em vez de voltar para reais. Pix já aberto e cotação já aceita seguem no modo em que nasceram.',
+            },
+            onlySuperadmin: 'Só o SUPERADMIN troca o câmbio do Pix.',
+        },
+        providerNames: {
+            ABACATEPAY: 'AbacatePay',
+            AIRWALLEX: 'Airwallex',
+        },
     },
     productRequests: {
         title: 'Encomendas',

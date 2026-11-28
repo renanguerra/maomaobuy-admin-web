@@ -1109,6 +1109,10 @@ export interface AdminTopUp {
     pspFeeMinor: string;
     /** `MANUAL` = pagamento recebido por fora e lançado pelo painel. */
     providerName: string | null;
+    /** A cobrança no provedor, para achar no painel dele. */
+    providerPaymentId?: string | null;
+    /** Parada em conferência: o Financeiro credita ou encerra. */
+    reviewable?: boolean;
     paymentMethod: PaymentMethod;
     cardBrand: string | null;
     cardLastFour: string | null;
@@ -1117,11 +1121,37 @@ export interface AdminTopUp {
     expiresAt: string | null;
 }
 
+/** `GET /finance/top-ups/:id/provider-check`: a recarga em conferência, vista pelo provedor. */
+export interface AdminTopUpCheck {
+    providerName: string | null;
+    providerPaymentId: string | null;
+    state:
+        | 'PENDING'
+        | 'PAID'
+        | 'EXPIRED'
+        | 'CANCELLED'
+        | 'REFUNDED'
+        | 'DISPUTED'
+        | 'FAILED'
+        | 'UNREACHABLE'
+        | 'NOT_OPENED';
+    expectedAmountMinor: string;
+    /** Centavos; em outra moeda vem como `USD:10`. */
+    providerAmountMinor: string | null;
+    /** Só com câmbio travado, em fen. */
+    expectedYuanMinor: string | null;
+    providerYuanMinor: string | null;
+    canCredit: boolean;
+}
+
 export type PaymentMethod = 'PIX' | 'CARD';
 
 export const PAYMENT_METHOD_ACCESS_MODES = ['ENABLED', 'DISABLED', 'ONLY_LISTED', 'EXCEPT_LISTED'] as const;
 
 export type PaymentMethodAccessMode = (typeof PAYMENT_METHOD_ACCESS_MODES)[number];
+
+/** Pix cobrado em reais ou em yuan com o câmbio travado pelo provedor. */
+export type PaymentFxMode = 'BRL' | 'LOCKED';
 
 /** `GET /payment-methods`: a chave de um meio de pagamento da recarga. */
 export interface AdminPaymentMethod {
@@ -1139,6 +1169,21 @@ export interface AdminPaymentMethod {
     installmentFees: Array<{ installmentCount: number; feeBasisPoints: number }>;
     /** Menor parcela aceita, em centavos de BRL. */
     minInstallmentMinor: string;
+    /** Quem cobra este meio para todos (`ABACATEPAY`, `AIRWALLEX`). */
+    providerName: string;
+    /** Quem cobra os clientes da lista de piloto; nulo = sem piloto. */
+    pilotProviderName: string | null;
+    pilotUsers: Array<{ userId: string; name: string; email: string; addedAt: string }>;
+    /** Provedores ligados no deploy e com credencial: a troca é entre eles. */
+    availableProviders: string[];
+    /** A rota aponta para um provedor desligado: o meio some para os clientes. */
+    providerUnavailable: boolean;
+    /** Só no Pix. Backend anterior ao modo de câmbio não manda. */
+    fxMode?: PaymentFxMode | null;
+    /** Provedores ligados que travam o câmbio do Pix; vazio = o modo não tem efeito. */
+    lockedFxProviders?: string[];
+    /** Taxas do modo travado no provedor deste Pix; nulo se ele não trava. */
+    lockedFees?: { feeBasisPoints: number; feeFixedCnyMinor: string; settlementBasisPoints: number } | null;
 }
 
 export interface AdminTopUpsPage extends Page<AdminTopUp> {
